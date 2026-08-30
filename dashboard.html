@@ -7,15 +7,38 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <main>
-    <h1>Dashboard</h1>
-    <p id="welcome"></p>
-    <button id="logoutButton">Odhlásiť sa</button>
+  <main class="wide">
+    <div class="top-bar">
+      <div>
+        <h1>Dashboard</h1>
+        <p id="welcome"></p>
+      </div>
+      <button id="logoutButton">Odhlásiť sa</button>
+    </div>
+
+    <h2>Vytvoriť nový event</h2>
+    <form id="createEventForm">
+      <div>
+        <label for="eventName">Názov eventu</label>
+        <input type="text" id="eventName" required />
+      </div>
+      <div>
+        <label for="eventDate">Dátum (voliteľné)</label>
+        <input type="date" id="eventDate" />
+      </div>
+      <button type="submit">Vytvoriť event</button>
+      <p id="createMessage"></p>
+    </form>
+
+    <h2>Moje eventy</h2>
+    <ul id="eventList" class="event-list"></ul>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
   <script>
+    let currentUserId = null;
+
     async function init() {
       const { data: { session } } = await supabaseClient.auth.getSession();
 
@@ -24,8 +47,69 @@
         return;
       }
 
+      currentUserId = session.user.id;
       document.getElementById("welcome").textContent = "Prihlásený ako: " + session.user.email;
+
+      await loadEvents();
     }
+
+    async function loadEvents() {
+      const listEl = document.getElementById("eventList");
+      listEl.innerHTML = "<li>Načítavam...</li>";
+
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id, name, event_date, slug")
+        .or(`owner_id.eq.${currentUserId},client_id.eq.${currentUserId}`)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        listEl.innerHTML = "<li>Chyba pri načítaní eventov: " + error.message + "</li>";
+        return;
+      }
+
+      if (data.length === 0) {
+        listEl.innerHTML = "<li>Zatiaľ nemáš žiadny event.</li>";
+        return;
+      }
+
+      listEl.innerHTML = "";
+      for (const event of data) {
+        const li = document.createElement("li");
+        li.className = "event-item";
+        li.innerHTML = `
+          <h3>${event.name}</h3>
+          <p>${event.event_date ? "Dátum: " + event.event_date : "Dátum nezadaný"}</p>
+          <p class="slug">Odkaz pre hostí (id eventu): ${event.slug}</p>
+        `;
+        listEl.appendChild(li);
+      }
+    }
+
+    document.getElementById("createEventForm").addEventListener("submit", async (submitEvent) => {
+      submitEvent.preventDefault();
+      const messageEl = document.getElementById("createMessage");
+      messageEl.textContent = "";
+      messageEl.className = "";
+
+      const name = document.getElementById("eventName").value;
+      const eventDate = document.getElementById("eventDate").value;
+
+      const { error } = await supabaseClient.from("events").insert({
+        name: name,
+        event_date: eventDate || null,
+        owner_id: currentUserId,
+      });
+
+      if (error) {
+        messageEl.textContent = error.message;
+        messageEl.className = "error";
+        return;
+      }
+
+      document.getElementById("createEventForm").reset();
+      await loadEvents();
+    });
 
     document.getElementById("logoutButton").addEventListener("click", async () => {
       await supabaseClient.auth.signOut();
