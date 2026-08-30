@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NaPamiatku — Prihlásenie</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main>
+    <h1>Prihlásenie</h1>
+    <form id="loginForm">
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" required />
+      </div>
+      <div>
+        <label for="password">Heslo</label>
+        <input type="password" id="password" required />
+      </div>
+      <button type="submit">Prihlásiť sa</button>
+      <p id="message"></p>
+    </form>
+    <p class="switch-link">Nemáš účet? <a href="register.html">Zaregistruj sa</a></p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script>
+    const form = document.getElementById("loginForm");
+    const messageEl = document.getElementById("message");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      messageEl.textContent = "";
+      messageEl.className = "";
+
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const submitButton = form.querySelector("button");
+      submitButton.disabled = true;
+
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+      submitButton.disabled = false;
+
+      if (error) {
+        messageEl.textContent = error.message;
+        messageEl.className = "error";
+        return;
+      }
+
+      window.location.href = "dashboard.html";
+    });
+  </script>
+</body>
+</html>

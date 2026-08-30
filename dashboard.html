@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NaPamiatku — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main>
+    <h1>Dashboard</h1>
+    <p id="welcome"></p>
+    <button id="logoutButton">Odhlásiť sa</button>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script>
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      if (!session) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      document.getElementById("welcome").textContent = "Prihlásený ako: " + session.user.email;
+    }
+
+    document.getElementById("logoutButton").addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
+    });
+
+    init();
+  </script>
+</body>
+</html>
