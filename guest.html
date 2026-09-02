@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NaPamiatku</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="top-bar">
+      <div>
+        <h1 id="eventName">NaPamiatku</h1>
+        <p class="muted" id="eventDate"></p>
+      </div>
+      <div class="top-bar-actions">
+        <button class="secondary small" data-theme-toggle>🌙</button>
+      </div>
+    </div>
+
+    <!-- 1. krok: heslo eventu -->
+    <section id="passwordStep" class="hidden">
+      <div class="card">
+        <h3>Zadaj heslo podujatia</h3>
+        <p class="muted">Heslo ti povie organizátor. Zapamätáme si ho v tomto prehliadači, takže ho zadávaš len raz.</p>
+        <form id="passwordForm">
+          <div class="field">
+            <label for="eventPassword">Heslo</label>
+            <div class="password-field">
+              <input type="password" id="eventPassword" required />
+            </div>
+          </div>
+          <button type="submit" id="passwordButton">Vstúpiť</button>
+          <p id="passwordMessage" class="message"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2. krok: obsah -->
+    <section id="mainStep" class="hidden">
+      <div class="card">
+        <label for="nickname">Vystupuješ ako</label>
+        <div class="copy-row">
+          <input type="text" id="nickname" maxlength="40" />
+          <button type="button" id="saveNicknameButton" class="secondary">Uložiť</button>
+        </div>
+        <p id="nicknameMessage" class="message"></p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="photos">Fotky</button>
+        <button class="tab" data-tab="guestbook">Kniha hostí</button>
+        <button class="tab hidden" data-tab="gifts" id="giftsTab">Dary</button>
+      </div>
+
+      <!-- Fotky -->
+      <section data-panel="photos">
+        <div class="card">
+          <div class="upload-box">
+            <p><strong>Pridaj svoje fotky</strong></p>
+            <p class="muted">Môžeš vybrať aj viac naraz. Veľké fotky automaticky zmenšíme, aby sa nahrávali rýchlo.</p>
+            <label class="file-button">
+              Vybrať fotky
+              <input type="file" id="photoInput" accept="image/*" multiple />
+            </label>
+            <p id="uploadMessage" class="message"></p>
+            <progress id="uploadProgress" class="hidden" max="100" value="0"></progress>
+          </div>
+        </div>
+        <div id="gallery" class="gallery"></div>
+      </section>
+
+      <!-- Kniha hostí -->
+      <section data-panel="guestbook" class="hidden">
+        <div class="card">
+          <h3>Nechaj odkaz</h3>
+          <form id="messageForm">
+            <div class="field">
+              <label for="messageText">Tvoje želanie alebo odkaz</label>
+              <textarea id="messageText" maxlength="1000" required></textarea>
+            </div>
+            <button type="submit" id="messageButton">Odoslať</button>
+            <p id="messageStatus" class="message"></p>
+          </form>
+        </div>
+        <ul id="messageList" class="message-list"></ul>
+      </section>
+
+      <!-- Dary -->
+      <section data-panel="gifts" class="hidden">
+        <div class="card qr-box">
+          <h3>Darovať</h3>
+          <p class="muted" id="giftRecipientInfo"></p>
+          <form id="giftForm">
+            <div class="field">
+              <label for="giftAmount">Suma v eurách (nepovinné)</label>
+              <input type="number" id="giftAmount" min="1" step="1" placeholder="napr. 50" />
+            </div>
+            <button type="button" id="generateGiftQr">Vytvoriť platobný QR kód</button>
+          </form>
+          <div id="giftQrBox" class="hidden" style="margin-top:1rem">
+            <img id="giftQrImage" alt="Platobný QR kód" />
+            <p class="muted">Naskenuj tento kód v mobilnej aplikácii svojej banky. Platbu potvrdzuješ vo svojej banke — my sa k tvojim peniazom nikdy nedostaneme.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <div id="notFound" class="hidden">
+      <p class="message error">Toto podujatie neexistuje alebo už nie je dostupné.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const slug = new URLSearchParams(window.location.search).get("slug");
+
+    // Kľúče v localStorage sú odvodené od slug-u, aby si prehliadač
+    // pamätal údaje zvlášť pre každé podujatie.
+    const PASSWORD_KEY = "napamiatku-pw-" + slug;
+    const NICKNAME_KEY = "napamiatku-nick-" + slug;
+
+    let eventInfo = null;
+    let eventPassword = null;
+    let nickname = null;
+
+    // Hosť sa neregistruje ani neprihlasuje. Ak si prezývku nezadá,
+    // vymyslíme mu nejakú, nech sa fotky nezobrazujú ako "Hosť, Hosť, Hosť".
+    const PRIDAVNE_MENA = ["Veselý", "Tancujúci", "Usmiaty", "Šťastný", "Spievajúci", "Zvedavý", "Nadšený", "Tajomný"];
+    const PODSTATNE_MENA = ["hosť", "kamarát", "tanečník", "fotograf", "sused", "svedok", "gratulant"];
+
+    function nahodnaPrezyvka() {
+      const pridavne = PRIDAVNE_MENA[Math.floor(Math.random() * PRIDAVNE_MENA.length)];
+      const podstatne = PODSTATNE_MENA[Math.floor(Math.random() * PODSTATNE_MENA.length)];
+      return pridavne + " " + podstatne;
+    }
+
+    async function init() {
+      if (!slug) return showNotFound();
+
+      const saved = localStorage.getItem(PASSWORD_KEY);
+      if (saved) {
+        const opened = await tryOpen(saved);
+        if (opened) return afterOpen();
+        localStorage.removeItem(PASSWORD_KEY);
+      }
+      document.getElementById("passwordStep").classList.remove("hidden");
+    }
+
+    // Overenie hesla robí databáza (funkcia guest_open_event).
+    // V prehliadači nikdy nemáme zoznam hesiel ani ich hashe.
+    async function tryOpen(password) {
+      const { data, error } = await supabaseClient.rpc("guest_open_event", {
+        p_slug: slug,
+        p_password: password,
+      });
+      if (error || !data) return false;
+
+      eventInfo = data;
+      eventPassword = password;
+      return true;
+    }
+
+    function showNotFound() {
+      document.getElementById("notFound").classList.remove("hidden");
+    }
+
+    async function afterOpen() {
+      document.getElementById("passwordStep").classList.add("hidden");
+      document.getElementById("mainStep").classList.remove("hidden");
+
+      document.getElementById("eventName").textContent = eventInfo.name;
+      document.getElementById("eventDate").textContent =
+        eventInfo.event_date ? formatDate(eventInfo.event_date) : "";
+
+      nickname = localStorage.getItem(NICKNAME_KEY);
+      if (!nickname) {
+        nickname = nahodnaPrezyvka();
+        localStorage.setItem(NICKNAME_KEY, nickname);
+      }
+      document.getElementById("nickname").value = nickname;
+
+      if (eventInfo.gift_enabled && eventInfo.gift_iban) {
+        document.getElementById("giftsTab").classList.remove("hidden");
+        document.getElementById("giftRecipientInfo").textContent =
+          eventInfo.gift_recipient ? "Príjemca: " + eventInfo.gift_recipient : "";
+      }
+
+      await loadPhotos();
+      await loadMessages();
+    }
+
+    /* ---------- Heslo ---------- */
+
+    document.getElementById("passwordForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const messageEl = document.getElementById("passwordMessage");
+      const button = document.getElementById("passwordButton");
+      button.disabled = true;
+      showMessage(messageEl, "Overujem...");
+
+      const opened = await tryOpen(document.getElementById("eventPassword").value);
+      button.disabled = false;
+
+      if (!opened) {
+        showMessage(messageEl, "Nesprávne heslo.", "error");
+        return;
+      }
+      localStorage.setItem(PASSWORD_KEY, eventPassword);
+      showMessage(messageEl, "");
+      await afterOpen();
+    });
+
+    /* ---------- Prezývka ---------- */
+
+    document.getElementById("saveNicknameButton").addEventListener("click", () => {
+      const messageEl = document.getElementById("nicknameMessage");
+      const zadane = document.getElementById("nickname").value.trim();
+
+      // Prázdne pole nenecháme - radšej vygenerujeme náhodnú prezývku.
+      nickname = zadane || nahodnaPrezyvka();
+      document.getElementById("nickname").value = nickname;
+      localStorage.setItem(NICKNAME_KEY, nickname);
+
+      showMessage(messageEl, "Uložené.", "ok");
+      setTimeout(() => showMessage(messageEl, ""), 2000);
+    });
+
+    /* ---------- Záložky ---------- */
+
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((other) => other.classList.remove("active"));
+        tab.classList.add("active");
+        document.querySelectorAll("[data-panel]").forEach((panel) => {
+          panel.classList.toggle("hidden", panel.dataset.panel !== tab.dataset.tab);
+        });
+      });
+    });
+
+    /* ---------- Fotky ---------- */
+
+    async function loadPhotos() {
+      const gallery = document.getElementById("gallery");
+      const { data, error } = await supabaseClient.rpc("guest_list_photos", {
+        p_slug: slug,
+        p_password: eventPassword,
+      });
+
+      if (error) {
+        gallery.innerHTML = "<p class='message error'>Chyba: " + escapeHtml(error.message) + "</p>";
+        return;
+      }
+      if (!data || data.length === 0) {
+        gallery.innerHTML = "<p class='empty'>Zatiaľ tu nie sú žiadne fotky. Buď prvý!</p>";
+        return;
+      }
+
+      gallery.innerHTML = "";
+      for (const photo of data) {
+        const url = publicUrl("photos", photo.storage_path);
+        const figure = document.createElement("figure");
+        figure.className = "photo";
+        figure.innerHTML = `
+          <img src="${url}" alt="Fotka od ${escapeHtml(photo.nickname)}" loading="lazy" />
+          <div class="photo-meta"><span>${escapeHtml(photo.nickname)}</span></div>
+          <div class="photo-actions">
+            <button class="small secondary" data-download="${url}">Stiahnuť</button>
+          </div>
+        `;
+        gallery.appendChild(figure);
+      }
+
+      gallery.querySelectorAll("[data-download]").forEach((button) => {
+        button.addEventListener("click", () =>
+          downloadFile(button.dataset.download, "napamiatku-foto.jpg"));
+      });
+    }
+
+    document.getElementById("photoInput").addEventListener("change", async (event) => {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
+
+      const messageEl = document.getElementById("uploadMessage");
+      const progressEl = document.getElementById("uploadProgress");
+      progressEl.classList.remove("hidden");
+      progressEl.value = 0;
+
+      let done = 0;
+      for (const file of files) {
+        showMessage(messageEl, `Nahrávam ${done + 1} z ${files.length}...`);
+
+        const optimized = await compressImage(file);
+        const path = `${eventInfo.id}/${crypto.randomUUID()}.jpg`;
+
+        const { error: uploadError } = await supabaseClient.storage
+          .from("photos")
+          .upload(path, optimized, { contentType: optimized.type || "image/jpeg" });
+
+        if (uploadError) {
+          showMessage(messageEl, "Nahrávanie zlyhalo: " + uploadError.message, "error");
+          progressEl.classList.add("hidden");
+          return;
+        }
+
+        // Riadok v databáze vytvorí až funkcia, ktorá znova overí heslo eventu.
+        const { error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
+          p_slug: slug,
+          p_password: eventPassword,
+          p_nickname: nickname,
+          p_storage_path: path,
+        });
+
+        if (rpcError) {
+          showMessage(messageEl, "Chyba: " + rpcError.message, "error");
+          progressEl.classList.add("hidden");
+          return;
+        }
+
+        done += 1;
+        progressEl.value = (done / files.length) * 100;
+      }
+
+      progressEl.classList.add("hidden");
+      showMessage(messageEl, `Ďakujeme! Nahraté fotky: ${done}`, "ok");
+      event.target.value = "";
+      await loadPhotos();
+    });
+
+    /* ---------- Kniha hostí ---------- */
+
+    async function loadMessages() {
+      const list = document.getElementById("messageList");
+      const { data, error } = await supabaseClient.rpc("guest_list_messages", {
+        p_slug: slug,
+        p_password: eventPassword,
+      });
+
+      if (error) {
+        list.innerHTML = "<li class='message error'>Chyba: " + escapeHtml(error.message) + "</li>";
+        return;
+      }
+      if (!data || data.length === 0) {
+        list.innerHTML = "<li class='empty'>Zatiaľ žiadne odkazy. Napíš prvý!</li>";
+        return;
+      }
+
+      list.innerHTML = "";
+      for (const item of data) {
+        const li = document.createElement("li");
+        li.className = "guest-message";
+        li.innerHTML = `
+          <div class="guest-message-head">
+            <strong>${escapeHtml(item.nickname)}</strong>
+            <span class="muted">${formatDateTime(item.created_at)}</span>
+          </div>
+          <p>${escapeHtml(item.message)}</p>
+        `;
+        list.appendChild(li);
+      }
+    }
+
+    document.getElementById("messageForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const statusEl = document.getElementById("messageStatus");
+      const button = document.getElementById("messageButton");
+      button.disabled = true;
+
+      const { error } = await supabaseClient.rpc("guest_add_message", {
+        p_slug: slug,
+        p_password: eventPassword,
+        p_nickname: nickname,
+        p_message: document.getElementById("messageText").value,
+      });
+
+      button.disabled = false;
+      if (error) return showMessage(statusEl, error.message, "error");
+
+      document.getElementById("messageText").value = "";
+      showMessage(statusEl, "Ďakujeme za odkaz!", "ok");
+      await loadMessages();
+    });
+
+    /* ---------- Dary ---------- */
+
+    document.getElementById("generateGiftQr").addEventListener("click", async () => {
+      const amountValue = document.getElementById("giftAmount").value;
+
+      const dataUrl = await makePaymentQrDataUrl({
+        iban: eventInfo.gift_iban,
+        amount: amountValue ? Number(amountValue) : 0,
+        recipient: eventInfo.gift_recipient,
+        message: eventInfo.gift_message || eventInfo.name,
+      });
+
+      document.getElementById("giftQrImage").src = dataUrl;
+      document.getElementById("giftQrBox").classList.remove("hidden");
+    });
+
+    init();
+  </script>
+</body>
+</html>
