@@ -39,6 +39,8 @@ Verejná registrácia neexistuje — účty zakladá výhradne Majiteľ.
 - `photos` — fotky priradené k eventu (prezývka autora je uložená priamo pri fotke)
 - `guestbook_messages` — odkazy hostí
 
+Plná história SQL migrácií (presne v poradí, ako boli spustené na Supabase) je v [`sql/migrations`](sql/migrations).
+
 Hosť nemá v databáze žiadny vlastný riadok ani účet — prezývka je len text uložený pri fotke a odkaze, a v prehliadači hosťa v `localStorage`.
 
 ## Ako je to zabezpečené
