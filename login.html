@@ -7,51 +7,89 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <main>
-    <h1>Prihlásenie</h1>
+  <div class="page narrow">
+    <div class="top-bar">
+      <h1>Prihlásenie</h1>
+      <div class="top-bar-actions">
+        <button class="secondary small" data-theme-toggle>🌙</button>
+      </div>
+    </div>
+
     <form id="loginForm">
-      <div>
+      <div class="field">
         <label for="email">Email</label>
-        <input type="email" id="email" required />
+        <input type="email" id="email" autocomplete="email" required />
       </div>
-      <div>
+      <div class="field">
         <label for="password">Heslo</label>
-        <input type="password" id="password" required />
+        <div class="password-field">
+          <input type="password" id="password" autocomplete="current-password" required />
+        </div>
       </div>
-      <button type="submit">Prihlásiť sa</button>
-      <p id="message"></p>
+      <button type="submit" id="submitButton">Prihlásiť sa</button>
+      <p id="message" class="message"></p>
     </form>
-    <p class="switch-link">Nemáš účet? <a href="register.html">Zaregistruj sa</a></p>
-  </main>
+
+    <div class="card">
+      <h3>Zabudnuté heslo</h3>
+      <p class="muted">Pošleme ti na email odkaz, cez ktorý si nastavíš nové heslo.</p>
+      <button type="button" class="secondary" id="resetButton">Poslať odkaz na obnovu</button>
+      <p id="resetMessage" class="message"></p>
+    </div>
+
+    <p class="muted"><a href="index.html">← Späť na úvod</a></p>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
+  <script src="js/app.js"></script>
   <script>
-    const form = document.getElementById("loginForm");
+    // Ak už je používateľ prihlásený, nemá čo robiť na prihlasovacej stránke.
+    (async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) window.location.href = "dashboard.html";
+    })();
+
     const messageEl = document.getElementById("message");
+    const submitButton = document.getElementById("submitButton");
 
-    form.addEventListener("submit", async (event) => {
+    document.getElementById("loginForm").addEventListener("submit", async (event) => {
       event.preventDefault();
-      messageEl.textContent = "";
-      messageEl.className = "";
-
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      const submitButton = form.querySelector("button");
+      showMessage(messageEl, "");
       submitButton.disabled = true;
 
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value,
+      });
 
       submitButton.disabled = false;
 
       if (error) {
-        messageEl.textContent = error.message;
-        messageEl.className = "error";
+        showMessage(messageEl, "Nesprávny email alebo heslo.", "error");
+        return;
+      }
+      window.location.href = "dashboard.html";
+    });
+
+    document.getElementById("resetButton").addEventListener("click", async () => {
+      const resetMessageEl = document.getElementById("resetMessage");
+      const email = document.getElementById("email").value.trim();
+
+      if (!email) {
+        showMessage(resetMessageEl, "Najprv vyplň email vyššie.", "error");
         return;
       }
 
-      window.location.href = "dashboard.html";
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname.replace("login.html", "set-password.html"),
+      });
+
+      if (error) {
+        showMessage(resetMessageEl, error.message, "error");
+        return;
+      }
+      showMessage(resetMessageEl, "Ak účet existuje, poslali sme naň email s odkazom.", "ok");
     });
   </script>
 </body>

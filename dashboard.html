@@ -7,114 +7,287 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <main class="wide">
+  <div class="page">
     <div class="top-bar">
       <div>
         <h1>Dashboard</h1>
-        <p id="welcome"></p>
+        <p class="muted" id="welcome"></p>
       </div>
-      <button id="logoutButton">Odhlásiť sa</button>
+      <div class="top-bar-actions">
+        <button class="secondary small" data-theme-toggle>🌙</button>
+        <button class="secondary small" data-logout>Odhlásiť sa</button>
+      </div>
     </div>
 
-    <h2>Vytvoriť nový event</h2>
-    <form id="createEventForm">
-      <div>
-        <label for="eventName">Názov eventu</label>
-        <input type="text" id="eventName" required />
-      </div>
-      <div>
-        <label for="eventDate">Dátum (voliteľné)</label>
-        <input type="date" id="eventDate" />
-      </div>
-      <button type="submit">Vytvoriť event</button>
-      <p id="createMessage"></p>
-    </form>
+    <!-- ---------- Časť len pre Majiteľa ---------- -->
+    <section id="majitelSection" class="hidden">
+      <h2>Žiadosti o schválenie</h2>
+      <div id="pendingList"></div>
 
-    <h2>Moje eventy</h2>
+      <h2>Vytvoriť účet pre klienta</h2>
+      <div class="card">
+        <p class="muted">Klientovi pošleme email s odkazom, cez ktorý si sám nastaví heslo. Ty jeho heslo nikdy neuvidíš.</p>
+        <form id="inviteForm">
+          <div class="field">
+            <label for="clientEmail">Email klienta</label>
+            <input type="email" id="clientEmail" required />
+          </div>
+          <button type="submit" id="inviteButton">Poslať pozvánku</button>
+          <p id="inviteMessage" class="message"></p>
+        </form>
+      </div>
+
+      <h2>Všetky účty</h2>
+      <div id="profileList"></div>
+    </section>
+
+    <!-- ---------- Žiadosť o event (Klient aj Majiteľ) ---------- -->
+    <h2>Požiadať o nový event</h2>
+    <div class="card">
+      <p class="muted" id="requestHint">Žiadosť musí schváliť prevádzkovateľ. Heslo eventu budú zadávať hostia po naskenovaní QR kódu — vyber jednoduché, ktoré im vieš povedať.</p>
+      <form id="requestForm">
+        <div class="field">
+          <label for="eventName">Názov eventu</label>
+          <input type="text" id="eventName" required maxlength="80" />
+        </div>
+        <div class="field">
+          <label for="eventDate">Dátum (voliteľné)</label>
+          <input type="date" id="eventDate" />
+        </div>
+        <div class="field">
+          <label for="eventPassword">Heslo eventu pre hostí (aspoň 4 znaky)</label>
+          <div class="password-field">
+            <input type="password" id="eventPassword" minlength="4" required />
+          </div>
+        </div>
+        <button type="submit" id="requestButton">Odoslať žiadosť</button>
+        <p id="requestMessage" class="message"></p>
+      </form>
+    </div>
+
+    <h2 id="eventsHeading">Moje eventy</h2>
     <ul id="eventList" class="event-list"></ul>
-  </main>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
+  <script src="js/app.js"></script>
   <script>
-    let currentUserId = null;
+    let profile = null;
 
     async function init() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
+      const session = await requireAuth();
+      if (!session) return;
 
-      if (!session) {
-        window.location.href = "login.html";
-        return;
+      profile = await loadProfile(session.user.id);
+      const roleLabel = profile && profile.role === "majitel" ? "Majiteľ" : "Klient";
+      document.getElementById("welcome").textContent = session.user.email + " — " + roleLabel;
+
+      if (profile && profile.role === "majitel") {
+        document.getElementById("majitelSection").classList.remove("hidden");
+        document.getElementById("eventsHeading").textContent = "Všetky eventy";
+        document.getElementById("requestHint").textContent =
+          "Ako majiteľ svoj event schváliš sám hneď po vytvorení.";
+        await loadPending();
+        await loadProfiles();
       }
-
-      currentUserId = session.user.id;
-      document.getElementById("welcome").textContent = "Prihlásený ako: " + session.user.email;
 
       await loadEvents();
     }
 
+    /* ---------- Eventy ---------- */
+
     async function loadEvents() {
       const listEl = document.getElementById("eventList");
-      listEl.innerHTML = "<li>Načítavam...</li>";
+      listEl.innerHTML = "<li class='muted'>Načítavam...</li>";
 
+      // Nefiltrujeme podľa používateľa - o tom, ktoré eventy uvidí,
+      // rozhoduje RLS politika v databáze (majiteľ všetky, klient svoje).
       const { data, error } = await supabaseClient
         .from("events")
-        .select("id, name, event_date, slug")
-        .or(`owner_id.eq.${currentUserId},client_id.eq.${currentUserId}`)
+        .select("id, name, event_date, status, client_id")
         .order("created_at", { ascending: false });
 
       if (error) {
-        listEl.innerHTML = "<li>Chyba pri načítaní eventov: " + error.message + "</li>";
+        listEl.innerHTML = "<li class='message error'>Chyba: " + escapeHtml(error.message) + "</li>";
         return;
       }
 
-      if (data.length === 0) {
-        listEl.innerHTML = "<li>Zatiaľ nemáš žiadny event.</li>";
+      const visible = data.filter((event) => event.status !== "pending");
+
+      if (visible.length === 0) {
+        listEl.innerHTML = "<li class='empty'>Zatiaľ tu nie je žiadny event.</li>";
         return;
       }
 
       listEl.innerHTML = "";
-      for (const event of data) {
+      for (const event of visible) {
         const li = document.createElement("li");
-        li.className = "event-item";
+        li.className = "card";
         li.innerHTML = `
-          <h3>${event.name}</h3>
-          <p>${event.event_date ? "Dátum: " + event.event_date : "Dátum nezadaný"}</p>
-          <p class="slug">Odkaz pre hostí (id eventu): ${event.slug}</p>
+          <a class="event-link" href="event.html?id=${encodeURIComponent(event.id)}">
+            <h3>${escapeHtml(event.name)} <span class="badge ${event.status}">${event.status === "approved" ? "schválený" : "zamietnutý"}</span></h3>
+            <p class="muted">${event.event_date ? "Dátum: " + formatDate(event.event_date) : "Dátum nezadaný"}</p>
+          </a>
         `;
         listEl.appendChild(li);
       }
     }
 
-    document.getElementById("createEventForm").addEventListener("submit", async (submitEvent) => {
-      submitEvent.preventDefault();
-      const messageEl = document.getElementById("createMessage");
-      messageEl.textContent = "";
-      messageEl.className = "";
+    document.getElementById("requestForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const messageEl = document.getElementById("requestMessage");
+      const button = document.getElementById("requestButton");
+      button.disabled = true;
+      showMessage(messageEl, "");
 
-      const name = document.getElementById("eventName").value;
-      const eventDate = document.getElementById("eventDate").value;
-
-      const { error } = await supabaseClient.from("events").insert({
-        name: name,
-        event_date: eventDate || null,
-        owner_id: currentUserId,
+      const { data: newEventId, error } = await supabaseClient.rpc("request_event", {
+        p_name: document.getElementById("eventName").value,
+        p_event_date: document.getElementById("eventDate").value || null,
+        p_password: document.getElementById("eventPassword").value,
       });
 
       if (error) {
-        messageEl.textContent = error.message;
-        messageEl.className = "error";
+        button.disabled = false;
+        showMessage(messageEl, error.message, "error");
         return;
       }
 
-      document.getElementById("createEventForm").reset();
+      // Majiteľ nemusí čakať na schválenie od nikoho - schváli si to sám.
+      if (profile && profile.role === "majitel") {
+        await supabaseClient.rpc("set_event_status", { p_event_id: newEventId, p_status: "approved" });
+      }
+
+      button.disabled = false;
+      document.getElementById("requestForm").reset();
+      showMessage(messageEl,
+        profile && profile.role === "majitel" ? "Event vytvorený." : "Žiadosť odoslaná, čaká na schválenie.",
+        "ok");
+
       await loadEvents();
+      if (profile && profile.role === "majitel") await loadPending();
     });
 
-    document.getElementById("logoutButton").addEventListener("click", async () => {
-      await supabaseClient.auth.signOut();
-      window.location.href = "login.html";
+    /* ---------- Schvaľovanie (len Majiteľ) ---------- */
+
+    async function loadPending() {
+      const container = document.getElementById("pendingList");
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id, name, event_date, client_id, created_at")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        container.innerHTML = "<p class='message error'>Chyba: " + escapeHtml(error.message) + "</p>";
+        return;
+      }
+      if (data.length === 0) {
+        container.innerHTML = "<p class='muted'>Žiadne čakajúce žiadosti.</p>";
+        return;
+      }
+
+      // K žiadostiam dohľadáme emaily klientov, nech majiteľ vie, kto žiada.
+      const { data: profiles } = await supabaseClient.from("profiles").select("id, email, full_name");
+      const byId = {};
+      (profiles || []).forEach((item) => { byId[item.id] = item; });
+
+      container.innerHTML = "";
+      for (const event of data) {
+        const client = byId[event.client_id];
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <h3>${escapeHtml(event.name)} <span class="badge pending">čaká</span></h3>
+          <p class="muted">
+            Žiada: ${escapeHtml(client ? (client.full_name || client.email) : "neznámy")}<br />
+            ${event.event_date ? "Dátum: " + formatDate(event.event_date) + "<br />" : ""}
+            Odoslané: ${formatDateTime(event.created_at)}
+          </p>
+          <div class="button-row">
+            <button class="small" data-approve="${event.id}">Schváliť</button>
+            <button class="small secondary" data-reject="${event.id}">Zamietnuť</button>
+          </div>
+        `;
+        container.appendChild(card);
+      }
+
+      container.querySelectorAll("[data-approve]").forEach((button) => {
+        button.addEventListener("click", () => changeStatus(button.dataset.approve, "approved"));
+      });
+      container.querySelectorAll("[data-reject]").forEach((button) => {
+        button.addEventListener("click", () => changeStatus(button.dataset.reject, "rejected"));
+      });
+    }
+
+    async function changeStatus(eventId, status) {
+      const { error } = await supabaseClient.rpc("set_event_status", {
+        p_event_id: eventId,
+        p_status: status,
+      });
+      if (error) {
+        alert("Chyba: " + error.message);
+        return;
+      }
+      await loadPending();
+      await loadEvents();
+    }
+
+    /* ---------- Účty klientov (len Majiteľ) ---------- */
+
+    document.getElementById("inviteForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const messageEl = document.getElementById("inviteMessage");
+      const button = document.getElementById("inviteButton");
+      button.disabled = true;
+      showMessage(messageEl, "");
+
+      const email = document.getElementById("clientEmail").value.trim();
+
+      // Pošleme prihlasovací odkaz. Ak účet ešte neexistuje, Supabase ho vytvorí.
+      // Klient po kliknutí príde na set-password.html a zvolí si vlastné heslo.
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: window.location.origin +
+            window.location.pathname.replace("dashboard.html", "set-password.html"),
+        },
+      });
+
+      button.disabled = false;
+
+      if (error) {
+        showMessage(messageEl, error.message, "error");
+        return;
+      }
+      document.getElementById("inviteForm").reset();
+      showMessage(messageEl, "Pozvánka odoslaná na " + email, "ok");
     });
+
+    async function loadProfiles() {
+      const container = document.getElementById("profileList");
+      const { data, error } = await supabaseClient
+        .from("profiles")
+        .select("id, email, full_name, role, created_at")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        container.innerHTML = "<p class='message error'>Chyba: " + escapeHtml(error.message) + "</p>";
+        return;
+      }
+
+      container.innerHTML = "";
+      for (const item of data) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <h3>${escapeHtml(item.full_name || item.email)} <span class="badge">${escapeHtml(item.role)}</span></h3>
+          <p class="muted">${escapeHtml(item.email)} · vytvorený ${formatDate(item.created_at)}</p>
+        `;
+        container.appendChild(card);
+      }
+    }
 
     init();
   </script>
