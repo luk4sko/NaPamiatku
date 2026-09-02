@@ -3,13 +3,175 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NaPamiatku</title>
+  <title>NaPamiatku — fotky od hostí na jednom mieste</title>
+  <meta name="description" content="Hostia naskenujú QR kód a nahrajú fotky z vašej svadby či oslavy do spoločnej galérie. Bez inštalácie aplikácie, bez registrácie." />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <main>
-    <h1>NaPamiatku</h1>
-    <p class="switch-link"><a href="login.html">Prihlásiť sa</a></p>
-  </main>
+  <nav class="site-nav">
+    <div class="site-nav-inner">
+      <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+      <div class="top-bar-actions">
+        <button class="secondary small" data-theme-toggle>🌙</button>
+        <a href="login.html"><button class="small" type="button">Prihlásiť sa</button></a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ---------- Hero ---------- -->
+  <header class="section">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Svadby · Oslavy · Firemné akcie</p>
+        <h1>Všetky fotky z vášho dňa. <em>Na jednom mieste.</em></h1>
+        <p class="hero-lead">
+          Fotograf odovzdá fotky o mesiac. Tie najlepšie momenty však majú v telefónoch vaši hostia —
+          a tam aj zostanú. NaPamiatku ich dostane k vám ešte v ten istý večer.
+        </p>
+        <div class="hero-actions">
+          <a href="#kontakt"><button class="large" type="button">Chcem to na svoju akciu</button></a>
+          <a href="#ako-to-funguje"><button class="large secondary" type="button">Ako to funguje</button></a>
+        </div>
+        <p class="hero-note">Hostia nič neinštalujú a neregistrujú sa. Stačí im fotoaparát v telefóne.</p>
+      </div>
+
+      <div class="hero-visual">
+        <div class="phone" aria-hidden="true">
+          <p class="phone-head">Svadba Zuzka &amp; Marek</p>
+          <div class="phone-grid">
+            <div class="phone-tile" style="height:74px"></div>
+            <div class="phone-tile" style="height:96px"></div>
+            <div class="phone-tile" style="height:104px"></div>
+            <div class="phone-tile" style="height:68px"></div>
+            <div class="phone-tile" style="height:80px"></div>
+            <div class="phone-tile" style="height:112px"></div>
+            <div class="phone-tile" style="height:90px"></div>
+            <div class="phone-tile" style="height:70px"></div>
+          </div>
+        </div>
+        <div class="qr-float">
+          <img id="heroQr" alt="Ukážka QR kódu" />
+          <span>Naskenuj a pridaj fotku</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ---------- Ako to funguje ---------- -->
+  <section class="band" id="ako-to-funguje">
+   <div class="section">
+    <div class="section-head">
+      <p class="eyebrow">Ako to funguje</p>
+      <h2>Tri kroky, žiadne školenie</h2>
+      <p>Celé to postavíme za vás. Vy dostanete hotový QR kód, ktorý stačí položiť na stoly.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <h3>Založíme vám podujatie</h3>
+        <p>Ozvete sa nám, my vytvoríme váš účet a podujatie. Dostanete QR kód pripravený na tlač a heslo, ktoré poviete hosťom.</p>
+      </div>
+      <div class="step">
+        <h3>Hostia skenujú a pridávajú</h3>
+        <p>Hosť namieri telefón na QR kód, zadá heslo a je vnútri. Žiadna aplikácia, žiadna registrácia — nahráva fotky a píše odkazy do knihy hostí.</p>
+      </div>
+      <div class="step">
+        <h3>Máte všetko pokope</h3>
+        <p>Galéria rastie naživo počas celej akcie. Ktorúkoľvek fotku si stiahnete v plnej kvalite, čo sa vám nehodí, zmažete.</p>
+      </div>
+    </div>
+   </div>
+  </section>
+
+  <!-- ---------- Vlastnosti ---------- -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Čo v tom je</p>
+      <h2>Postavené pre reálny priebeh večera</h2>
+      <p>Nie zoznam funkcií pre efekt, ale veci, ktoré na mieste naozaj potrebujete.</p>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <span class="feature-icon">📷</span>
+        <h3>Spoločná galéria</h3>
+        <p>Fotky od všetkých hostí v jednej prehľadnej nástenke, zoradené od najnovších. Pri každej vidno, kto ju pridal.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">💌</span>
+        <h3>Kniha hostí</h3>
+        <p>Digitálne želania a odkazy. Zostanú vám čitateľné aj o desať rokov — na rozdiel od podpisov na obruse.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🎁</span>
+        <h3>Dary cez QR</h3>
+        <p>Hosť naskenuje platobný kód, banka mu predvyplní príkaz a sumu si zvolí sám. Peniaze idú priamo na váš účet.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">⬇️</span>
+        <h3>Sťahovanie v plnej kvalite</h3>
+        <p>Žiadne rozmazané snímky z chatu. Každú fotku si stiahnete presne v takej kvalite, v akej bola nahraná.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🔒</span>
+        <h3>Prístup len na heslo</h3>
+        <p>Galéria nie je verejná. Otvorí sa len tomu, kto pozná odkaz aj heslo podujatia — a to poviete vy.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">📱</span>
+        <h3>Funguje na každom telefóne</h3>
+        <p>Beží v prehliadači. Nič sa neinštaluje, nič nezaberá miesto a je jedno, či má hosť iPhone alebo Android.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- Pre koho ---------- -->
+  <section class="band">
+   <div class="section section-tight">
+    <div class="section-head" style="margin-bottom:1.75rem">
+      <h2>Hodí sa na</h2>
+    </div>
+    <div class="audience">
+      <span class="pill">Svadby</span>
+      <span class="pill">Narodeniny a jubileá</span>
+      <span class="pill">Krstiny</span>
+      <span class="pill">Stužkové</span>
+      <span class="pill">Firemné večierky</span>
+      <span class="pill">Rodinné stretnutia</span>
+      <span class="pill">Konferencie</span>
+    </div>
+   </div>
+  </section>
+
+  <!-- ---------- Výzva ---------- -->
+  <section class="section" id="kontakt">
+    <div class="cta">
+      <h2>Máte termín? Ozvite sa.</h2>
+      <p>
+        Napíšte nám, o akú akciu ide a kedy sa koná. Pripravíme vám podujatie
+        aj QR kód na tlač — vy sa už len tešíte z fotiek.
+      </p>
+      <!-- TODO: po kúpe domény sem doplniť firemný email a prípadne telefón -->
+      <a href="mailto:info@napamiatku.sk"><button class="large" type="button">Napísať nám</button></a>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+      <span>© 2026 NaPamiatku · Fotky z vášho dňa na jednom mieste</span>
+      <a href="login.html">Prihlásenie pre organizátorov</a>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Ukážkový QR kód v hero sekcii vedie na túto istú stránku.
+    makeQrDataUrl(window.location.origin, 300).then((dataUrl) => {
+      document.getElementById("heroQr").src = dataUrl;
+    });
+  </script>
 </body>
 </html>
