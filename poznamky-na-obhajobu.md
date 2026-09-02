@@ -154,3 +154,24 @@ Je poskladaný z obyčajných `<div>` a CSS (rámik, zaoblenie, gradientové dla
 Natívne pole na výber súboru sa nedá naštýlovať a v každom prehliadači vyzerá inak („Vybrať súbory / Nie je vybratý žiadny súbor"). Preto ho skryjeme (`display: none`) a obalíme do `<label class="file-button">`.
 
 Funguje to preto, lebo kliknutie na `<label>` prehliadač automaticky presmeruje na pole, ktoré label obaľuje — čiže sa otvorí ten istý dialóg. JavaScript ostáva nezmenený, lebo pole stále existuje, len ho nevidno. Bonus: je to prístupné aj pre čítačky obrazovky.
+
+## 2026-09-02 — Nasadenie na napamiatku.com a prečo nemáme "leaked password" ochranu
+
+**Kontext:** Doména `napamiatku.com` (Websupport) je pripojená na Vercel hosting (A záznam `@ → 216.198.79.1`, CNAME `www → *.vercel-dns-017.com`). V Supabase sme nastavili produkčné Site URL/Redirect URL a vlastný SMTP cez `napamiatku@seznam.cz`, aby chodili emaily na pozvánky a obnovu hesla aj z ostrej domény, nielen z lokálneho vývoja.
+
+**1. Čo je "Prevent use of leaked passwords" a prečo sme ju nezapli?**
+
+Je to funkcia Supabase Auth, ktorá pri registrácii/zmene hesla overí zadané heslo oproti databáze **HaveIBeenPwned** — zoznamu hesiel uniknutých z iných služieb (LinkedIn, Adobe a pod.), ktoré kolujú na internete. Ak si niekto zvolí heslo, ktoré je v tomto zozname (napr. `Password123`), Supabase mu ho odmietne.
+
+Vo Vercel/Supabase dashboarde je táto možnosť uzamknutá s textom *"Only available on Pro plan and above"* — na Free pláne, na ktorom projekt beží, sa zapnúť nedá bez platenej Supabase Pro subscription (25 $/mesiac).
+
+**2. Pred akým útokom to chráni a prečo to u nás nie je kritické?**
+
+Rieši to konkrétny útok: **credential stuffing**. Útočník má stiahnutý zoznam miliónov uniknutých kombinácií email:heslo z iných únikov a skúša ich hromadne na cudzej appke — sázka na to, že si niekto recykluje rovnaké heslo všade. Bez tejto funkcie appka len kontroluje dĺžku hesla (min. 6 znakov), nie či je konkrétne heslo už verejne známe.
+
+Riziko je u nás nízke, pretože:
+- **Verejná registrácia neexistuje** — účty (Majiteľ/Klient v `auth.users`) zakladá výhradne Majiteľ pozvánkou, nie je to systém s masovou registráciou, na ktorý by sa credential stuffing štatisticky oplatil.
+- Počet účtov je malý a pod kontrolou.
+- Heslo hosťa (vstup do galérie) je **úplne iný mechanizmus** — nie Supabase Auth heslo, ale `password_hash` v tabuľke `events`, hashovaný cez bcrypt (`pgcrypto`). Tejto funkcie by sa HaveIBeenPwned kontrola ani netýkala, tá platí len pre `auth.users`.
+
+**Záver pre obhajobu:** je to legitímna bezpečnostná vrstva (*defense in depth* — viacero prekrývajúcich sa ochrán, nie spoliehanie sa na jednu), nie diera, ktorú by dalo priamo zneužiť. Vedeli sme o nej, je to platená funkcia Supabase Pro plánu, a vzhľadom na uzavretý okruh účtov na pozvánku sme riziko vyhodnotili ako nízke a rozhodli sa neplatiť za Pro plán — projekt beží ďalej na Free.

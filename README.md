@@ -55,13 +55,23 @@ Heslo eventu je uložené ako bcrypt hash (`pgcrypto`), nikdy v čitateľnej pod
 - Všetok text od hostí sa vypisuje cez `escapeHtml()` — ochrana proti XSS
 - `slug` je oddelený od `id`, takže sa dá zneplatniť starý QR kód bez zrušenia eventu
 
-## Čo treba nastaviť v Supabase dashboarde
+## Nasadenie
+
+- **Doména:** napamiatku.com
+- **Hosting:** [Vercel](https://vercel.com) — statický web bez build kroku, stačí pripojiť GitHub repozitár a nastaviť ako Root Directory koreň projektu (žiadny framework, žiadny build command).
+- **Email organizátora:** napamiatku@seznam.cz
+
+## Čo bolo treba nastaviť v Supabase dashboarde
 
 Toto sa nedá spraviť z kódu:
 
-1. **Authentication → URL Configuration** — pridať Site URL a Redirect URLs (`https://<domena>/set-password.html`), inak nebudú fungovať odkazy z emailov na ostrej doméne.
-2. **Authentication → SMTP** — predvolený Supabase mailer posiela len pár emailov za hodinu a slúži na testovanie. Pre ostrú prevádzku treba nastaviť vlastný SMTP (firemný mail).
-3. **Authentication → Password protection** — zapnúť kontrolu uniknutých hesiel (HaveIBeenPwned).
+1. ✅ **Authentication → URL Configuration** — Site URL `https://napamiatku.com` a Redirect URL `https://napamiatku.com/set-password.html`, inak by nefungovali odkazy z emailov na ostrej doméne.
+2. ✅ **Authentication → Emails → SMTP Settings** — predvolený Supabase mailer posiela len pár emailov za hodinu a slúži na testovanie. Pre ostrú prevádzku vlastný SMTP cez `napamiatku@seznam.cz`:
+   - Host: `smtp.seznam.cz`
+   - Port: `465` (SSL/TLS)
+   - Username / Sender email: `napamiatku@seznam.cz`
+   - Password: heslo k schránke
+3. ⏭️ **Authentication → Sign In / Providers → Email → Prevent use of leaked passwords** — kontrola hesla oproti HaveIBeenPwned je funkcia **Supabase Pro plánu**, na Free pláne je uzamknutá. Vedome sme ju vynechali — registrácia je len na pozvanie od Majiteľa (žiadny verejný sign-up), takže riziko credential stuffing je nízke. Dôvod je rozpísaný v [`poznamky-na-obhajobu.md`](poznamky-na-obhajobu.md).
 
 ## Spustenie lokálne
 
