@@ -1224,6 +1224,213 @@ progress {
   color: var(--accent);
 }
 
+/* ======================================================================
+   PRIHLASOVACIE STRÁNKY (login, register, set-password)
+   ====================================================================== */
+
+/* Rozdelená obrazovka: vľavo fotka s odkazom značky, vpravo formulár. */
+.auth {
+  min-height: 100vh;
+  display: grid;
+}
+
+@media (min-width: 900px) {
+  .auth { grid-template-columns: 0.85fr 1.15fr; }
+}
+
+/* Fotku ukazujeme až tam, kde je na ňu miesto. Na mobile chceme mať
+   formulár hneď hore, nie ho tlačiť pod dekoráciu. */
+.auth-visual {
+  display: none;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  .auth-visual { display: block; }
+}
+
+.auth-visual img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Tmavý prechod cez fotku - drží biely text čitateľný nezávisle od toho,
+   ktorá časť fotky je pod ním svetlá. */
+.auth-visual-body {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2.5rem;
+  background: linear-gradient(to top, rgba(10, 8, 7, 0.93) 8%, rgba(10, 8, 7, 0.4) 55%, rgba(10, 8, 7, 0.6));
+}
+
+.auth-visual-body .logo {
+  color: #fff;
+  font-size: 1.45rem;
+}
+
+.auth-quote {
+  margin: 0;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.6rem;
+  line-height: 1.3;
+  color: #fff;
+  max-width: 20rem;
+}
+
+.auth-quote span {
+  display: block;
+  margin-top: 0.75rem;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.925rem;
+  line-height: 1.6;
+  color: rgba(245, 240, 234, 0.75);
+}
+
+.auth-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 380px;
+}
+
+.auth-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+/* Logo nad formulárom má zmysel len na mobile - na širokej obrazovke
+   je už jedno vľavo vo fotke a dve by boli navyše. */
+@media (min-width: 900px) {
+  .auth-head .logo { visibility: hidden; }
+}
+
+.auth-form-inner h1 {
+  font-size: 1.9rem;
+  margin: 0 0 0.5rem;
+}
+
+.auth-intro {
+  color: var(--text-muted);
+  margin: 0 0 1.75rem;
+}
+
+/* V úzkom stĺpci pôsobí tlačidlo na plnú šírku prirodzenejšie. */
+.auth-form-inner form > button {
+  align-self: stretch;
+}
+
+.auth-foot {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.auth-foot p { margin: 0.4rem 0; }
+
+/* ======================================================================
+   VNÚTORNÉ STRÁNKY (dashboard, event, guest)
+   ====================================================================== */
+
+/* Utlmená verzia teplého pozadia z úvodnej stránky, aby appka nepôsobila
+   ako úplne iný web než to, cez čo sa k nej používateľ dostal. */
+.page-hero {
+  background:
+    radial-gradient(32rem 20rem at 12% -25%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 70%),
+    radial-gradient(28rem 18rem at 88% -35%, color-mix(in srgb, #8b5e34 18%, transparent), transparent 70%);
+  border-bottom: 1px solid var(--border);
+}
+
+.page-hero .page {
+  padding-top: 2.5rem;
+  padding-bottom: 2rem;
+}
+
+.page-hero .top-bar {
+  margin-bottom: 0;
+}
+
+/* ---------- Vstupná brána pre hostí (guest.html) ---------- */
+
+/* Prvá obrazovka po naskenovaní QR kódu. Fotka na pozadí dáva hosťovi
+   hneď pocit, kam sa dostal, ešte než zadá heslo. */
+.gate {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  overflow: hidden;
+}
+
+.gate-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+}
+
+.gate-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem 1.75rem;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.gate-card .logo {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+}
+
+.gate-card h1 {
+  font-size: 1.6rem;
+  margin: 0 0 0.5rem;
+}
+
+.gate-card > p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0 0 1.5rem;
+}
+
+.gate-card form {
+  text-align: left;
+}
+
+.gate-card form > button {
+  align-self: stretch;
+}
+
+.gate-theme {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+}
+
 /* ---------- Pás fotiek pod hero sekciou ---------- */
 .marquee {
   overflow: hidden;

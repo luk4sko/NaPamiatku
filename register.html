@@ -7,46 +7,62 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="page narrow">
-    <div class="top-bar">
-      <h1>Registrácia</h1>
-      <div class="top-bar-actions">
-        <button class="secondary small" data-theme-toggle>🌙</button>
+  <div class="auth">
+    <aside class="auth-visual">
+      <img src="img/auth-registracia-lg.webp" alt="" />
+      <div class="auth-visual-body">
+        <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+        <p class="auth-quote">
+          Za pár minút máte QR kód na stoloch.
+          <span>Vytvorte si účet, požiadajte o event a po schválení je všetko pripravené.</span>
+        </p>
       </div>
-    </div>
+    </aside>
 
-    <p class="muted">
-      Vytvor si účet a potom rovno v dashboarde požiadaj o event —
-      po schválení dostaneš QR kód pre svojich hostí.
-    </p>
+    <main class="auth-form">
+      <div class="auth-form-inner">
+        <div class="auth-head">
+          <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+          <button class="secondary small" data-theme-toggle>🌙</button>
+        </div>
 
-    <form id="registerForm">
-      <div class="field">
-        <label for="fullName">Tvoje meno</label>
-        <input type="text" id="fullName" autocomplete="name" />
-      </div>
-      <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" autocomplete="email" required />
-      </div>
-      <div class="field">
-        <label for="password">Heslo (aspoň 6 znakov)</label>
-        <div class="password-field">
-          <input type="password" id="password" autocomplete="new-password" minlength="6" required />
+        <h1>Registrácia</h1>
+        <p class="auth-intro">
+          Vytvor si účet a potom rovno v dashboarde požiadaj o event —
+          po schválení dostaneš QR kód pre svojich hostí.
+        </p>
+
+        <form id="registerForm">
+          <div class="field">
+            <label for="fullName">Tvoje meno</label>
+            <input type="text" id="fullName" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="password">Heslo (aspoň 6 znakov)</label>
+            <div class="password-field">
+              <input type="password" id="password" autocomplete="new-password" minlength="6" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="passwordConfirm">Heslo znova</label>
+            <div class="password-field">
+              <input type="password" id="passwordConfirm" autocomplete="new-password" minlength="6" required />
+            </div>
+          </div>
+          <button type="submit" id="submitButton">Zaregistrovať sa</button>
+          <p id="message" class="message"></p>
+        </form>
+
+        <div class="auth-foot">
+          <p>Už máš účet? <a href="login.html">Prihlás sa</a></p>
+          <p><a href="index.html">← Späť na úvod</a></p>
         </div>
       </div>
-      <div class="field">
-        <label for="passwordConfirm">Heslo znova</label>
-        <div class="password-field">
-          <input type="password" id="passwordConfirm" autocomplete="new-password" minlength="6" required />
-        </div>
-      </div>
-      <button type="submit" id="submitButton">Zaregistrovať sa</button>
-      <p id="message" class="message"></p>
-    </form>
-
-    <p class="muted">Už máš účet? <a href="login.html">Prihlás sa</a></p>
-    <p class="muted"><a href="index.html">← Späť na úvod</a></p>
+    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -65,7 +81,6 @@
     document.getElementById("registerForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       showMessage(messageEl, "");
-      submitButton.disabled = true;
 
       const email = document.getElementById("email").value.trim();
       const fullName = document.getElementById("fullName").value.trim();

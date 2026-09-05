@@ -7,38 +7,56 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="page narrow">
-    <div class="top-bar">
-      <h1>Prihlásenie</h1>
-      <div class="top-bar-actions">
-        <button class="secondary small" data-theme-toggle>🌙</button>
+  <div class="auth">
+    <aside class="auth-visual">
+      <img src="img/auth-prihlasenie-lg.webp" alt="" />
+      <div class="auth-visual-body">
+        <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+        <p class="auth-quote">
+          Fotky z vášho večera čakajú.
+          <span>Prihláste sa a pozrite si, čo medzitým pridali vaši hostia.</span>
+        </p>
       </div>
-    </div>
+    </aside>
 
-    <form id="loginForm">
-      <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" autocomplete="email" required />
-      </div>
-      <div class="field">
-        <label for="password">Heslo</label>
-        <div class="password-field">
-          <input type="password" id="password" autocomplete="current-password" required />
+    <main class="auth-form">
+      <div class="auth-form-inner">
+        <div class="auth-head">
+          <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+          <button class="secondary small" data-theme-toggle>🌙</button>
+        </div>
+
+        <h1>Prihlásenie</h1>
+        <p class="auth-intro">Zadaj email a heslo k svojmu účtu.</p>
+
+        <form id="loginForm">
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="password">Heslo</label>
+            <div class="password-field">
+              <input type="password" id="password" autocomplete="current-password" required />
+            </div>
+          </div>
+          <button type="submit" id="submitButton">Prihlásiť sa</button>
+          <p id="message" class="message"></p>
+        </form>
+
+        <div class="card">
+          <h3>Zabudnuté heslo</h3>
+          <p class="muted">Pošleme ti na email odkaz, cez ktorý si nastavíš nové heslo.</p>
+          <button type="button" class="secondary" id="resetButton">Poslať odkaz na obnovu</button>
+          <p id="resetMessage" class="message"></p>
+        </div>
+
+        <div class="auth-foot">
+          <p>Nemáš účet? <a href="register.html">Zaregistruj sa</a></p>
+          <p><a href="index.html">← Späť na úvod</a></p>
         </div>
       </div>
-      <button type="submit" id="submitButton">Prihlásiť sa</button>
-      <p id="message" class="message"></p>
-    </form>
-
-    <div class="card">
-      <h3>Zabudnuté heslo</h3>
-      <p class="muted">Pošleme ti na email odkaz, cez ktorý si nastavíš nové heslo.</p>
-      <button type="button" class="secondary" id="resetButton">Poslať odkaz na obnovu</button>
-      <p id="resetMessage" class="message"></p>
-    </div>
-
-    <p class="muted">Nemáš účet? <a href="register.html">Zaregistruj sa</a></p>
-    <p class="muted"><a href="index.html">← Späť na úvod</a></p>
+    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
