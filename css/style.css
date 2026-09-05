@@ -954,3 +954,17 @@ progress {
   gap: 1rem;
   flex-wrap: wrap;
 }
+
+.site-footer-social {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.site-footer-social a {
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
+.site-footer-social a:hover {
+  color: var(--accent);
+}
