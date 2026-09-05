@@ -205,20 +205,26 @@ textarea {
   right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  align-items: center;
   background: none;
   border: none;
   cursor: pointer;
   padding: 0.35rem;
-  font-size: 1.05rem;
-  line-height: 1;
   color: var(--text-muted);
   width: auto;
   box-shadow: none;
+  /* Bez animácie a bez zdedeného transform z ":active" (button má
+     transform: translateY(1px) na kliknutie) - transform sa nedá skladať,
+     takže by prepísal vycentrovanie a ikonka by pri kliku poskočila. */
+  transition: none;
 }
 
-.password-toggle:hover {
+.password-toggle:hover,
+.password-toggle:active {
   background: none;
   filter: none;
+  transform: translateY(-50%);
 }
 
 button {

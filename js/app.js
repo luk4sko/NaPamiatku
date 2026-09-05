@@ -31,6 +31,22 @@ function updateThemeButtons() {
 
 /* ---------- Ikonka očka pri heslách ---------- */
 
+// Vlastné SVG namiesto emoji 👁 / 🙈 - emoji sa na niektorých systémoch
+// vykresľujú nespoľahlivo (iný font, chýbajúci glyf) a "opica zakrývajúca oči"
+// navyše vizuálne nezodpovedá tomu, čo má znamenať (heslo je/nie je viditeľné).
+// Obe SVG sú v DOM stále, prepína sa len trieda "hidden" - bez animácie.
+const EYE_OPEN_SVG = `
+  <svg class="eye-icon eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>`;
+const EYE_CLOSED_SVG = `
+  <svg class="eye-icon eye-closed hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+    <circle cx="12" cy="12" r="3" />
+    <line x1="2" y1="2" x2="22" y2="22" />
+  </svg>`;
+
 // Ku každému <input type="password"> vnútri .password-field pridá tlačidlo,
 // ktoré prepína medzi type="password" a type="text".
 function setupPasswordToggles() {
@@ -41,13 +57,15 @@ function setupPasswordToggles() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "password-toggle";
-    button.textContent = "👁";
+    button.innerHTML = EYE_OPEN_SVG + EYE_CLOSED_SVG;
     button.title = "Zobraziť heslo";
 
     button.addEventListener("click", () => {
       const isHidden = input.type === "password";
       input.type = isHidden ? "text" : "password";
-      button.textContent = isHidden ? "🙈" : "👁";
+      // Viditeľné heslo = preškrtnuté oko, skryté heslo = obyčajné oko.
+      button.querySelector(".eye-open").classList.toggle("hidden", isHidden);
+      button.querySelector(".eye-closed").classList.toggle("hidden", !isHidden);
       button.title = isHidden ? "Skryť heslo" : "Zobraziť heslo";
     });
 
