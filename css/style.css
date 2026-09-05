@@ -214,17 +214,12 @@ textarea {
   color: var(--text-muted);
   width: auto;
   box-shadow: none;
-  /* Bez animácie a bez zdedeného transform z ":active" (button má
-     transform: translateY(1px) na kliknutie) - transform sa nedá skladať,
-     takže by prepísal vycentrovanie a ikonka by pri kliku poskočila. */
   transition: none;
 }
 
-.password-toggle:hover,
-.password-toggle:active {
+.password-toggle:hover {
   background: none;
   filter: none;
-  transform: translateY(-50%);
 }
 
 button {
@@ -237,15 +232,11 @@ button {
   background: var(--accent);
   color: var(--accent-text);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 button:hover:not(:disabled) {
   background: var(--accent-hover);
-}
-
-button:active:not(:disabled) {
-  transform: translateY(1px);
 }
 
 button:disabled {
