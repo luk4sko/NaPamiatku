@@ -7,15 +7,21 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <nav class="site-nav">
+    <div class="site-nav-inner">
+      <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+      <div class="top-bar-actions">
+        <button class="secondary small" data-theme-toggle>🌙</button>
+        <button class="secondary small" data-logout>Odhlásiť sa</button>
+      </div>
+    </div>
+  </nav>
+
   <div class="page">
     <div class="top-bar">
       <div>
         <h1>Dashboard</h1>
         <p class="muted" id="welcome"></p>
-      </div>
-      <div class="top-bar-actions">
-        <button class="secondary small" data-theme-toggle>🌙</button>
-        <button class="secondary small" data-logout>Odhlásiť sa</button>
       </div>
     </div>
 
@@ -68,6 +74,13 @@
     <h2 id="eventsHeading">Moje eventy</h2>
     <ul id="eventList" class="event-list"></ul>
   </div>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+      <span>© 2026 NaPamiatku · Fotky z vášho dňa na jednom mieste</span>
+    </div>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
