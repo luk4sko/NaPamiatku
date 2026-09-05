@@ -6,77 +6,143 @@
   <title>NaPamiatku — fotky od hostí na jednom mieste</title>
   <meta name="description" content="Hostia naskenujú QR kód a nahrajú fotky z vašej svadby či oslavy do spoločnej galérie. Bez inštalácie aplikácie, bez registrácie." />
   <link rel="stylesheet" href="css/style.css" />
+  <!-- Označíme, že JS beží. Animácie pri scrollovaní schovávajú obsah, kým sa
+       neodhalí - bez tejto triedy by pri vypnutom JS zostala stránka prázdna. -->
+  <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
-  <nav class="site-nav">
+  <nav class="site-nav" id="siteNav">
     <div class="site-nav-inner">
       <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+
+      <div class="nav-links">
+        <a href="#ako-to-funguje">Ako to funguje</a>
+        <a href="#funkcie">Čo v tom je</a>
+        <a href="#ukazka">Ukážka</a>
+        <a href="#pre-koho">Pre koho</a>
+      </div>
+
       <div class="top-bar-actions">
         <button class="secondary small" data-theme-toggle>🌙</button>
-        <a href="register.html"><button class="small secondary" type="button">Registrácia</button></a>
-        <a href="login.html"><button class="small" type="button">Prihlásiť sa</button></a>
+        <a href="login.html" class="nav-login">Prihlásiť sa</a>
+        <a href="register.html"><button class="small" type="button">Založiť účet</button></a>
       </div>
     </div>
   </nav>
 
-  <!-- ---------- Hero ---------- -->
-  <header class="section">
-    <div class="hero">
-      <div>
-        <p class="eyebrow">Svadby · Oslavy · Firemné akcie</p>
-        <h1>Všetky fotky z vášho dňa. <em>Na jednom mieste.</em></h1>
-        <p class="hero-lead">
-          Fotograf odovzdá fotky o mesiac. Tie najlepšie momenty však majú v telefónoch vaši hostia —
-          a tam aj zostanú. NaPamiatku ich dostane k vám ešte v ten istý večer.
-        </p>
-        <div class="hero-actions">
-          <a href="#kontakt"><button class="large" type="button">Chcem to na svoju akciu</button></a>
-          <a href="#ako-to-funguje"><button class="large secondary" type="button">Ako to funguje</button></a>
-        </div>
-        <p class="hero-note">Hostia nič neinštalujú a neregistrujú sa. Stačí im fotoaparát v telefóne.</p>
-      </div>
-
-      <div class="hero-visual">
-        <div class="phone" aria-hidden="true">
-          <p class="phone-head">Svadba Zuzka &amp; Marek</p>
-          <div class="phone-grid">
-            <div class="phone-tile" style="height:74px"></div>
-            <div class="phone-tile" style="height:96px"></div>
-            <div class="phone-tile" style="height:104px"></div>
-            <div class="phone-tile" style="height:68px"></div>
-            <div class="phone-tile" style="height:80px"></div>
-            <div class="phone-tile" style="height:112px"></div>
-            <div class="phone-tile" style="height:90px"></div>
-            <div class="phone-tile" style="height:70px"></div>
+  <!-- ---------- Hero ----------
+       Fotky sú z Unsplash (licencia dovoľuje aj komerčné použitie) a sú
+       uložené v priečinku img/. Prípona -sm / -lg / -xl hovorí, na akú
+       veľkosť plochy je súbor pripravený: malé náhľady nemá zmysel
+       sťahovať vo veľkom rozlíšení, hlavne nie na mobilných dátach. -->
+  <header class="hero-wrap">
+    <div class="section">
+      <div class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Svadby · Oslavy · Firemné akcie</p>
+          <h1>Všetky fotky z vášho dňa. <em>Na jednom mieste.</em></h1>
+          <p class="hero-lead">
+            Fotograf odovzdá fotky o mesiac. Tie najlepšie momenty však majú v telefónoch vaši hostia —
+            a tam aj zostanú. NaPamiatku ich dostane k vám ešte v ten istý večer.
+          </p>
+          <div class="hero-actions">
+            <a href="register.html"><button class="large" type="button">Chcem to na svoju akciu</button></a>
+            <a href="#ako-to-funguje"><button class="large secondary" type="button">Ako to funguje</button></a>
           </div>
+
+          <ul class="trust-row">
+            <li>Hostia nič neinštalujú</li>
+            <li>Vnútri za 10 sekúnd</li>
+            <li>Fotky v plnej kvalite</li>
+          </ul>
         </div>
-        <div class="qr-float">
-          <img id="heroQr" alt="Ukážka QR kódu" />
-          <span>Naskenuj a pridaj fotku</span>
+
+        <div class="hero-visual">
+          <!-- Plávajúce fotky vypĺňajú priestor okolo telefónu na veľkých
+               obrazovkách. Na mobile ich schovávame, tam by len zavadzali. -->
+          <figure class="float-card float-card-a" aria-hidden="true">
+            <img src="img/hostia-mobilmi-sm.webp" alt="" loading="lazy" />
+          </figure>
+          <figure class="float-card float-card-b" aria-hidden="true">
+            <img src="img/konfety-radost-sm.webp" alt="" loading="lazy" />
+          </figure>
+
+          <div class="phone">
+            <p class="phone-head">Svadba Zuzka &amp; Marek</p>
+
+            <!-- Dve sady fotiek: tmavá (večerné, teplé tóny) a svetlá (denné,
+                 vzdušné). Prepínajú sa podľa zvoleného režimu - pozri CSS
+                 pri .phone-set. -->
+            <div class="phone-set" data-set="dark">
+              <img src="img/pripitok-svetielka-sm.webp" alt="Prípitok hostí" />
+              <img src="img/prvy-tanec-sm.webp" alt="Prvý tanec" />
+              <img src="img/hostia-mobilmi-sm.webp" alt="Hostia fotia mobilmi" />
+              <img src="img/tanec-parket-sm.webp" alt="Tanec na parkete" />
+              <img src="img/pripitok-poharmi-sm.webp" alt="Prípitok pohármi" />
+              <img src="img/odchod-konfety-sm.webp" alt="Odchod novomanželov" />
+            </div>
+
+            <div class="phone-set" data-set="light">
+              <img src="img/obrad-vonku-sm.webp" alt="Obrad vonku" />
+              <img src="img/slavnostny-stol-sm.webp" alt="Slávnostný stôl" />
+              <img src="img/nevesta-vo-vzduchu-sm.webp" alt="Nevesta vyhodená do vzduchu" />
+              <img src="img/kvety-na-stole-sm.webp" alt="Kvety na stole" />
+              <img src="img/konfety-radost-sm.webp" alt="Konfety" />
+              <img src="img/prestrety-stol-sm.webp" alt="Prestretý stôl" />
+            </div>
+          </div>
+
+          <div class="qr-float">
+            <img id="heroQr" alt="Ukážka QR kódu" />
+            <span>Naskenuj a pridaj fotku</span>
+          </div>
         </div>
       </div>
     </div>
   </header>
 
+  <!-- ---------- Pás fotiek ---------- -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <img src="img/odchod-konfety-sm.webp" alt="" loading="lazy" />
+      <img src="img/pripitok-svetielka-sm.webp" alt="" loading="lazy" />
+      <img src="img/obrad-vonku-sm.webp" alt="" loading="lazy" />
+      <img src="img/tanec-parket-sm.webp" alt="" loading="lazy" />
+      <img src="img/pripitok-poharmi-sm.webp" alt="" loading="lazy" />
+      <img src="img/slavnostny-stol-sm.webp" alt="" loading="lazy" />
+      <img src="img/prvy-tanec-sm.webp" alt="" loading="lazy" />
+      <img src="img/konfety-radost-sm.webp" alt="" loading="lazy" />
+      <!-- Rovnaká sada ešte raz - vďaka tomu je posun v slučke plynulý. -->
+      <img src="img/odchod-konfety-sm.webp" alt="" loading="lazy" />
+      <img src="img/pripitok-svetielka-sm.webp" alt="" loading="lazy" />
+      <img src="img/obrad-vonku-sm.webp" alt="" loading="lazy" />
+      <img src="img/tanec-parket-sm.webp" alt="" loading="lazy" />
+      <img src="img/pripitok-poharmi-sm.webp" alt="" loading="lazy" />
+      <img src="img/slavnostny-stol-sm.webp" alt="" loading="lazy" />
+      <img src="img/prvy-tanec-sm.webp" alt="" loading="lazy" />
+      <img src="img/konfety-radost-sm.webp" alt="" loading="lazy" />
+    </div>
+  </div>
+
   <!-- ---------- Ako to funguje ---------- -->
   <section class="band" id="ako-to-funguje">
    <div class="section">
-    <div class="section-head">
+    <div class="section-head reveal">
       <p class="eyebrow">Ako to funguje</p>
       <h2>Tri kroky, žiadne školenie</h2>
       <p>Celé to postavíme za vás. Vy dostanete hotový QR kód, ktorý stačí položiť na stoly.</p>
     </div>
 
     <div class="steps">
-      <div class="step">
+      <div class="step reveal" style="--d:0s">
         <h3>Založíte si účet</h3>
         <p>Zaregistrujete sa a rovno v dashboarde požiadate o svoj event. Po schválení dostanete QR kód pripravený na tlač a heslo, ktoré poviete hosťom.</p>
       </div>
-      <div class="step">
+      <div class="step reveal" style="--d:.12s">
         <h3>Hostia skenujú a pridávajú</h3>
         <p>Hosť namieri telefón na QR kód, zadá heslo a je vnútri. Žiadna aplikácia, žiadna registrácia — nahráva fotky a píše odkazy do knihy hostí.</p>
       </div>
-      <div class="step">
+      <div class="step reveal" style="--d:.24s">
         <h3>Máte všetko pokope</h3>
         <p>Galéria rastie naživo počas celej akcie. Ktorúkoľvek fotku si stiahnete v plnej kvalite, čo sa vám nehodí, zmažete.</p>
       </div>
@@ -85,54 +151,99 @@
   </section>
 
   <!-- ---------- Vlastnosti ---------- -->
-  <section class="section">
-    <div class="section-head">
+  <section class="section" id="funkcie">
+    <div class="section-head reveal">
       <p class="eyebrow">Čo v tom je</p>
       <h2>Postavené pre reálny priebeh večera</h2>
       <p>Nie zoznam funkcií pre efekt, ale veci, ktoré na mieste naozaj potrebujete.</p>
     </div>
 
-    <div class="features">
-      <div class="feature">
-        <span class="feature-icon">📷</span>
-        <h3>Spoločná galéria</h3>
-        <p>Fotky od všetkých hostí v jednej prehľadnej nástenke, zoradené od najnovších. Pri každej vidno, kto ju pridal.</p>
-      </div>
-      <div class="feature">
+    <div class="bento">
+      <article class="bento-card bento-hero reveal" style="--d:0s">
+        <img class="bento-bg" src="img/hostia-mobilmi-lg.webp" alt="Hostia fotia svadbu mobilmi" loading="lazy" />
+        <div class="bento-body">
+          <span class="feature-icon">📷</span>
+          <h3>Spoločná galéria</h3>
+          <p>Fotky od všetkých hostí v jednej prehľadnej nástenke, zoradené od najnovších. Pri každej vidno, kto ju pridal.</p>
+        </div>
+      </article>
+
+      <article class="bento-card reveal" style="--d:.08s">
         <span class="feature-icon">💌</span>
         <h3>Kniha hostí</h3>
         <p>Digitálne želania a odkazy. Zostanú vám čitateľné aj o desať rokov — na rozdiel od podpisov na obruse.</p>
-      </div>
-      <div class="feature">
+      </article>
+
+      <article class="bento-card bento-accent reveal" style="--d:.16s">
         <span class="feature-icon">🎁</span>
         <h3>Dary cez QR</h3>
         <p>Hosť naskenuje platobný kód, banka mu predvyplní príkaz a sumu si zvolí sám. Peniaze idú priamo na váš účet.</p>
-      </div>
-      <div class="feature">
+      </article>
+
+      <article class="bento-card reveal" style="--d:.24s">
         <span class="feature-icon">⬇️</span>
         <h3>Sťahovanie v plnej kvalite</h3>
         <p>Žiadne rozmazané snímky z chatu. Každú fotku si stiahnete presne v takej kvalite, v akej bola nahraná.</p>
-      </div>
-      <div class="feature">
+      </article>
+
+      <article class="bento-card reveal" style="--d:.32s">
         <span class="feature-icon">🔒</span>
         <h3>Prístup len na heslo</h3>
         <p>Galéria nie je verejná. Otvorí sa len tomu, kto pozná odkaz aj heslo podujatia — a to poviete vy.</p>
-      </div>
-      <div class="feature">
+      </article>
+
+      <article class="bento-card reveal" style="--d:.4s">
         <span class="feature-icon">📱</span>
         <h3>Funguje na každom telefóne</h3>
         <p>Beží v prehliadači. Nič sa neinštaluje, nič nezaberá miesto a je jedno, či má hosť iPhone alebo Android.</p>
-      </div>
+      </article>
     </div>
   </section>
 
+  <!-- ---------- Ukážka galérie ---------- -->
+  <section class="band" id="ukazka">
+   <div class="section">
+    <div class="section-head reveal">
+      <p class="eyebrow">Ukážka</p>
+      <h2>Takto vyzerá galéria počas večera</h2>
+      <p>Každá fotka nesie prezývku hosťa, ktorý ju pridal. Ilustračné fotky — u vás tam budú tie vaše.</p>
+    </div>
+
+    <div class="shots">
+      <figure class="shot reveal" style="--d:0s">
+        <img src="img/odchod-konfety-lg.webp" alt="Odchod novomanželov v konfetách" loading="lazy" />
+        <figcaption>Zuzka</figcaption>
+      </figure>
+      <figure class="shot reveal" style="--d:.06s">
+        <img src="img/pripitok-svetielka-lg.webp" alt="Prípitok pod svetielkami" loading="lazy" />
+        <figcaption>Marek</figcaption>
+      </figure>
+      <figure class="shot reveal" style="--d:.12s">
+        <img src="img/slavnostny-stol-lg.webp" alt="Slávnostne prestretý stôl" loading="lazy" />
+        <figcaption>Klára</figcaption>
+      </figure>
+      <figure class="shot reveal" style="--d:.18s">
+        <img src="img/prvy-tanec-lg.webp" alt="Prvý tanec" loading="lazy" />
+        <figcaption>Tomáš</figcaption>
+      </figure>
+      <figure class="shot reveal" style="--d:.24s">
+        <img src="img/pripitok-poharmi-lg.webp" alt="Prípitok pohármi" loading="lazy" />
+        <figcaption>Peter</figcaption>
+      </figure>
+      <figure class="shot reveal" style="--d:.3s">
+        <img src="img/nevesta-vo-vzduchu-lg.webp" alt="Nevesta vyhodená do vzduchu" loading="lazy" />
+        <figcaption>Ivana</figcaption>
+      </figure>
+    </div>
+   </div>
+  </section>
+
   <!-- ---------- Pre koho ---------- -->
-  <section class="band">
-   <div class="section section-tight">
-    <div class="section-head" style="margin-bottom:1.75rem">
+  <section class="section section-tight" id="pre-koho">
+    <div class="section-head reveal" style="margin-bottom:1.75rem">
       <h2>Hodí sa na</h2>
     </div>
-    <div class="audience">
+    <div class="audience reveal" style="--d:.08s">
       <span class="pill">Svadby</span>
       <span class="pill">Narodeniny a jubileá</span>
       <span class="pill">Krstiny</span>
@@ -141,18 +252,20 @@
       <span class="pill">Rodinné stretnutia</span>
       <span class="pill">Konferencie</span>
     </div>
-   </div>
   </section>
 
   <!-- ---------- Výzva ---------- -->
   <section class="section" id="kontakt">
-    <div class="cta">
-      <h2>Máte termín? Založte si účet.</h2>
-      <p>
-        Zaregistrujte sa, požiadajte o event a po schválení dostanete QR kód
-        aj heslo pripravené na tlač — vy sa už len tešíte z fotiek.
-      </p>
-      <a href="register.html"><button class="large" type="button">Založiť účet</button></a>
+    <div class="cta reveal">
+      <img class="cta-bg" src="img/odchod-konfety-xl.webp" alt="" loading="lazy" aria-hidden="true" />
+      <div class="cta-body">
+        <h2>Máte termín? Založte si účet.</h2>
+        <p>
+          Zaregistrujte sa, požiadajte o event a po schválení dostanete QR kód
+          aj heslo pripravené na tlač — vy sa už len tešíte z fotiek.
+        </p>
+        <a href="register.html"><button class="large" type="button">Založiť účet</button></a>
+      </div>
     </div>
   </section>
 
@@ -179,6 +292,37 @@
     makeQrDataUrl(window.location.origin, 300).then((dataUrl) => {
       document.getElementById("heroQr").src = dataUrl;
     });
+
+    // Niektorí ľudia majú v systéme zapnuté "obmedziť pohyb" (napr. kvôli
+    // nevoľnosti z animácií). Vtedy prvky rovno odhalíme a nič neanimujeme.
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* ---------- Odhaľovanie pri scrollovaní ---------- */
+
+    // IntersectionObserver vie zavolať funkciu, keď sa prvok objaví v okne.
+    // Je to lacnejšie než počítať pozície pri každom scroll evente.
+    const revealItems = document.querySelectorAll(".reveal");
+
+    if (reducedMotion) {
+      revealItems.forEach((item) => item.classList.add("in"));
+    } else {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("in");
+          observer.unobserve(entry.target); // animujeme len raz
+        });
+      }, { threshold: 0.15, rootMargin: "0px 0px -60px 0px" });
+
+      revealItems.forEach((item) => observer.observe(item));
+    }
+
+    /* ---------- Hlavička po scrollnutí ---------- */
+
+    const siteNav = document.getElementById("siteNav");
+    const onScroll = () => siteNav.classList.toggle("scrolled", window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
   </script>
 </body>
 </html>
