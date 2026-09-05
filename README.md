@@ -72,7 +72,7 @@ Toto sa nedá spraviť z kódu:
    - Port: `465` (SSL/TLS)
    - Username / Sender email: `info@napamiatku.com` (pri vlastnej doméne sa ako username zadáva celá emailová adresa)
    - Password: heslo k tejto schránke (nie heslo k inému seznam.cz účtu)
-3. ⏭️ **Authentication → Sign In / Providers → Email → Prevent use of leaked passwords** — kontrola hesla oproti HaveIBeenPwned je funkcia **Supabase Pro plánu**, na Free pláne je uzamknutá. Vedome sme ju vynechali — registrácia (`register.html`) aj pozvánka od Majiteľa idú cez `signInWithOtp` (magic link), takže heslo sa nikdy nezadáva do formulára, ktorý by šlo použiť na credential stuffing pri registrácii; nastavuje sa až po overení emailu na `set-password.html`. Nový účet navyše bez schváleného eventu nemá k ničomu prístup. Aktualizovaný dôvod je rozpísaný v [`poznamky-na-obhajobu.md`](poznamky-na-obhajobu.md).
+3. ⏭️ **Authentication → Sign In / Providers → Email → Prevent use of leaked passwords** — kontrola hesla oproti HaveIBeenPwned je funkcia **Supabase Pro plánu**, na Free pláne je uzamknutá. Vedome sme ju vynechali. Klient si heslo zadáva priamo pri registrácii (`register.html`, `signUp`) aj pri obnove hesla, takže táto kontrola by sa reálne zišla — bez nej môže niekto použiť aj uniknuté/slabé heslo. Riziko zmierňuje to, že samotný účet bez schváleného eventu nemá k ničomu prístup (žiadne fotky, žiadne dáta klientov) — zneužitie slabého hesla znamená v najhoršom prípade falošnú žiadosť o event, nie únik dát. Pozvánka od Majiteľa (v dashboarde) naďalej ide cez `signInWithOtp` (magic link), tam sa heslo nastavuje až po overení emailu. Aktualizovaný dôvod je rozpísaný v [`poznamky-na-obhajobu.md`](poznamky-na-obhajobu.md).
 
 ## Spustenie lokálne
 

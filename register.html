@@ -16,7 +16,7 @@
     </div>
 
     <p class="muted">
-      Vytvor si účet a potom nám cez dashboard pošli žiadosť o event —
+      Vytvor si účet a potom rovno v dashboarde požiadaj o event —
       po schválení dostaneš QR kód pre svojich hostí.
     </p>
 
@@ -28,6 +28,18 @@
       <div class="field">
         <label for="email">Email</label>
         <input type="email" id="email" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="password">Heslo (aspoň 6 znakov)</label>
+        <div class="password-field">
+          <input type="password" id="password" autocomplete="new-password" minlength="6" required />
+        </div>
+      </div>
+      <div class="field">
+        <label for="passwordConfirm">Heslo znova</label>
+        <div class="password-field">
+          <input type="password" id="passwordConfirm" autocomplete="new-password" minlength="6" required />
+        </div>
       </div>
       <button type="submit" id="submitButton">Zaregistrovať sa</button>
       <p id="message" class="message"></p>
@@ -57,18 +69,24 @@
 
       const email = document.getElementById("email").value.trim();
       const fullName = document.getElementById("fullName").value.trim();
+      const password = document.getElementById("password").value;
+      const passwordConfirm = document.getElementById("passwordConfirm").value;
 
-      // Rovnaký mechanizmus ako pozvánka od Majiteľa v dashboard.html:
-      // heslo sa netypuje priamo do formulára, ale nastaví sa až po kliknutí
-      // na odkaz z emailu (set-password.html). Nový profil dostane rolu
-      // "klient" automaticky - pozri trigger handle_new_user v DB.
-      const { error } = await supabaseClient.auth.signInWithOtp({
+      if (password !== passwordConfirm) {
+        showMessage(messageEl, "Heslá sa nezhodujú.", "error");
+        return;
+      }
+
+      submitButton.disabled = true;
+
+      // Klient zadá heslo rovno pri registrácii. Nový profil dostane rolu
+      // "klient" automaticky - pozri trigger handle_new_user v DB - ale bez
+      // schváleného eventu nemá k ničomu prístup, takže tu sa nič neschvaľuje.
+      const { data, error } = await supabaseClient.auth.signUp({
         email: email,
+        password: password,
         options: {
-          shouldCreateUser: true,
           data: fullName ? { full_name: fullName } : undefined,
-          emailRedirectTo: window.location.origin +
-            window.location.pathname.replace("register.html", "set-password.html"),
         },
       });
 
@@ -78,8 +96,23 @@
         showMessage(messageEl, error.message, "error");
         return;
       }
+
+      // Ak email už existuje, Supabase to schválne nevráti ako chybu (aby sa
+      // cez registráciu nedalo zisťovať, ktoré emaily sú u nás zaregistrované) -
+      // pozná sa to podľa prázdneho poľa identities.
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        showMessage(messageEl, "Tento email je už zaregistrovaný. Prihlás sa.", "error");
+        return;
+      }
+
       document.getElementById("registerForm").reset();
-      showMessage(messageEl, "Poslali sme ti na email odkaz, cez ktorý si dokončíš registráciu a nastavíš heslo.", "ok");
+
+      if (data.session) {
+        window.location.href = "dashboard.html";
+        return;
+      }
+
+      showMessage(messageEl, "Účet vytvorený. Skontroluj email a potvrď registráciu, potom sa môžeš prihlásiť.", "ok");
     });
   </script>
 </body>

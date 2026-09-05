@@ -175,3 +175,43 @@ Riziko je u nás nízke, pretože:
 - Heslo hosťa (vstup do galérie) je **úplne iný mechanizmus** — nie Supabase Auth heslo, ale `password_hash` v tabuľke `events`, hashovaný cez bcrypt (`pgcrypto`). Tejto funkcie by sa HaveIBeenPwned kontrola ani netýkala, tá platí len pre `auth.users`.
 
 **Záver pre obhajobu:** je to legitímna bezpečnostná vrstva (*defense in depth* — viacero prekrývajúcich sa ochrán, nie spoliehanie sa na jednu), nie diera, ktorú by dalo priamo zneužiť. Vedeli sme o nej, je to platená funkcia Supabase Pro plánu, a vzhľadom na uzavretý okruh účtov na pozvánku sme riziko vyhodnotili ako nízke a rozhodli sa neplatiť za Pro plán — projekt beží ďalej na Free.
+
+## 2026-09-03 — Samoregistrácia klienta a oprava firemného emailu
+
+**Kontext:** Pôvodne účty zakladal výhradne Majiteľ pozvánkou (pozri poznámku vyššie o "verejná registrácia neexistuje" — to už neplatí). Zadanie: Klient si má vedieť sám vytvoriť účet a požiadať o event, ktorý Majiteľ schváli. Cestou sa vyriešil aj samostatný problém — rozbité odosielanie emailov v Supabase — a napojila sa vlastná emailová schránka `info@napamiatku.com` cez Seznam Email Profi.
+
+**1. Prečo registrácia (`register.html`) nepoužíva bežný formulár s heslom, ale `signInWithOtp`?**
+
+Je to presne ten istý mechanizmus, aký už predtým používala pozvánka od Majiteľa v dashboarde — pošle sa magic link na email, heslo sa nastavuje až po kliknutí naň na `set-password.html`. Dôvody:
+- **Žiadny nový kód na údržbu** — jeden osvedčený spôsob autentifikácie namiesto dvoch.
+- **Heslo sa nikdy nezadáva pred overením emailu.** Pri klasickom `signUp(email, password)` niekto zadá heslo do formulára skôr, než sa čo i len overí, že email vlastní. Pri OTP flow je poradie opačné: over email → až potom nastav heslo. To zároveň znamená, že sa nedá poslať slabé/uniknuté heslo "naslepo" pri registrácii.
+
+**2. Prečo je rola `klient` nastavená automaticky (DB trigger `handle_new_user`, `profiles.role default 'klient'`) a nie je to diera?**
+
+Lebo **samotný účet bez schváleného eventu nemá k ničomu prístup**. RLS politiky na `events`, `photos`, `guestbook_messages` sú viazané na `client_id = auth.uid()` **a** `status = 'approved'` (schvaľuje ho `set_event_status`, ktoré smie volať len Majiteľ — `is_majitel()`). Zaregistrovať sa teda znamená len "môžem požiadať o event", nie "vidím dáta". Schvaľovanie zostáva jediným miestom, kde Majiteľ kontroluje prístup.
+
+**3. Prečo Claude nesmel zadať heslo (k emailovej schránke, k Websupport DNS) ani kliknúť "vytvoriť účet", hoci som ho na to vyzval a dal mu heslo?**
+
+Toto je **pevné pravidlo, nezávislé od povolenia používateľa** — vytváranie účtov a zadávanie hesiel/prihlasovacích údajov do formulárov je vždy zakázané, aj keď to používateľ výslovne povolí alebo poskytne heslo. Zmysel: citlivé prihlasovacie údaje (k emailu, k DNS správcovi domény, ...) by nemali nikdy prechádzať cez AI nástroj, ani keď je to pohodlnejšie. Prakticky to znamenalo: Claude pripravil presné kroky/hodnoty a dostal sa na správnu stránku vo formulári, ale kliknutie "Uložiť"/napísanie hesla musel urobiť vždy človek.
+
+**Vedľajšie zistenie:** SMTP posielanie (autentifikácia cez `smtp.seznam.cz`) je nezávislé od DNS/MX záznamov — MX riadi len *doručovanie prichádzajúcej* pošty na doménu, kým SMTP reší *odosielanie* cez existujúcu schránku. Dá sa to pomýliť, lebo obe súvisia s "poštou na doméne", ale ide o dva odlišné mechanizmy s odlišnou zodpovednosťou.
+
+## 2026-09-05 — Registrácia s heslom namiesto magic linku
+
+**Kontext:** `register.html` doteraz posielal len magic link (`signInWithOtp`) — heslo sa nastavovalo až po kliknutí naň, na `set-password.html`. Zadanie: klient má heslo zadať rovno pri registrácii, žiadny extra krok cez email. Zároveň zmizol odkaz `Prihlásenie pre organizátorov` z pätičky `index.html` a hlavná ponuka na úvodnej stránke sa zmenila z "napíšte nám" na "založte si účet".
+
+**1. Čo presne sa zmenilo v kóde a čo sa nezmenilo?**
+
+Zmenilo sa len volanie na `register.html`: namiesto `supabaseClient.auth.signInWithOtp(...)` je tam teraz `supabaseClient.auth.signUp({ email, password })`, plus druhé pole na potvrdenie hesla (kontrola zhody v JS pred odoslaním). **Databáza sa meniť nemusela** — trigger `handle_new_user` (pozri `sql/migrations/20260831181255_...`) beží `after insert on auth.users`, teda pri *akomkoľvek* spôsobe založenia účtu, nielen pri OTP. Pozvánka od Majiteľa v dashboarde (`inviteForm`) naďalej používa `signInWithOtp` — tam to zmyslel dáva, lebo Majiteľ nepozná heslo, ktoré by klient chcel, takže si ho klient beztak musí nastaviť sám cez odkaz.
+
+**2. Prečo to nezvyšuje riziko, že niekto získa prístup k cudzím dátam bez schválenia?**
+
+Lebo brána k dátam bola vždy **schválenie eventu** (`set_event_status`, len `is_majitel()`), nie samotné založenie účtu — to platilo aj pred touto zmenou (pozri poznámku z 2026-09-03 vyššie). Zjednodušenie registrácie mení len *pohodlie* založenia účtu, nie *rozsah* toho, čo účet vidí. Novým účtom bez schváleného eventu RLS politiky na `events`/`photos`/`guestbook_messages` stále nedovolia nič.
+
+**3. Prečo sme museli prepísať zdôvodnenie v README bod 3 (vynechanie "Prevent use of leaked passwords")?**
+
+Pôvodné zdôvodnenie znelo: *"heslo sa nikdy nezadáva do formulára pred overením emailu, lebo ideme cez magic link"* — to bola pravda, kým `register.html` používal OTP. Teraz to heslo **priamo do formulára ide**, takže pôvodný argument by bol nepravdivý, keby sme ho nechali bez úpravy. Toto je dôležité pre obhajobu: nestačí raz niečo zdokumentovať ako bezpečné, treba si všímať, keď zmena kódu podkope dôvod, prečo bolo niečo predtým vyhodnotené ako v poriadku. Aktuálne zdôvodnenie stojí na inom argumente — že samotný účet bez schváleného eventu nemá k ničomu prístup (bod 2 vyššie), takže zneužitie slabého/uniknutého hesla klienta má v najhoršom prípade dosah len na jeho vlastnú (ne)schválenú žiadosť, nie na cudzie dáta.
+
+**4. Prečo pri `signUp` na email, ktorý už je zaregistrovaný, Supabase nevráti chybu, a ako to teda odhalíme?**
+
+Keby Supabase pri duplicitnom emaili vrátilo jasnú chybu typu "tento email už existuje", útočník by mohol skúšať náhodné emaily a podľa chybovej hlášky zisťovať, ktoré z nich sú u nás zaregistrované (tzv. *user enumeration* — samo osebe to nie je prienik, ale uľahčuje ďalší útok, napr. cielený phishing alebo skúšanie uniknutých hesiel práve na tie emaily, o ktorých už vie, že majú účet). Preto Supabase v tomto prípade vráti úspech bez chyby, ale vo vrátenom `user.identities` je prázdne pole — podľa toho v `register.html` rozoznáme duplicitu a ukážeme používateľovi vlastnú správu ("tento email je už zaregistrovaný, prihlás sa").
