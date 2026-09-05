@@ -215,3 +215,27 @@ Pôvodné zdôvodnenie znelo: *"heslo sa nikdy nezadáva do formulára pred over
 **4. Prečo pri `signUp` na email, ktorý už je zaregistrovaný, Supabase nevráti chybu, a ako to teda odhalíme?**
 
 Keby Supabase pri duplicitnom emaili vrátilo jasnú chybu typu "tento email už existuje", útočník by mohol skúšať náhodné emaily a podľa chybovej hlášky zisťovať, ktoré z nich sú u nás zaregistrované (tzv. *user enumeration* — samo osebe to nie je prienik, ale uľahčuje ďalší útok, napr. cielený phishing alebo skúšanie uniknutých hesiel práve na tie emaily, o ktorých už vie, že majú účet). Preto Supabase v tomto prípade vráti úspech bez chyby, ale vo vrátenom `user.identities` je prázdne pole — podľa toho v `register.html` rozoznáme duplicitu a ukážeme používateľovi vlastnú správu ("tento email je už zaregistrovaný, prihlás sa").
+
+## 2026-09-05 — Redesign celého webu, WebP fotky a dve opravené animácie
+
+**Kontext:** Úvodná stránka pôsobila "sucho" — prázdne rohy na PC, farebné dlaždice namiesto fotiek, žiadne animácie. Zadanie bolo dotvoriť to vizuálne aj obsahovo a rozšíriť rovnaký štýl na celý web (login, register, dashboard, event, guest), nech appka nepôsobí ako jedna pekná stránka a k nej pripojená iná appka. Popri tom sa opravili dve reálne chyby v správaní tlačidiel.
+
+**1. Prečo fotky nie sú stiahnuté z Pinterestu, keď to bola pôvodná požiadavka?**
+
+Fotky na Pinterest sú takmer vždy cudzie autorské dielo (fotograf/pár si ich tam niekto len uložil, nevlastní k nim práva) — použiť ich na komerčnej stránke bez licencie je porušenie autorského práva. Namiesto toho sa použil **Unsplash**, ktorého licencia výslovne dovoľuje aj komerčné použitie bez nutnosti uvádzať autora. Toto je presne typ otázky, ktorá na obhajobe padne ("odkiaľ máte fotky a smiete ich takto použiť?") a vedieť vysvetliť rozdiel medzi "voľne dostupné na internete" a "mám na to licenciu" je dôležité.
+
+**2. Prečo sú fotky v `img/` v troch veľkostiach (`-sm`, `-lg`, `-xl`) namiesto jednej v plnom rozlíšení?**
+
+Každá fotka sa stiahne v takej veľkosti, na akú sa naozaj používa — malé náhľady v telefóne a v posuvnom páse (`-sm`, 400 px), stredné v galérii (`-lg`, 900 px), veľké len pre pozadie na celú šírku obrazovky (`-xl`, 1400 px). Keby sa všade použil jeden súbor v plnom rozlíšení, mobil by pri načítaní hero sekcie musel stiahnuť niekoľko MB namiesto nameraných ~317 KB. Spolu s `loading="lazy"` (fotky mimo obrazovky sa sťahujú až keď na ne používateľ doscrolluje) je to hlavný dôvod, prečo stránka s desiatkami fotiek nie je pomalá.
+
+**3. Prečo WebP nakoniec nevyšiel podstatne menší, hoci to je bežné tvrdenie o tomto formáte?**
+
+Pri rovnakom čísle kvality (`q=72`) vyšiel WebP dokonca *väčší* než pôvodný JPEG (1 356 vs 1 315 KB pre celú sadu) — číslo kvality neznamená naprieč formátmi to isté, a Unsplašova JPEG kompresia bola už dobre vyladená. Až zníženie na `q=50` prinieslo reálnu úsporu (968 KB, −26 %), a kvalita sa pri tom vizuálne neodlíšila ani pri dvojnásobnom priblížení najťažšieho prípadu (hladká obloha, kde sa artefakty kompresie prejavia najskôr). Poučenie: tvrdenia o formátoch treba pred nasadením odmerať na skutočných dátach, nie brať ako všeobecnú pravdu — prvý odhad ("WebP bude o polovicu menší") bol nesprávny a ukázalo sa to až meraním.
+
+**4. Prečo sa ikonka oka pri hesle niekedy "nesprávala" a čo presne bola oprava?**
+
+Pôvodne to bolo emoji 👁 / 🙈 (druhé je opica zakrývajúca si oči, nie preškrtnuté oko) — to samo osebe nezodpovedalo zámeru a naviac sa emoji na rôznych systémoch/fontoch vykresľujú nespoľahlivo. Skutočná príčina "hopkania" pri kliknutí ale bola v CSS: ikonka bola vycentrovaná cez `transform: translateY(-50%)`, ale spoločné pravidlo `button:active { transform: translateY(1px); }` (dopadový efekt pri kliknutí na *akékoľvek* tlačidlo v appke) sa pri kliknutí aplikovalo tiež. **`transform` sa neskladá** — druhá hodnota prvú úplne prepíše, nespoja sa — takže namiesto "vycentrované a o 1px nižšie" sa ikonka na okamih ocitla úplne mimo stred.
+
+Prvá oprava (nahradenie emoji vlastným SVG + `.password-toggle:active` prepisujúce transform späť na `translateY(-50%)`) riešila len prejav na jednom mieste. Až druhá oprava išla ku koreňu: `button:active { transform: translateY(1px); }` bolo totiž pravidlo pre *všetky* tlačidlá na stránke, takže rovnaké "hopkanie" sa dalo cítiť pri kliknutí kdekoľvek, nielen na oku. Namiesto ďalšej výnimky sa celé pravidlo zmazalo. Overené meraním polohy tlačidla (`getBoundingClientRect().top`) pred, počas a po kliknutí — hodnota sa nezmenila ani o pixel.
+
+**Poučenie pre obhajobu:** keď niečo "niekedy nefunguje" alebo sa správa nekonzistentne, oplatí sa najprv nájsť *mechanizmus* (tu: konflikt dvoch CSS pravidiel na `transform`), nie len opraviť to, čo je vidno na jednom mieste — inak sa rovnaký problém objaví inde nabudúce.
