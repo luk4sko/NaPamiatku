@@ -206,10 +206,14 @@ function copyToClipboard(text, messageElement) {
   });
 }
 
-/* ---------- Lightbox (fotka na celú obrazovku) ---------- */
+/* ---------- Lightbox (fotka na celú obrazovku, s prepínaním) ---------- */
 
 // Prvok sa vytvorí len raz a znova sa použije pre každú ďalšiu otvorenú fotku.
 let lightboxEl = null;
+// Fotky z aktuálne otvorenej galérie a index tej, čo sa práve zobrazuje -
+// vďaka tomu vieme prepínať šípkami/swipom bez opätovného čítania z DOM.
+let lightboxItems = [];
+let lightboxIndex = 0;
 
 function ensureLightbox() {
   if (lightboxEl) return lightboxEl;
@@ -218,36 +222,87 @@ function ensureLightbox() {
   lightboxEl.className = "lightbox hidden";
   lightboxEl.innerHTML = `
     <button type="button" class="lightbox-close" aria-label="Zavrieť">✕</button>
+    <button type="button" class="lightbox-arrow lightbox-prev hidden" aria-label="Predchádzajúca fotka">‹</button>
     <img />
+    <button type="button" class="lightbox-arrow lightbox-next hidden" aria-label="Ďalšia fotka">›</button>
   `;
   document.body.appendChild(lightboxEl);
 
   const close = () => lightboxEl.classList.add("hidden");
   lightboxEl.querySelector(".lightbox-close").addEventListener("click", close);
-  // Klik na tmavé pozadie mimo fotky tiež zatvorí.
+  lightboxEl.querySelector(".lightbox-prev").addEventListener("click", showPrevPhoto);
+  lightboxEl.querySelector(".lightbox-next").addEventListener("click", showNextPhoto);
+
+  // Klik na tmavé pozadie mimo fotky a šípok tiež zatvorí.
   lightboxEl.addEventListener("click", (event) => {
     if (event.target === lightboxEl) close();
   });
+
   document.addEventListener("keydown", (event) => {
+    if (lightboxEl.classList.contains("hidden")) return;
     if (event.key === "Escape") close();
+    if (event.key === "ArrowLeft") showPrevPhoto();
+    if (event.key === "ArrowRight") showNextPhoto();
+  });
+
+  // Swipe na mobile: prst doľava = ďalšia fotka, doprava = predchádzajúca.
+  // Zvislý pohyb (scroll) ignorujeme, aby swipe nefungoval pri každom dotyku.
+  let touchStartX = 0;
+  let touchStartY = 0;
+  lightboxEl.addEventListener("touchstart", (event) => {
+    touchStartX = event.changedTouches[0].clientX;
+    touchStartY = event.changedTouches[0].clientY;
+  });
+  lightboxEl.addEventListener("touchend", (event) => {
+    const deltaX = event.changedTouches[0].clientX - touchStartX;
+    const deltaY = event.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(deltaX) < 50 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+    if (deltaX < 0) showNextPhoto(); else showPrevPhoto();
   });
 
   return lightboxEl;
 }
 
-function openLightbox(url, alt) {
+function showLightboxPhoto() {
+  const item = lightboxItems[lightboxIndex];
+  const img = lightboxEl.querySelector("img");
+  img.src = item.url;
+  img.alt = item.alt || "";
+
+  // Šípky nemá zmysel ukazovať, keď je v galérii len jedna fotka.
+  const showArrows = lightboxItems.length > 1;
+  lightboxEl.querySelectorAll(".lightbox-arrow").forEach((button) => {
+    button.classList.toggle("hidden", !showArrows);
+  });
+}
+
+function showPrevPhoto() {
+  lightboxIndex = (lightboxIndex - 1 + lightboxItems.length) % lightboxItems.length;
+  showLightboxPhoto();
+}
+
+function showNextPhoto() {
+  lightboxIndex = (lightboxIndex + 1) % lightboxItems.length;
+  showLightboxPhoto();
+}
+
+function openLightbox(items, index) {
   const lightbox = ensureLightbox();
-  const img = lightbox.querySelector("img");
-  img.src = url;
-  img.alt = alt || "";
+  lightboxItems = items;
+  lightboxIndex = index;
+  showLightboxPhoto();
   lightbox.classList.remove("hidden");
 }
 
-// Klik na ktorúkoľvek fotku v galérii ju otvorí na celú obrazovku.
-// Volá sa vždy po prekreslení galérie, keďže staré <img> uzly zmiznú s ňou.
+// Klik na ktorúkoľvek fotku v galérii ju otvorí na celú obrazovku aj so
+// zvyškom galérie, aby sa dalo medzi fotkami prepínať. Volá sa vždy po
+// prekreslení galérie, keďže staré <img> uzly zmiznú s ňou.
 function setupGalleryLightbox(gallery) {
-  gallery.querySelectorAll(".photo > img").forEach((img) => {
-    img.addEventListener("click", () => openLightbox(img.src, img.alt));
+  const images = Array.from(gallery.querySelectorAll(".photo > img"));
+  const items = images.map((img) => ({ url: img.src, alt: img.alt }));
+
+  images.forEach((img, index) => {
+    img.addEventListener("click", () => openLightbox(items, index));
   });
 }
 
