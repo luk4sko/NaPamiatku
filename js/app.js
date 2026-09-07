@@ -206,7 +206,7 @@ function copyToClipboard(text, messageElement) {
   });
 }
 
-/* ---------- Lightbox (fotka na celú obrazovku, s prepínaním) ---------- */
+/* ---------- Lightbox (fotka na celú obrazovku, s prepínaním a priblížením) ---------- */
 
 // Prvok sa vytvorí len raz a znova sa použije pre každú ďalšiu otvorenú fotku.
 let lightboxEl = null;
@@ -214,6 +214,12 @@ let lightboxEl = null;
 // vďaka tomu vieme prepínať šípkami/swipom bez opätovného čítania z DOM.
 let lightboxItems = [];
 let lightboxIndex = 0;
+// Priblíženie fotky: mierka (1 = normálne, do 4 = najviac) a posun stredu v px.
+let zoomScale = 1;
+let panX = 0;
+let panY = 0;
+// Nastaví sa v setupLightboxZoom(); volá ju showLightboxPhoto() pri každom prepnutí fotky.
+let resetLightboxZoom = () => {};
 
 function ensureLightbox() {
   if (lightboxEl) return lightboxEl;
@@ -227,6 +233,7 @@ function ensureLightbox() {
     <button type="button" class="lightbox-arrow lightbox-next hidden" aria-label="Ďalšia fotka">›</button>
   `;
   document.body.appendChild(lightboxEl);
+  const img = lightboxEl.querySelector("img");
 
   const close = () => lightboxEl.classList.add("hidden");
   lightboxEl.querySelector(".lightbox-close").addEventListener("click", close);
@@ -245,22 +252,103 @@ function ensureLightbox() {
     if (event.key === "ArrowRight") showNextPhoto();
   });
 
-  // Swipe na mobile: prst doľava = ďalšia fotka, doprava = predchádzajúca.
-  // Zvislý pohyb (scroll) ignorujeme, aby swipe nefungoval pri každom dotyku.
-  let touchStartX = 0;
-  let touchStartY = 0;
-  lightboxEl.addEventListener("touchstart", (event) => {
-    touchStartX = event.changedTouches[0].clientX;
-    touchStartY = event.changedTouches[0].clientY;
+  setupLightboxZoom(lightboxEl, img);
+
+  return lightboxEl;
+}
+
+// Priblíženie a posúvanie fotky: na počítači koliesko myši a dvojklik,
+// na mobile stiahnutie/roztiahnutie dvoma prstami (pinch). Priblíženie je
+// vždy voči stredu fotky - nesleduje presne, kam si klikol/stiahol prsty,
+// čo by vyžadovalo prepočet oproti prirodzeným rozmerom obrázka. Kým je
+// fotka priblížená, jeden prst/ťahanie myšou ju posúva namiesto toho,
+// aby prepínal na ďalšiu fotku.
+function setupLightboxZoom(lightbox, img) {
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 4;
+
+  function applyTransform() {
+    img.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+    img.classList.toggle("zoomed", zoomScale > MIN_SCALE);
+  }
+
+  function setZoom(scale) {
+    zoomScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+    if (zoomScale === MIN_SCALE) { panX = 0; panY = 0; }
+    applyTransform();
+  }
+  resetLightboxZoom = () => setZoom(MIN_SCALE);
+
+  lightbox.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    setZoom(zoomScale * (event.deltaY < 0 ? 1.15 : 1 / 1.15));
+  }, { passive: false });
+
+  img.addEventListener("dblclick", () => setZoom(zoomScale > MIN_SCALE ? MIN_SCALE : 2.5));
+
+  // Ťahanie myšou, len keď je fotka priblížená (inak by to prekážalo klikaniu).
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+
+  img.addEventListener("mousedown", (event) => {
+    if (zoomScale <= MIN_SCALE) return;
+    isDragging = true;
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+    panStartX = panX;
+    panStartY = panY;
+    event.preventDefault();
   });
-  lightboxEl.addEventListener("touchend", (event) => {
+  window.addEventListener("mousemove", (event) => {
+    if (!isDragging) return;
+    panX = panStartX + (event.clientX - dragStartX);
+    panY = panStartY + (event.clientY - dragStartY);
+    applyTransform();
+  });
+  window.addEventListener("mouseup", () => { isDragging = false; });
+
+  // Dotyk: jeden prst mimo priblíženia = swipe medzi fotkami (nižšie),
+  // jeden prst v priblížení = posúvanie, dva prsty = pinch-zoom.
+  let touchStartX = 0, touchStartY = 0;
+  let pinchStartDistance = 0, pinchStartScale = 1;
+
+  function touchDistance(touches) {
+    return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+  }
+
+  lightbox.addEventListener("touchstart", (event) => {
+    if (event.touches.length === 2) {
+      pinchStartDistance = touchDistance(event.touches);
+      pinchStartScale = zoomScale;
+    } else if (event.touches.length === 1) {
+      touchStartX = event.touches[0].clientX;
+      touchStartY = event.touches[0].clientY;
+      panStartX = panX;
+      panStartY = panY;
+    }
+  });
+
+  lightbox.addEventListener("touchmove", (event) => {
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      setZoom(pinchStartScale * (touchDistance(event.touches) / pinchStartDistance));
+    } else if (event.touches.length === 1 && zoomScale > MIN_SCALE) {
+      event.preventDefault();
+      panX = panStartX + (event.touches[0].clientX - touchStartX);
+      panY = panStartY + (event.touches[0].clientY - touchStartY);
+      applyTransform();
+    }
+  }, { passive: false });
+
+  // Swipe na mobile: prst doľava = ďalšia fotka, doprava = predchádzajúca.
+  // Zvislý pohyb (scroll) aj koniec pinchu (ešte drží druhý prst) ignorujeme.
+  lightbox.addEventListener("touchend", (event) => {
+    if (zoomScale > MIN_SCALE || event.touches.length > 0) return;
     const deltaX = event.changedTouches[0].clientX - touchStartX;
     const deltaY = event.changedTouches[0].clientY - touchStartY;
     if (Math.abs(deltaX) < 50 || Math.abs(deltaX) < Math.abs(deltaY)) return;
     if (deltaX < 0) showNextPhoto(); else showPrevPhoto();
   });
-
-  return lightboxEl;
 }
 
 function showLightboxPhoto() {
@@ -268,6 +356,7 @@ function showLightboxPhoto() {
   const img = lightboxEl.querySelector("img");
   img.src = item.url;
   img.alt = item.alt || "";
+  resetLightboxZoom();
 
   // Šípky nemá zmysel ukazovať, keď je v galérii len jedna fotka.
   const showArrows = lightboxItems.length > 1;
