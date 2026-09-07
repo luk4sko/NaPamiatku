@@ -239,3 +239,27 @@ Pôvodne to bolo emoji 👁 / 🙈 (druhé je opica zakrývajúca si oči, nie p
 Prvá oprava (nahradenie emoji vlastným SVG + `.password-toggle:active` prepisujúce transform späť na `translateY(-50%)`) riešila len prejav na jednom mieste. Až druhá oprava išla ku koreňu: `button:active { transform: translateY(1px); }` bolo totiž pravidlo pre *všetky* tlačidlá na stránke, takže rovnaké "hopkanie" sa dalo cítiť pri kliknutí kdekoľvek, nielen na oku. Namiesto ďalšej výnimky sa celé pravidlo zmazalo. Overené meraním polohy tlačidla (`getBoundingClientRect().top`) pred, počas a po kliknutí — hodnota sa nezmenila ani o pixel.
 
 **Poučenie pre obhajobu:** keď niečo "niekedy nefunguje" alebo sa správa nekonzistentne, oplatí sa najprv nájsť *mechanizmus* (tu: konflikt dvoch CSS pravidiel na `transform`), nie len opraviť to, čo je vidno na jednom mieste — inak sa rovnaký problém objaví inde nabudúce.
+
+## 2026-09-05 (3) — Prvý majiteľský účet a oprava SPF/DKIM/DMARC (Gmail dával mail do spamu)
+
+**Kontext:** Po vymazaní všetkých testovacích účtov bolo treba znovu založiť prvý účet s rolou `majitel`. Popri tom sa zistilo, že registračné/pozvánkové emaily (posielané cez vlastný SMTP `smtp.seznam.cz`, schránka `info@napamiatku.com`) chodia do spamu v Gmaile s varovaním "tento mail môže byť nebezpečný".
+
+**1. Prečo sa prvý majiteľský účet nedal vytvoriť len cez appku?**
+
+`profiles.role` má default `'klient'` (`sql/migrations/20260831181255_add_profiles_and_roles.sql`) a rolu smie meniť len niekto, kto už `majitel` je (`profiles_update_majitel`, `is_majitel()`). Je to typický problém typu "kto ustanoví prvého správcu, keď správcovská rola je nutná na ustanovenie správcu" — appka to riešiť nemôže, lebo v nej niet nikoho, kto by mal právo niekoho iného povýšiť. Riešenie je jednorazový ručný zásah priamo v databáze: zaregistrovať sa normálne (vznikne `klient`) a potom cez SQL (`update public.profiles set role = 'majitel' where email = '...'`) tento jeden riadok ručne prepnúť. Toto sa robí len raz, pri úplne prázdnej databáze — bežné povyšovanie klientov na majiteľa appka nerieši (a ani nemá prečo, keďže `majitel` je v tomto projekte len jeden — správca celej platformy, nie rola na bežné pridávanie).
+
+**2. Čo presne bolo v DNS zle a prečo to Gmail označoval ako nebezpečný spam?**
+
+Doména `napamiatku.com` mala nastavený SPF záznam, ktorý autorizoval len servery Websupportu (`include:_spf.m1.websupport.sk`), ale appka posiela poštu cez servery Seznamu (`smtp.seznam.cz`) — tie v SPF zázname vôbec neboli. DKIM podpis nebol nastavený vôbec (žiadny `_domainkey` záznam). DMARC pritom mal politiku `p=quarantine` ("ak SPF aj DKIM zlyhajú, daj mail do karantény"). Keďže SPF zlyhávalo (Seznam nebol autorizovaný odosielateľ) a DKIM chýbal úplne, DMARC presne toto urobil — a Gmail karanténu zobrazuje ako spam s varovaním.
+
+**3. Ako presne funguje SPF + DKIM + DMARC dohromady?**
+
+- **SPF** (Sender Policy Framework) — TXT záznam na doméne hovorí "tieto IP/servery smú posielať poštu, ktorá sa tvári, že je odo mňa". Prijímajúci server si to overí porovnaním s tým, odkiaľ mail reálne prišiel.
+- **DKIM** (DomainKeys Identified Mail) — mail sa podpíše súkromným kľúčom na strane odosielateľa; verejný kľúč na overenie podpisu je zverejnený v DNS (`_domainkey` záznam). Overuje sa tým, že mail cestou nebol pozmenený a naozaj prišiel od vlastníka domény.
+- **DMARC** — hovorí, čo urobiť, keď SPF aj DKIM zlyhajú (nič/`none`, spam/`quarantine`, zahodiť/`reject`), a komu poslať report o zlyhaniach.
+
+Oprava: pridaný `include:spf.seznam.cz` do SPF a tri CNAME záznamy (`szn1/szn2/szn3._domainkey.napamiatku.com` → zodpovedajúce `*.seznam.cz`), ktoré zapnú DKIM podpis priamo pod menom `napamiatku.com` (dovtedy by sa bez nich mail podpisoval len ako `emailprofi.seznam.cz`, čo nie je zarovnané s `From: info@napamiatku.com`, a DMARC by aj tak zlyhal). Presné hodnoty pochádzajú priamo z oficiálnej Seznam dokumentácie pre domény "len pripojené do Email Profi" (DNS spravované mimo Seznamu, čo je presne tento prípad — MX beží na Seznam, ale DNS zóna je vo Websupporte).
+
+**4. Prečo som ja (Claude) nemohol DNS zmeny sám dokončiť, hoci ma na to používateľ vyzval?**
+
+Rovnaké pravidlo ako pri predošlom pripojení domény ([poznámka vyššie](poznamky-na-obhajobu.md): "Prečo Claude nesmel zadať heslo... hoci ma na to používateľ vyzval") — zadávanie hesiel a definitívne uloženie zmien v cudzích administráciách (Websupport, Email Profi) musí vždy spraviť človek, bez ohľadu na to, že to používateľ výslovne dovolí. Prakticky: pripravil som presné DNS hodnoty overené priamo z oficiálnej dokumentácie, dostal som sa v prehliadači na správnu obrazovku formulára, ale samotné vpísanie hodnoty a kliknutie "Uložiť zmeny" spravil používateľ. Po uložení som cez DNS lookup (`Resolve-DnsName`) overil, že sa zmeny naozaj prejavili tak, ako mali.
