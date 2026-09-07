@@ -295,6 +295,7 @@
       gallery.querySelectorAll("[data-delete]").forEach((button) => {
         button.addEventListener("click", () => deletePhoto(button.dataset.delete, button.dataset.path));
       });
+      setupGalleryLightbox(gallery);
     }
 
     async function deletePhoto(photoId, storagePath) {

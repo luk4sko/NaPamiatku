@@ -309,6 +309,7 @@
         button.addEventListener("click", () =>
           downloadFile(button.dataset.download, "napamiatku-foto.jpg"));
       });
+      setupGalleryLightbox(gallery);
     }
 
     document.getElementById("photoInput").addEventListener("change", async (event) => {

@@ -206,6 +206,51 @@ function copyToClipboard(text, messageElement) {
   });
 }
 
+/* ---------- Lightbox (fotka na celú obrazovku) ---------- */
+
+// Prvok sa vytvorí len raz a znova sa použije pre každú ďalšiu otvorenú fotku.
+let lightboxEl = null;
+
+function ensureLightbox() {
+  if (lightboxEl) return lightboxEl;
+
+  lightboxEl = document.createElement("div");
+  lightboxEl.className = "lightbox hidden";
+  lightboxEl.innerHTML = `
+    <button type="button" class="lightbox-close" aria-label="Zavrieť">✕</button>
+    <img />
+  `;
+  document.body.appendChild(lightboxEl);
+
+  const close = () => lightboxEl.classList.add("hidden");
+  lightboxEl.querySelector(".lightbox-close").addEventListener("click", close);
+  // Klik na tmavé pozadie mimo fotky tiež zatvorí.
+  lightboxEl.addEventListener("click", (event) => {
+    if (event.target === lightboxEl) close();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") close();
+  });
+
+  return lightboxEl;
+}
+
+function openLightbox(url, alt) {
+  const lightbox = ensureLightbox();
+  const img = lightbox.querySelector("img");
+  img.src = url;
+  img.alt = alt || "";
+  lightbox.classList.remove("hidden");
+}
+
+// Klik na ktorúkoľvek fotku v galérii ju otvorí na celú obrazovku.
+// Volá sa vždy po prekreslení galérie, keďže staré <img> uzly zmiznú s ňou.
+function setupGalleryLightbox(gallery) {
+  gallery.querySelectorAll(".photo > img").forEach((img) => {
+    img.addEventListener("click", () => openLightbox(img.src, img.alt));
+  });
+}
+
 /* ---------- QR kódy ---------- */
 
 // Knižnice načítavame až keď sú naozaj treba (dynamický import).
