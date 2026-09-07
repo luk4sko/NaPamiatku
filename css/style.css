@@ -393,10 +393,14 @@ form > button {
   box-shadow: var(--shadow);
 }
 
-/* Iba priamy potomok = samotná fotka. */
-.photo > img {
+/* Iba priamy potomok = samotná fotka/video. */
+.photo > img,
+.photo > video {
   width: 100%;
   display: block;
+}
+
+.photo > img {
   cursor: zoom-in;
 }
 

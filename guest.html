@@ -72,7 +72,7 @@
             <p class="muted">Môžeš vybrať aj viac naraz. Veľké fotky automaticky zmenšíme, aby sa nahrávali rýchlo.</p>
             <label class="file-button">
               Vybrať fotky
-              <input type="file" id="photoInput" accept="image/*" multiple />
+              <input type="file" id="photoInput" accept="image/*,video/*" multiple />
             </label>
             <p id="uploadMessage" class="message"></p>
             <progress id="uploadProgress" class="hidden" max="100" value="0"></progress>
@@ -293,13 +293,19 @@
       gallery.innerHTML = "";
       for (const photo of data) {
         const url = publicUrl("photos", photo.storage_path);
+        const isVideo = photo.media_type === "video";
+        const filename = isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg";
+        const mediaTag = isVideo
+          ? `<video src="${url}" controls playsinline preload="metadata"></video>`
+          : `<img src="${url}" alt="Fotka od ${escapeHtml(photo.nickname)}" loading="lazy" />`;
+
         const figure = document.createElement("figure");
         figure.className = "photo";
         figure.innerHTML = `
-          <img src="${url}" alt="Fotka od ${escapeHtml(photo.nickname)}" loading="lazy" />
+          ${mediaTag}
           <div class="photo-meta"><span>${escapeHtml(photo.nickname)}</span></div>
           <div class="photo-actions">
-            <button class="small secondary" data-download="${url}">Stiahnuť</button>
+            <button class="small secondary" data-download="${url}" data-filename="${filename}">Stiahnuť</button>
           </div>
         `;
         gallery.appendChild(figure);
@@ -307,7 +313,7 @@
 
       gallery.querySelectorAll("[data-download]").forEach((button) => {
         button.addEventListener("click", () =>
-          downloadFile(button.dataset.download, "napamiatku-foto.jpg"));
+          downloadFile(button.dataset.download, button.dataset.filename));
       });
       setupGalleryLightbox(gallery);
     }
@@ -325,12 +331,16 @@
       for (const file of files) {
         showMessage(messageEl, `Nahrávam ${done + 1} z ${files.length}...`);
 
-        const optimized = await compressImage(file);
-        const path = `${eventInfo.id}/${crypto.randomUUID()}.jpg`;
+        // Video sa (na rozdiel od fotiek) neprekomprimúva - zmenšenie videa
+        // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
+        const isVideo = file.type.startsWith("video/");
+        const toUpload = isVideo ? file : await compressImage(file);
+        const extension = isVideo ? (file.name.split(".").pop() || "mp4") : "jpg";
+        const path = `${eventInfo.id}/${crypto.randomUUID()}.${extension}`;
 
         const { error: uploadError } = await supabaseClient.storage
           .from("photos")
-          .upload(path, optimized, { contentType: optimized.type || "image/jpeg" });
+          .upload(path, toUpload, { contentType: toUpload.type || file.type });
 
         if (uploadError) {
           showMessage(messageEl, "Nahrávanie zlyhalo: " + uploadError.message, "error");
@@ -344,6 +354,7 @@
           p_password: eventPassword,
           p_nickname: nickname,
           p_storage_path: path,
+          p_media_type: isVideo ? "video" : "photo",
         });
 
         if (rpcError) {
