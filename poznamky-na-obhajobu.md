@@ -263,3 +263,143 @@ Oprava: pridaný `include:spf.seznam.cz` do SPF a tri CNAME záznamy (`szn1/szn2
 **4. Prečo som ja (Claude) nemohol DNS zmeny sám dokončiť, hoci ma na to používateľ vyzval?**
 
 Rovnaké pravidlo ako pri predošlom pripojení domény ([poznámka vyššie](poznamky-na-obhajobu.md): "Prečo Claude nesmel zadať heslo... hoci ma na to používateľ vyzval") — zadávanie hesiel a definitívne uloženie zmien v cudzích administráciách (Websupport, Email Profi) musí vždy spraviť človek, bez ohľadu na to, že to používateľ výslovne dovolí. Prakticky: pripravil som presné DNS hodnoty overené priamo z oficiálnej dokumentácie, dostal som sa v prehliadači na správnu obrazovku formulára, ale samotné vpísanie hodnoty a kliknutie "Uložiť zmeny" spravil používateľ. Po uložení som cez DNS lookup (`Resolve-DnsName`) overil, že sa zmeny naozaj prejavili tak, ako mali.
+
+## 2026-09-07 — Lightbox, videá v galérii a chýbajúca RLS politika
+
+V tento deň pribudlo zobrazenie fotky na celú obrazovku (lightbox) s prepínaním a priblížením, podpora videí v galérii a opravila sa chyba, pre ktorú organizátor nemohol nahrávať fotky. Poznámky sa vtedy nestihli zapísať, dopĺňam ich spätne 8. 9. 2026.
+
+**1. Prečo organizátorovi nefungovalo nahrávanie fotiek, keď hosťom fungovalo?**
+
+Sú to dve úplne odlišné cesty zápisu do tabuľky `photos` a sprísnenie RLS politík (`20260831181331_tighten_rls_policies.sql`) zrušilo starú voľnú politiku `photos_insert_public`, ale novú pridalo len pre niektoré prípady.
+
+- **Hosť** nahráva cez funkciu `guest_add_photo`, ktorá je `security definer`. To znamená, že sa vykonáva s právami toho, kto ju vytvoril (vlastníka databázy), nie s právami toho, kto ju zavolal. RLS politiky na tabuľke `photos` sa na ňu preto vôbec nevzťahujú — funkcia si zapíše riadok sama a bezpečnosť rieši tým, že si najprv overí heslo eventu.
+- **Organizátor** je prihlásený používateľ a v `event.html` vkladá riadok priamo: `supabaseClient.from("photos").insert(...)`. Tento zápis ide cez REST API pod rolou `authenticated`, takže RLS naň platí naplno. A keďže preň neexistovala žiadna `insert` politika, PostgreSQL ho zamietol — RLS totiž funguje na princípe „čo nie je výslovne povolené, je zakázané".
+
+Oprava bola jedna politika (`20260907120000_add_photos_insert_manager_policy.sql`):
+
+```sql
+create policy photos_insert_manager on public.photos
+  for insert to authenticated
+  with check (public.can_manage_event(event_id));
+```
+
+`with check` je pri `insert` obdoba `using` pri `select` — kontroluje riadok, ktorý sa práve zapisuje. Podmienka hovorí: smieš vložiť fotku len do eventu, ktorý smieš spravovať.
+
+**Poučenie na obhajobu:** keď sa sprísňujú RLS politiky, treba prejsť *všetky* cesty, ktorými sa do tabuľky zapisuje — nielen tú, ktorú má človek práve pred očami. Chyba sa neprejavila hneď, lebo hosťovská cesta (tá, ktorá sa testovala) šla cez `security definer` funkciu a fungovala ďalej.
+
+**2. Prečo je lightbox jeden jediný prvok v DOM a nie jeden pre každú fotku?**
+
+Funkcia `ensureLightbox()` v `js/app.js` vytvorí prvok len raz a pri každom ďalšom otvorení ho znovu použije (preto tá podmienka `if (lightboxEl) return lightboxEl;`). Keby sa vyrábal pre každú fotku zvlášť, tak pri galérii so 150 fotkami by v stránke bolo 150 skrytých kópií toho istého — zbytočná pamäť a 150 sád listenerov na klávesnicu.
+
+Ktorá fotka je práve zobrazená, si držíme v dvoch premenných: `lightboxItems` (pole všetkých fotiek galérie) a `lightboxIndex` (poradie tej otvorenej). Zoznam si kopírujeme do poľa vopred vo `setupGalleryLightbox()` a nečítame ho pri každom prepnutí z DOM — galéria sa totiž po každom nahraní alebo zmazaní celá prekresľuje (`gallery.innerHTML = ""`), takže staré `<img>` uzly prestanú existovať a odkazy na ne by boli neplatné.
+
+Prepínanie dokola rieši zvyškové delenie (modulo):
+
+```js
+lightboxIndex = (lightboxIndex - 1 + lightboxItems.length) % lightboxItems.length;
+```
+
+To `+ lightboxItems.length` tam nie je navyše. V JavaScripte `-1 % 5` nevráti `4`, ale `-1` (na rozdiel napríklad od Pythonu), a záporný index by v poli nič nenašiel. Pripočítaním dĺžky sa číslo najprv dostane do kladných hodnôt a až potom sa zvyškovo delí. Pri poslednej fotke to isté v druhom smere: `(4 + 1) % 5` je `0`, čiže skok na začiatok.
+
+**3. Prečo sa video pred nahraním nezmenšuje, keď fotky áno?**
+
+Fotku zmenšuje `compressImage()` tak, že ju nakreslí do prvku `<canvas>` v menšej veľkosti a ten vyexportuje ako JPEG. Pre jeden obrázok je to jeden priechod a trvá to zlomok sekundy.
+
+Video je ale postupnosť obrázkov — pri 30 snímkach za sekundu má minútové video 1 800 samostatných obrázkov. Prekódovať ho v prehliadači by znamenalo každý snímok dekódovať, zmenšiť a znovu zakódovať (cez `MediaRecorder` alebo `WebCodecs`). Na mobile by to trvalo minúty, vyčerpávalo batériu a hosť by medzitým nemohol appku poriadne používať. Na svadbe, kde chce človek rýchlo hodiť video a vrátiť sa k zábave, je to neprijateľné.
+
+Preto sa video nahráva tak, ako je, a namiesto toho sa zdvihol limit priamo na úložisku (`20260907130000_add_video_support.sql`): z 10 MB na 100 MB a k povoleným typom pribudli `video/mp4`, `video/quicktime` (iPhone) a `video/webm`.
+
+**Dôležité na obhajobu:** ten limit je nastavený na strane servera, na samotnom buckete — nie v JavaScripte. Keby bol len v prehliadači, dal by sa obísť (stačí zavolať Storage API priamo) a ktokoľvek by mohol zaplniť úložisko obrovským súborom. Kontrola v prehliadači je pre pohodlie používateľa, kontrola na serveri je tá, ktorá naozaj platí.
+
+**4. Načo je v databáze stĺpec `media_type`, keď typ súboru sa dá spoznať podľa prípony?**
+
+Galéria musí pri každom zázname vedieť, či má vykresliť `<img>` alebo `<video>` — sú to iné HTML značky a video potrebuje `controls`, aby sa dalo prehrať. Dalo by sa to hádať z prípony v `storage_path`, ale to by znamenalo, že sa logika appky opiera o text v ceste k súboru. Stačilo by pridať podporu ďalšieho formátu a museli by sme na to nezabudnúť na každom mieste, kde sa galéria vykresľuje (a tie sú dve — `event.html` aj `guest.html`).
+
+Samostatný stĺpec s obmedzením `check (media_type in ('photo', 'video'))` je jednoznačný: databáza sama nepustí dnu inú hodnotu a appka sa len spýta, čo to je.
+
+Videá sa zámerne neotvárajú v lightboxe. Prehrávač `<video controls>` má vlastné tlačidlo na celú obrazovku a vlastné ovládanie prehrávania — lightbox s priblížením a swipovaním by mu do toho len zasahoval. Preto `setupGalleryLightbox()` vyberá selektorom `.photo > img` výslovne len obrázky.
+
+## 2026-09-08 — Bezpečnostná diera v ceste k súboru, kvalita fotiek a čo hlási Supabase advisor
+
+Kontrola celého projektu po pridaní videí. Našla sa jedna skutočná bezpečnostná chyba (XSS), tri rozmazané fotky a jedna drobná chyba v zobrazení prázdnej galérie.
+
+**1. Kde bola bezpečnostná diera a prečo nestačilo opraviť ju v JavaScripte?**
+
+Funkcia `guest_add_photo` overovala cestu k súboru takto:
+
+```sql
+if p_storage_path not like v_event_id::text || '/%' then
+```
+
+Čiže kontrolovala len to, že cesta **začína** na id eventu. Zvyšok reťazca mohol byť čokoľvek. Táto funkcia je pritom verejná — volať ju smie rola `anon`, teda ktokoľvek, kto pozná heslo eventu a adresu Supabase projektu.
+
+Útok vyzeral takto: hosť (alebo ktokoľvek, komu sa dostane heslo eventu) nezadá cestu cez našu stránku, ale zavolá RPC priamo — z konzoly prehliadača alebo cez `curl` — a pošle cestu:
+
+```
+<id-eventu>/nieco.jpg" onerror="ukradniÚdaje()
+```
+
+Prefix sedí, kontrola prejde a riadok sa zapíše. Galéria potom túto cestu vloží do HTML:
+
+```js
+`<img src="${url}" ...>`
+```
+
+Úvodzovka v ceste predčasne ukončí atribút `src` a zvyšok sa stane novým atribútom `onerror`, ktorý prehliadač spustí ako JavaScript. To je útok **XSS (Cross-Site Scripting)** — cudzí kód beží v prehliadači ostatných hostí aj organizátora, pod ich prihlásením.
+
+Prečo nestačí oprava v JavaScripte: **frontend nie je bezpečnostná hranica.** Všetko, čo beží v prehliadači, má útočník plne pod kontrolou — vie si to prepísať, vypnúť alebo úplne obísť a hovoriť so serverom priamo. Skutočná kontrola musí byť tam, kam sa nedostane, čiže v databáze.
+
+Oprava má tri vrstvy (`20260908120000_harden_guest_photo_path.sql` a `js/app.js`):
+
+1. **Databáza** vyžaduje presný tvar cesty, nie len prefix: `<event_id>/<uuid>.<jpg|mp4|mov|webm>`. Toto je tá kontrola, na ktorej stojí bezpečnosť.
+2. **Prípona pri nahrávaní** sa berie z whitelistu (`videoExtension()` v `app.js`). Prípona pochádza z názvu súboru, ktorý si zvolil používateľ, takže jej nemožno veriť. Whitelist (povolím len to, čo poznám) je bezpečnejší ako blacklist (zakážem to, čo mi napadne) — pri blackliste treba dopredu uhádnuť všetky škodlivé možnosti a na jednu sa vždy zabudne.
+3. **Escapovanie pri vykresľovaní** — `escapeHtml(publicUrl(...))`. Aj keby sa do databázy niekedy dostala zlá hodnota inou cestou, do HTML sa už nedostane ako kód.
+
+Tomu, že sa tá istá vec chráni na viacerých miestach naraz, sa hovorí **obrana do hĺbky** (defense in depth). Zmyslom je, aby jedna chyba neznamenala hneď prielom.
+
+Že oprava funguje, sa overilo priamym útokom na RPC funkciu mimo stránky. Databáza odmietla všetky štyri pokusy (XSS v ceste, výstup z priečinka cez `../`, cesta do cudzieho eventu, prípona `.html`) a prijala len legitímnu cestu. Bonusom je, že sprísnenie zablokovalo aj `../`, čo pôvodná kontrola tiež púšťala.
+
+**2. Podľa čoho sa dá objektívne povedať, že je fotka na stránke rozmazaná?**
+
+Nie od oka, ale porovnaním dvoch čísel: koľko pixelov obrázok naozaj má (`naturalWidth` × `naturalHeight`) oproti tomu, na akú plochu ho prehliadač vykresľuje. Pomer týchto hodnôt hovorí, koľkokrát sa obrázok naťahuje. Ak je väčší ako 1, prehliadač dopĺňa pixely, ktoré v súbore nie sú — a to je presne to, čo oko vníma ako rozmazanie.
+
+Pri `object-fit: cover` sa počíta ten **väčší** z pomerov (šírka aj výška), lebo obrázok musí plochu úplne pokryť; prebytok sa oreže.
+
+Namerané hodnoty pred opravou:
+
+| Fotka | Rozlíšenie | Vykresľuje sa na | Naťahuje sa |
+|---|---|---|---|
+| `hostia-konfety-lg.webp` (brána hostí) | 900 × 720 | 1425 × 900 | 1,58× |
+| `auth-prihlasenie-lg.webp` (login) | 900 × 601 | 612 × 900 | 1,50× |
+| `auth-registracia-lg.webp` (registrácia) | 900 × 600 | 612 × 900 | 1,50× |
+| `auth-heslo-lg.webp` (nastavenie hesla) | 900 × 1350 | 612 × 900 | 0,68× ✓ |
+
+Príčina pri prihlásení a registrácii nebola veľkosť, ale **orientácia**. Bočný panel je na výšku (612 × 900), ale fotky boli na šírku. Aby fotka na šírku pokryla vysoký úzky panel, musí sa zväčšiť podľa výšky a väčšina šírky sa oreže — z fotky tak reálne vidno len úzky stredový pruh, a ten ešte roztiahnutý. Že ide o orientáciu a nie o rozlíšenie, dokazuje posledný riadok: `auth-heslo-lg.webp` má rovnakú šírku 900 px, ale je na výšku — a naťahuje sa 0,68×, čiže sa naopak zmenšuje a je ostrý.
+
+Opravené výmenou za fotky so správnou orientáciou a rozlíšením (1100 × 1650 pre panely, 1800 × 1350 pre bránu). Všetky tri sú teraz pod 1× — brána 0,79×, panely 0,56×. Zaujímavosť: fotka brány má teraz dvojnásobné rozlíšenie a napriek tomu je súbor menší než pôvodný (153 kB oproti 227 kB), lebo bola nanovo zakódovaná do WebP s primeranou kompresiou.
+
+Nové fotky sú z Pexels (Pexels License — voľné aj na komerčné použitie, bez povinnosti uvádzať autora), pôvodné boli z Unsplash. Obe licencie to dovoľujú; pri obhajobe je dobré vedieť, že fotky nie sú stiahnuté odkiaľkoľvek z internetu.
+
+**3. Prečo sa hláška „Zatiaľ tu nie sú žiadne fotky" čítala odzadu?**
+
+Galéria je poskladaná pomocou CSS stĺpcov (`column-count: 2`) — to je ten spôsob, akým vzniká nástenkový (masonry) vzhľad. Lenže do stĺpcov sa rozdelí *všetko*, čo je vnútri, vrátane obyčajného odstavca s hláškou o prázdnej galérii. Veta sa preto rozsekla medzi dva stĺpce a na obrazovke vyšlo „fotky. Buď prvý!" nad „Zatiaľ tu nie sú žiadne".
+
+Riešenie je jedna vlastnosť: `column-span: all`, ktorá prvku povie, nech sa roztiahne cez všetky stĺpce a do delenia nevstupuje.
+
+**4. Supabase advisor hlási 12 funkcií ako verejne spustiteľné. Prečo sa väčšina z nich nechala tak?**
+
+Najprv, prečo hlási aj `handle_new_user()`, ktorú sme kedysi výslovne zakazovali. Migrácia `20260831182158` obsahovala:
+
+```sql
+revoke all on function public.handle_new_user() from anon, authenticated;
+```
+
+Vyzerá to správne, ale nefunguje to. V PostgreSQL majú funkcie po vytvorení automaticky pridelené právo `EXECUTE` pre **PUBLIC**, čo je zástupný názov pre „úplne každý". Role `anon` a `authenticated` sú súčasťou PUBLIC, takže im odobratie ich vlastného práva nepomôže — zdedia ho ďalej cez PUBLIC. Vidno to priamo vo výpise práv (`proacl`), kde je záznam `=X/postgres`: prázdno pred `=` znamená práve PUBLIC. Správne by muselo byť `revoke ... from public`. Pre porovnanie, funkcia `find_event_by_password` to má spravené správne a v jej právach žiadne `=X` nie je.
+
+Napriek tomu sa to nechalo bez zmeny a je to vedomé rozhodnutie:
+
+- `handle_new_user()` je **triggerová** funkcia. PostgreSQL odmietne zavolať triggerovú funkciu ako bežnú funkciu, takže cez REST API sa spustiť nedá bez ohľadu na práva. Riziko je nulové.
+- `can_manage_event()` a `is_majitel()` sa **musia** dať volať, lebo ich používajú samotné RLS politiky. Výrazy v RLS politikách sa vyhodnocujú s právami prihláseného používateľa, takže keby sme im právo `EXECUTE` odobrali, každý dopyt na chránené tabuľky by skončil chybou „permission denied for function" — a appka by prestala fungovať úplne. Ich návratová hodnota je pritom len `true`/`false` o volajúcom samom, čiže žiadny únik údajov.
+- Ostatné (`guest_*`, `request_event`, `set_event_status`…) sú funkcie, ktoré appka volá zámerne a ktoré si vnútri samy overujú heslo alebo rolu. Byť verejne volateľné je ich účel.
+
+**Poučenie na obhajobu:** automatický kontrolór (linter) hlási vzory, nie skutočné diery. Pri každom hlásení treba vedieť odpovedať, či ide o reálne riziko alebo o zámer — a to zdôvodniť. Slepé „opravenie" hlásení pri `can_manage_event` by tento projekt rozbilo.
