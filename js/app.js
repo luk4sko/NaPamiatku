@@ -181,6 +181,18 @@ async function compressImage(file) {
   return blob && blob.size < file.size ? blob : file;
 }
 
+// Príponu berieme z názvu súboru, ktorý si zvolil používateľ - a tomu sa
+// veriť nedá. Namiesto vyhadzovania podozrivých znakov povolíme len prípony,
+// ktoré naozaj podporujeme (rovnaké formáty ako pripúšťa bucket "photos");
+// čokoľvek iné dostane mp4. Tento prístup sa volá whitelist a je bezpečnejší
+// ako blacklist - nemusíme dopredu uhádnuť všetko, čo by mohlo uškodiť.
+const ALLOWED_VIDEO_EXTENSIONS = ["mp4", "mov", "webm"];
+
+function videoExtension(file) {
+  const extension = file.name.split(".").pop().toLowerCase();
+  return ALLOWED_VIDEO_EXTENSIONS.includes(extension) ? extension : "mp4";
+}
+
 // Stiahnutie fotky. Atribút download na odkaze na cudziu doménu prehliadač
 // ignoruje, preto si súbor najprv stiahneme ako blob a až ten uložíme.
 async function downloadFile(url, filename) {

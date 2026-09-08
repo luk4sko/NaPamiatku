@@ -273,7 +273,11 @@
       gallery.innerHTML = "";
       for (const photo of data) {
         const nickname = photo.uploaded_by_nickname || "Hosť";
-        const url = publicUrl("photos", photo.storage_path);
+        // storage_path ide do HTML atribútu, preto ho aj tu ošetríme. Do
+        // databázy sa síce dostane len cez overené cesty, ale spoliehať sa
+        // na to pri skladaní HTML by znamenalo, že jedna diera inde hneď
+        // znamená spustený cudzí kód v prehliadači.
+        const url = escapeHtml(publicUrl("photos", photo.storage_path));
         const isVideo = photo.media_type === "video";
         const filename = isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg";
         const mediaTag = isVideo
@@ -335,7 +339,7 @@
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
         const isVideo = file.type.startsWith("video/");
         const toUpload = isVideo ? file : await compressImage(file);
-        const extension = isVideo ? (file.name.split(".").pop() || "mp4") : "jpg";
+        const extension = isVideo ? videoExtension(file) : "jpg";
         const path = `${currentEvent.id}/${crypto.randomUUID()}.${extension}`;
 
         const { error: uploadError } = await supabaseClient.storage

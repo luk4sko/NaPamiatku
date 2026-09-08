@@ -10,7 +10,7 @@
   <!-- 1. krok: brána s heslom. Toto je úplne prvá vec, ktorú hosť po
        naskenovaní QR kódu uvidí, preto dostala celú obrazovku a fotku. -->
   <section id="passwordStep" class="gate hidden">
-    <img class="gate-bg" src="img/hostia-konfety-lg.webp" alt="" aria-hidden="true" />
+    <img class="gate-bg" src="img/hostia-konfety-xl.webp" alt="" aria-hidden="true" />
     <button class="secondary small gate-theme" data-theme-toggle>🌙</button>
 
     <div class="gate-card">
@@ -292,7 +292,9 @@
 
       gallery.innerHTML = "";
       for (const photo of data) {
-        const url = publicUrl("photos", photo.storage_path);
+        // Rovnako ako v event.html: adresa ide do HTML atribútu, takže ju
+        // ošetríme, aj keď sa do databázy dostáva len cez overené cesty.
+        const url = escapeHtml(publicUrl("photos", photo.storage_path));
         const isVideo = photo.media_type === "video";
         const filename = isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg";
         const mediaTag = isVideo
@@ -335,7 +337,7 @@
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
         const isVideo = file.type.startsWith("video/");
         const toUpload = isVideo ? file : await compressImage(file);
-        const extension = isVideo ? (file.name.split(".").pop() || "mp4") : "jpg";
+        const extension = isVideo ? videoExtension(file) : "jpg";
         const path = `${eventInfo.id}/${crypto.randomUUID()}.${extension}`;
 
         const { error: uploadError } = await supabaseClient.storage
