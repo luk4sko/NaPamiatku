@@ -403,3 +403,31 @@ Napriek tomu sa to nechalo bez zmeny a je to vedomé rozhodnutie:
 - Ostatné (`guest_*`, `request_event`, `set_event_status`…) sú funkcie, ktoré appka volá zámerne a ktoré si vnútri samy overujú heslo alebo rolu. Byť verejne volateľné je ich účel.
 
 **Poučenie na obhajobu:** automatický kontrolór (linter) hlási vzory, nie skutočné diery. Pri každom hlásení treba vedieť odpovedať, či ide o reálne riziko alebo o zámer — a to zdôvodniť. Slepé „opravenie" hlásení pri `can_manage_event` by tento projekt rozbilo.
+
+## 2026-09-14 — Čisté URL adresy bez `.html` (Vercel `cleanUrls`)
+
+Cieľ: aby adresný riadok ukazoval `napamiatku.com/dashboard`, nie `napamiatku.com/dashboard.html`. Stránka je statická (bez build kroku), takže riešenie muselo prísť z konfigurácie hostingu (Vercel), nie z novej technológie.
+
+**1. Prečo nestačí len pridať `vercel.json` s `cleanUrls: true` a nechať staré odkazy (`href="dashboard.html"`) tak, ako boli?**
+
+`cleanUrls: true` spraví dve veci: (a) súbor `dashboard.html` sa dá volať aj na `/dashboard` bez prípony, (b) ak niekto vyžiada priamo `/dashboard.html`, Vercel to presmeruje (301) na `/dashboard`.
+
+Keby odkazy v kóde aj naďalej mierili na `dashboard.html`, každý klik by prešiel cez zbytočný medzikrok: prehliadač by si vyžiadal `/dashboard.html`, server by odpovedal „presunuté", a až druhou požiadavkou by prehliadač skončil na `/dashboard`. Adresa by sa na zlomok sekundy mihla s `.html` a navyše by to bol jeden HTTP request navyše. Preto sa popri `vercel.json` prepísali aj všetky interné odkazy (`<a href>`) a JS presmerovania (`window.location.href`) tak, aby smerovali rovno na čistú cestu — žiadny redirect netreba.
+
+**2. Prečo `guestUrl()` v `event.html` (skladala QR/odkaz pre hostí cez `window.location.pathname.replace("event.html", "guest.html")`) prestala po tejto zmene fungovať a musela sa prerobiť?**
+
+Ten trik fungoval len preto, že `window.location.pathname` v danej chvíli reálne obsahovalo podreťazec `"event.html"` (stránka bežala na `/event.html`). `.replace()` ho tam našla a nahradila za `"guest.html"`.
+
+Po zapnutí čistých URL beží tá istá stránka na `/event` — podreťazec `"event.html"` sa v `pathname` už vôbec nenachádza. `.replace()` vtedy nič nenájde a vráti string bez zmeny, teda `"/event"`. Výsledná `guestUrl()` by namiesto `.../guest?slug=...` vyrobila `.../event?slug=...` — čo je stránka správcu eventu (vyžaduje prihlásenie), nie hosťovská galéria. QR kód pre hostí by bol rozbitý, a to *ticho*, bez chyby — funkcia by len vrátila zmysluplne vyzerajúcu, ale nesprávnu adresu.
+
+Poučenie: skladanie URL pomocou `.replace()` na aktuálnej ceste je krehké — závisí od presného tvaru `pathname` v danom momente. Keď sa routovanie zmení inde v projekte (tu: zapnutím `cleanUrls`), takýto kód sa potichu rozbije. Bezpečnejšie je, ak je cieľová cesta vopred známa, napísať ju natvrdo (`"/guest"`) namiesto odvodzovania z aktuálnej adresy.
+
+**3. Čo presne robí 301 redirect zo starej `.html` adresy a prečo staré vytlačené QR kódy (`guest.html?slug=...`) fungujú aj naďalej?**
+
+301 (Moved Permanently) je HTTP odpoveď, ktorú pošle **Vercelov server** — deje sa to skôr, než sa spustí čo i len jeden riadok JavaScriptu appky alebo než sa čokoľvek pýta Supabase. Postup:
+
+1. Hosť naskenuje starý QR kód → prehliadač si vyžiada `napamiatku.com/guest.html?slug=xyz`.
+2. Server odpovie stavovým kódom 301 s hlavičkou `Location: /guest?slug=xyz`.
+3. Prehliadač to automaticky, bez opýtania sa používateľa, nasleduje a pošle novú požiadavku na `/guest?slug=xyz`.
+
+Query string (`?slug=xyz`) sa pri presmerovaní zachová — týka sa len časti cesty pred otáznikom. Preto starý, už vytlačený alebo poslaný odkaz aj naďalej dovedie hosťa na správny event, len s jedným neviditeľným medzikrokom navyše. Toto presmerovanie je čisto na úrovni HTTP hlavičiek (server ↔ prehliadač), nemá nič spoločné s dátami v appke (napr. správami v knihe hostí) — tie sa načítajú až po tom, čo je hosť na finálnej `/guest` adrese.
