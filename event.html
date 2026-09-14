@@ -9,7 +9,7 @@
 <body>
   <nav class="site-nav">
     <div class="site-nav-inner">
-      <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+      <a class="logo" href="/">Na<span>Pamiatku</span></a>
       <div class="top-bar-actions">
         <button class="secondary small" data-theme-toggle>🌙</button>
         <button class="secondary small" data-logout>Odhlásiť sa</button>
@@ -21,7 +21,7 @@
     <div class="page">
       <div class="top-bar">
         <div>
-          <p class="muted"><a href="dashboard.html">← Späť na dashboard</a></p>
+          <p class="muted"><a href="/dashboard">← Späť na dashboard</a></p>
           <h1 id="eventName">Načítavam...</h1>
           <p class="muted" id="eventMeta"></p>
         </div>
@@ -139,7 +139,7 @@
 
   <footer class="site-footer">
     <div class="site-footer-inner">
-      <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+      <a class="logo" href="/">Na<span>Pamiatku</span></a>
       <span>© 2026 NaPamiatku · Fotky z vášho dňa na jednom mieste</span>
       <div class="site-footer-social">
         <a href="https://www.instagram.com/luk4sko/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
@@ -216,8 +216,7 @@
     /* ---------- Zdieľanie / QR ---------- */
 
     function guestUrl() {
-      return window.location.origin +
-        window.location.pathname.replace("event.html", "guest.html") +
+      return window.location.origin + "/guest" +
         "?slug=" + encodeURIComponent(currentEvent.slug);
     }
 

@@ -11,7 +11,7 @@
     <aside class="auth-visual">
       <img src="img/auth-registracia-lg.webp" alt="" />
       <div class="auth-visual-body">
-        <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+        <a class="logo" href="/">Na<span>Pamiatku</span></a>
         <p class="auth-quote">
           Za pár minút máte QR kód na stoloch.
           <span>Vytvorte si účet, požiadajte o event a po schválení je všetko pripravené.</span>
@@ -22,7 +22,7 @@
     <main class="auth-form">
       <div class="auth-form-inner">
         <div class="auth-head">
-          <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+          <a class="logo" href="/">Na<span>Pamiatku</span></a>
           <button class="secondary small" data-theme-toggle>🌙</button>
         </div>
 
@@ -58,8 +58,8 @@
         </form>
 
         <div class="auth-foot">
-          <p>Už máš účet? <a href="login.html">Prihlás sa</a></p>
-          <p><a href="index.html">← Späť na úvod</a></p>
+          <p>Už máš účet? <a href="/login">Prihlás sa</a></p>
+          <p><a href="/">← Späť na úvod</a></p>
         </div>
       </div>
     </main>
@@ -72,7 +72,7 @@
     // Ak už je používateľ prihlásený, nemá čo robiť na registračnej stránke.
     (async () => {
       const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) window.location.href = "dashboard.html";
+      if (session) window.location.href = "/dashboard";
     })();
 
     const messageEl = document.getElementById("message");
@@ -123,7 +123,7 @@
       document.getElementById("registerForm").reset();
 
       if (data.session) {
-        window.location.href = "dashboard.html";
+        window.location.href = "/dashboard";
         return;
       }
 

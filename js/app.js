@@ -79,7 +79,7 @@ function setupPasswordToggles() {
 async function requireAuth() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) {
-    window.location.href = "login.html";
+    window.location.href = "/login";
     return null;
   }
   return session;
@@ -99,7 +99,7 @@ async function loadProfile(userId) {
 
 async function logout() {
   await supabaseClient.auth.signOut();
-  window.location.href = "login.html";
+  window.location.href = "/login";
 }
 
 function setupLogoutButtons() {

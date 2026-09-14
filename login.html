@@ -11,7 +11,7 @@
     <aside class="auth-visual">
       <img src="img/auth-prihlasenie-lg.webp" alt="" />
       <div class="auth-visual-body">
-        <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+        <a class="logo" href="/">Na<span>Pamiatku</span></a>
         <p class="auth-quote">
           Fotky z vášho večera čakajú.
           <span>Prihláste sa a pozrite si, čo medzitým pridali vaši hostia.</span>
@@ -22,7 +22,7 @@
     <main class="auth-form">
       <div class="auth-form-inner">
         <div class="auth-head">
-          <a class="logo" href="index.html">Na<span>Pamiatku</span></a>
+          <a class="logo" href="/">Na<span>Pamiatku</span></a>
           <button class="secondary small" data-theme-toggle>🌙</button>
         </div>
 
@@ -52,8 +52,8 @@
         </div>
 
         <div class="auth-foot">
-          <p>Nemáš účet? <a href="register.html">Zaregistruj sa</a></p>
-          <p><a href="index.html">← Späť na úvod</a></p>
+          <p>Nemáš účet? <a href="/register">Zaregistruj sa</a></p>
+          <p><a href="/">← Späť na úvod</a></p>
         </div>
       </div>
     </main>
@@ -66,7 +66,7 @@
     // Ak už je používateľ prihlásený, nemá čo robiť na prihlasovacej stránke.
     (async () => {
       const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) window.location.href = "dashboard.html";
+      if (session) window.location.href = "/dashboard";
     })();
 
     const messageEl = document.getElementById("message");
@@ -88,7 +88,7 @@
         showMessage(messageEl, "Nesprávny email alebo heslo.", "error");
         return;
       }
-      window.location.href = "dashboard.html";
+      window.location.href = "/dashboard";
     });
 
     document.getElementById("resetButton").addEventListener("click", async () => {
@@ -101,7 +101,7 @@
       }
 
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + window.location.pathname.replace("login.html", "set-password.html"),
+        redirectTo: window.location.origin + "/set-password",
       });
 
       if (error) {
