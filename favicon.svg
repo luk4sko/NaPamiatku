@@ -15,8 +15,8 @@
   <circle cx="256" cy="256" r="252" fill="url(#bg)" />
   <circle cx="256" cy="256" r="238" fill="none" stroke="#5a4c3d" stroke-width="2" opacity="0.6" />
   <circle cx="256" cy="256" r="190" fill="url(#glow)" filter="url(#soften)" />
-  <text x="180" y="327" font-family="'Playfair Display', Georgia, 'Times New Roman', serif"
+  <text x="188" y="322" font-family="'Playfair Display', Georgia, 'Times New Roman', serif"
         font-size="190" font-weight="800" fill="#f5f0ea" text-anchor="middle">N</text>
-  <text x="332" y="327" font-family="'Playfair Display', Georgia, 'Times New Roman', serif"
+  <text x="340" y="322" font-family="'Playfair Display', Georgia, 'Times New Roman', serif"
         font-size="190" font-weight="800" fill="#c89b6a" text-anchor="middle">P</text>
 </svg>
