@@ -431,3 +431,53 @@ Poučenie: skladanie URL pomocou `.replace()` na aktuálnej ceste je krehké —
 3. Prehliadač to automaticky, bez opýtania sa používateľa, nasleduje a pošle novú požiadavku na `/guest?slug=xyz`.
 
 Query string (`?slug=xyz`) sa pri presmerovaní zachová — týka sa len časti cesty pred otáznikom. Preto starý, už vytlačený alebo poslaný odkaz aj naďalej dovedie hosťa na správny event, len s jedným neviditeľným medzikrokom navyše. Toto presmerovanie je čisto na úrovni HTTP hlavičiek (server ↔ prehliadač), nemá nič spoločné s dátami v appke (napr. správami v knihe hostí) — tie sa načítajú až po tom, čo je hosť na finálnej `/guest` adrese.
+
+## 2026-09-15 — Migrácia na self-hosted Supabase (Docker + Cloudflare Tunnel)
+
+**Kontext:** Supabase Cloud free plán mal nedostatočný úložiskový limit pre svadobné fotky/videá. Presunuli sme backend na self-hosted Supabase v Dockeri na vlastnom Ubuntu serveri (pripojenom cez školskú sieť), zapojený do internetu cez Cloudflare Tunnel na `api.napamiatku.com`. Frontend na Verceli sa nemenil — zmenil sa len `SUPABASE_URL`/kľúč v `js/supabaseClient.js`.
+
+**1. Prečo nestačilo spustiť len posledný súbor z `sql/migrations` na novej, prázdnej databáze?**
+
+Migrácie nie sú samostatné "snímky" celej databázy — každá je len **rozdiel** oproti stavu, ktorý vytvorili tie predošlé (podobne ako Git commity: posledný commit sám osebe nedá celý projekt bez histórie pred ním). Napríklad posledný súbor (`20260908120000_harden_guest_photo_path.sql`) len nahrádza (`create or replace`) funkciu `guest_add_photo`, ktorá vo vnútri odkazuje na tabuľku `photos` a funkciu `find_event_by_password` — obe vznikli v oveľa skorších migráciách. Na prázdnej databáze by tak funkcia okamžite zlyhala pri prvom volaní. Preto bolo treba prehrať všetkých 14 súborov v chronologickom poradí (podľa časovej pečiatky v názve).
+
+Dôležité si uvedomiť: toto **je** fakticky vytvorenie novej databázy — len bezpečnejšou cestou, než písať finálnu schému ručne odznova. Ručné písanie by znamenalo v hlave poskladať výsledok všetkých 14 zmien (vrátane napr. opravy XSS diery v poslednej migrácii) a riskovať, že sa niečo vynechá alebo napíše inak, než je to naozaj na produkcii. Spustenie existujúcich, už otestovaných súborov v poradí dá zaručene identický výsledok.
+
+**2. Prečo pri mazaní testovacieho účtu (Majiteľ) nastala chyba `violates foreign key constraint "events_approved_by_fkey"`, hoci `owner_id` problém nerobil?**
+
+V schéme (`initial_schema.sql`) má `events.owner_id` definíciu `references auth.users(id) on delete cascade` — teda "keď zmažeš tohto používateľa, zmaž aj jeho eventy". Stĺpec `events.approved_by` (kto event schválil) ale žiadne takéto pravidlo pri vytvorení nedostal, takže platí defaultné správanie cudzieho kľúča v Postgrese: `NO ACTION` = zablokuj zmazanie, kým na daný riadok niečo odkazuje.
+
+Keďže testovací účet bol Majiteľ, ktorý schválil svoj vlastný event, bol zapísaný súčasne v `owner_id` aj v `approved_by`. `owner_id` by mazanie prepustil (cascade), ale `approved_by` ho zablokoval. Riešenie: zmazať najprv samotný event (`delete from public.events where id = ...`), čo vďaka `on delete cascade` na `photos.event_id` a `guestbook_messages.event_id` potiahlo aj tie, a až potom išlo zmazať používateľský účet bez prekážky.
+
+V produkcii to nevadí (nikdy sa nemaže majiteľský účet), ale je to drobná medzera v návrhu — `approved_by` by logicky mal mať skôr `on delete set null` (rovnako ako `client_id`), nie chýbajúce pravidlo.
+
+**3. Prečo museli byť DNS záznamy smerujúce na Vercel (`napamiatku.com`, `www`) v Cloudflare nastavené na "DNS only", zatiaľ čo `api.napamiatku.com` (pre tunel) musí byť "Proxied"?**
+
+"Proxied" (oranžový mrak) znamená, že prevádzka ide cez Cloudflarove servery — Cloudflare si tam rieši aj vlastný SSL certifikát, cachovanie, DDoS ochranu. Vercel robí presne to isté vo vlastnej réžii (vlastný Let's Encrypt certifikát). Keď sú obe vrstvy zapnuté naraz pred tou istou doménou, prekážajú si navzájom — Vercel nevie overiť doménu (SSL handshake zlyhá) a vznikajú presmerovacie slučky. Preto Vercel výslovne odporúča "DNS only": Cloudflare má len povedať, kde Vercel je, nie zasahovať do prevádzky.
+
+`api.napamiatku.com` naopak **musí** byť "Proxied", lebo Cloudflare Tunnel inak vôbec nefunguje — princípom tunela je, že Cloudflare prevádzku aktívne prijme na svojej hrane a pošle ju ďalej cez tunel k serveru; to sa dá len v režime, keď Cloudflare prevádzku skutočne spracúva ("Proxied"), nie keď len odpovedá na DNS dotaz ("DNS only").
+
+**Vedľajšie zistenie:** automatický import DNS záznamov pri pridávaní domény do Cloudflare **nezachytil 14 z 25 existujúcich záznamov** (poštové subdomény `mail`/`smtp`/`imap`/`pop3`/`webmail`, `admin`, aj DKIM CNAME záznamy `szn1-3._domainkey`). Keby sa nameservery prepli bez tejto kontroly, pošta a DKIM by prestali fungovať. Poučenie: pri prechode na iného DNS správcu vždy porovnať automatický scan s pôvodným zoznamom priamo u starého poskytovateľa, nespoliehať sa na "Automatic" import.
+
+## 2026-09-14 (2) — Plán migrácie na vlastný server (self-hosted Supabase)
+
+**Kontext:** Dôvod migrácie je úložiskový limit Supabase Cloud Free plánu — vlastný Ubuntu server má 500 GB SSD. Cieľ je nahradiť Supabase Cloud (`iaaaeplkexaqzjrfdzwc`) za self-hosted Supabase v Dockeri na vlastnom serveri. Frontend (statické HTML/CSS/JS na Verceli) sa nemení — mení sa len `SUPABASE_URL`/kľúč v `js/supabaseClient.js`, keďže Supabase je open-source a self-hosted verzia je ten istý softvér (Postgres, GoTrue, PostgREST, Storage API), len bežiaci na vlastnej infraštruktúre namiesto Supabase servera. Táto session bola plánovacia — samotná migrácia (Docker, tunel, replay migrácií) prebehne v ďalších sessions.
+
+**1. Prečo self-hosted Supabase na serveri potrebuje Cloudflare Tunnel a nestačí len spustiť Docker?**
+
+Docker kontajnery bežia lokálne na serveri, dostupné len z toho istého počítača/siete. Frontend appky je ale hostovaný na Verceli (verejný internet) a volajú ho aj hostia na svadbe zo svojich telefónov — teda cudzí ľudia odkiaľkoľvek, z akejkoľvek siete. Server musí byť teda dosiahnuteľný z verejného internetu, nielen z domácej siete.
+
+Bežné riešenie by bol **port forwarding** na routeri (presmerovanie verejnej IP na server doma). To ale nefunguje, lebo poskytovateľ internetu používa **CGNAT** (Carrier-Grade NAT) — jedna verejná IP adresa sa zdieľa medzi viacero domácností naraz, takže server nemá skutočne vlastnú verejnú IP, na ktorú by sa dalo smerovať.
+
+**Cloudflare Tunnel** to obchádza opačným smerom: namiesto toho, aby niekto zvonka otváral spojenie *dovnútra* k serveru (čo CGNAT blokuje), server sám **aktívne vytvorí odchádzajúce spojenie** von, ku Cloudflare infraštruktúre. Odchádzajúce spojenia CGNAT nijako neobmedzuje. Návštevníci potom volajú verejnú adresu (`api.napamiatku.com`), Cloudflare to presmeruje cez už existujúci tunel na server — bez toho, aby čokoľvek muselo byť "otvorené" smerom dnu.
+
+**2. Prečo sa `ANON_KEY`/`SERVICE_ROLE_KEY` negenerujú ručne, ale cez skript `add-new-auth-keys.sh`?**
+
+Tieto kľúče nie sú náhodné reťazce — sú to **JWT (JSON Web Token)**, kryptograficky podpísané pomocou `JWT_SECRET` (ktorý vygeneruje `generate-keys.sh`). Vnútri JWT je zakódovaná rola (`anon` alebo `service_role`) a dátum expirácie; podpis dokazuje, že token vydal niekto, kto pozná `JWT_SECRET` — presne to si PostgREST a GoTrue pri každom requeste overujú, aby vedeli, akú rolu má volajúci.
+
+Keby sa kľúč vytvoril ručne (napr. len skopírovaním náhodného textu), nebol by to platný podpísaný JWT a server by ho jednoducho odmietol. Skript použije rovnaký algoritmus podpisovania ako samotné GoTrue/PostgREST, takže výsledok je zaručene kompatibilný. Ako user výstižne povedal — pri ručnom prepisovaní takýchto hodnôt je ľahké sa pomýliť (preklep, zlý formát, zlá dĺžka), a keďže ide o bezpečnostné kľúče, oplatí sa nechať to na overený skript namiesto ručnej práce.
+
+**3. Prečo musí byť `SMTP_ADMIN_EMAIL` rovnaké ako `SMTP_USER` (`info@napamiatku.com`)?**
+
+`SMTP_USER` je prihlasovacie meno, ktorým sa GoTrue autentifikuje voči `smtp.seznam.cz`. `SMTP_ADMIN_EMAIL` je adresa, ktorá sa použije ako **From** (odosielateľ) vo výstupných auth e-mailoch (potvrdenie registrácie, reset hesla).
+
+Toto priamo súvisí s poznámkou o SPF/DKIM/DMARC z 2026-09-05: SMTP servery (Seznam nevynímajúc) bežne odmietnu alebo označia ako spam mail, kde sa adresa vo `From` hlavičke nezhoduje s tým, pod akým účtom sa odosielateľ reálne prihlásil — je to ochrana proti spoofingu (niekto sa vydáva za cudziu adresu). Keďže jediná funkčná schránka na `smtp.seznam.cz` je `info@napamiatku.com`, musí byť použitá na oboch miestach zároveň, inak by auth e-maily buď vôbec neodišli, alebo skončili v spame — presne ten istý druh problému, aký sa už raz riešil pri SPF/DKIM.
