@@ -481,3 +481,25 @@ Keby sa kľúč vytvoril ručne (napr. len skopírovaním náhodného textu), ne
 `SMTP_USER` je prihlasovacie meno, ktorým sa GoTrue autentifikuje voči `smtp.seznam.cz`. `SMTP_ADMIN_EMAIL` je adresa, ktorá sa použije ako **From** (odosielateľ) vo výstupných auth e-mailoch (potvrdenie registrácie, reset hesla).
 
 Toto priamo súvisí s poznámkou o SPF/DKIM/DMARC z 2026-09-05: SMTP servery (Seznam nevynímajúc) bežne odmietnu alebo označia ako spam mail, kde sa adresa vo `From` hlavičke nezhoduje s tým, pod akým účtom sa odosielateľ reálne prihlásil — je to ochrana proti spoofingu (niekto sa vydáva za cudziu adresu). Keďže jediná funkčná schránka na `smtp.seznam.cz` je `info@napamiatku.com`, musí byť použitá na oboch miestach zároveň, inak by auth e-maily buď vôbec neodišli, alebo skončili v spame — presne ten istý druh problému, aký sa už raz riešil pri SPF/DKIM.
+
+## 2026-09-16 — Výpadok po reštarte servera (Docker, DNS, Cloudflare Tunnel)
+
+**Kontext:** Po vypnutí a opätovnom zapnutí Ubuntu servera prestalo fungovať prihlásenie na napamiatku.com aj Immich (osobná fotogaléria bežiaca na tom istom serveri, mimo NaPamiatku projektu). Ukázalo sa, že išlo o **štyri samostatné, na sebe nezávislé poruchy**, ktoré sa všetky prejavili naraz len preto, že mali spoločný spúšťač (reštart servera). Stručné zhrnutie bez kvízu — plné vysvetlenia boli v chate, dá sa k nim vrátiť pri príprave na obhajobu.
+
+**1. Docker štartoval skôr než Tailscale (VPN na vzdialený prístup na server).** Niektoré kontajnery (`supabase-envoy`, `supabase-pooler`, `immich_server`) majú v `docker-compose.yml` porty naviazané priamo na Tailscale IP servera (`100.81.135.86:PORT`), nie na `0.0.0.0`. Pri boote Docker naštartoval skôr, než Tailscale stihol túto IP vôbec prideliť sieťovému rozhraniu → `cannot assign requested address` → kontajnery spadli a nenaštartovali sa späť.
+
+*Trvalá oprava:* `/etc/systemd/system/docker.service.d/override.conf` — `After=`/`Requires=tailscaled.service` (poradie služieb) **plus** `ExecStartPre` skript, ktorý pred štartom Dockera aktívne čaká (max 30×1s), kým `tailscale ip -4` vráti platnú IP. Len `After=`/`Requires=` nestačilo, lebo systemd považuje `tailscaled.service` za "bežiaci" hneď po spustení procesu, nie až keď má reálne pridelenú IP (to trvá o pár sekúnd dlhšie).
+
+**2. Tailscale search doména unikala do DNS kontajnerov.** Tailscale nastavuje na serveri `/etc/resolv.conf` so `search tailc57237.ts.net`. Docker túto search doménu pri vytváraní kontajnera skopíroval aj do jeho vlastného DNS nastavenia. Výsledok: keď si `supabase-pooler` alebo `immich_server` pri štarte zisťovali svoje meno / meno databázy (`hostname -f`, `getaddrinfo('database')`), DNS resolver im k menu automaticky prilepil `.tailc57237.ts.net` a hľadal neexistujúci názov → `NXDOMAIN` / `EAI_AGAIN` → kontajner spadol → reštart → dookola.
+
+*Trvalá oprava:* `/etc/docker/daemon.json` s `{"dns-search": ["."]}` (RFC hodnota pre "žiadna search doména") + reštart Docker démona. Dôležitý detail: táto zmena platí len pre **novovytvorené** kontajnery, nie pre existujúce — bolo treba spustiť `docker compose up -d --force-recreate <služba>` pre `supavisor` aj `immich-server`, aby dostali nový `resolv.conf`. Samotný `docker start` (napr. po reštarte servera) `resolv.conf` nemení.
+
+**3. `supabase-envoy` občas nepublikoval svoj port, aj keď bol "healthy".** Toto zostáva **nevyriešená, zriedkavá chyba** — kontajner sa naštartuje a prejde healthcheckom, ale `docker ps`/`docker port` neukazuje žiadnu väzbu na `8000`, a spojenie zvonka dostane "Connection refused". V logoch (`journalctl -u docker`) sa nenašla žiadna chyba, ktorá by to vysvetľovala. Zopakovalo sa to aj po oprave bodu 1, takže to nie je (len) ten istý bind-race.
+
+*Dočasná oprava (funguje spoľahlivo, ale manuálne):* `docker compose up -d --force-recreate api-gw` v `/home/lukasko/servers/napamiatku-web/docker`. Pre školský projekt je v poriadku mať toto zdokumentované ako known issue s jasným manuálnym postupom, namiesto hľadania dokonalého riešenia bez jasnej príčiny.
+
+**4. Cloudflare Tunnel smeroval na `localhost:8000` namiesto na skutočnú adresu.** `/etc/cloudflared/config.yml` mal `service: http://localhost:8000`, ale Envoy (z bodu 1 vyššie) počúva len na `100.81.135.86:8000`, nie na `localhost`. Tunel teda bežal a bol pripojený ku Cloudflare, ale nevedel sa dostať k Envoy — `cloudflared` logoval "Unable to reach the origin service."
+
+*Oprava:* zmena `service:` na `http://100.81.135.86:8000` v `config.yml` + `sudo systemctl restart cloudflared`. Toto je jednorazová oprava konfiguračného súboru, po reštarte servera ostáva platná (nič sa tu nerecreatuje ako pri Docker kontajneroch).
+
+**Vedľajšie zistenie k diagnostike:** `systemctl cat docker.service` vedel byť zavádzajúci — pri dlhšom výstupe orezal pager zobrazenie presne na hranici pôvodného súboru, takže to vyzeralo, akoby sa override vôbec neaplikoval, hoci `systemctl show docker.service -p DropInPaths` aj `-p ExecStartPre` ho celý čas správne hlásili. Pri overovaní systemd override-ov je spoľahlivejšie použiť `--no-pager` alebo `systemctl show -p <vlastnosť>` než sa spoliehať na orezaný `cat`.
