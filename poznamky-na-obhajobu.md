@@ -503,3 +503,53 @@ Toto priamo súvisí s poznámkou o SPF/DKIM/DMARC z 2026-09-05: SMTP servery (S
 *Oprava:* zmena `service:` na `http://100.81.135.86:8000` v `config.yml` + `sudo systemctl restart cloudflared`. Toto je jednorazová oprava konfiguračného súboru, po reštarte servera ostáva platná (nič sa tu nerecreatuje ako pri Docker kontajneroch).
 
 **Vedľajšie zistenie k diagnostike:** `systemctl cat docker.service` vedel byť zavádzajúci — pri dlhšom výstupe orezal pager zobrazenie presne na hranici pôvodného súboru, takže to vyzeralo, akoby sa override vôbec neaplikoval, hoci `systemctl show docker.service -p DropInPaths` aj `-p ExecStartPre` ho celý čas správne hlásili. Pri overovaní systemd override-ov je spoľahlivejšie použiť `--no-pager` alebo `systemctl show -p <vlastnosť>` než sa spoliehať na orezaný `cat`.
+
+## 2026-09-16 (2) — Úvodná stránka: animácie, ikony, čísla krokov a identita v hlavičke
+
+**Kontext:** Úprava vzhľadu úvodnej stránky na základe pripomienok — málo animácií, mätúce hover efekty, emoji a „AI vzhľad". Neskôr pribudlo zobrazenie prihláseného používateľa v hlavičke aplikácie. Kvíz na konci relácie.
+
+**1. Sťažoval som sa, že na stránke nefungujú animácie. Kde bola chyba?**
+
+*Odpoveď: chyba bola u mňa, musel som si zapnúť animácie vo Windowse.* — Správne.
+
+Vo Windowse (Nastavenia → Zjednodušenie ovládania → Vizuálne efekty → Efekty animácie) som mal animácie vypnuté. Prehliadač to hlási stránke cez `prefers-reduced-motion: reduce` a `style.css` toto nastavenie **zámerne rešpektuje** — vypne nábehy pri scrollovaní, nábeh hero sekcie, parallax aj plynulý posun na kotvu. Je to prístupnostná funkcia: niektorým ľuďom je z animácií fyzicky nevoľno. Kód teda fungoval správne, len robil presne to, o čo ho systém požiadal.
+
+**2. Prečo prekážal hover efekt na kartách krokov, dlaždiciach funkcií a štítkoch „Pre koho"?**
+
+*Odpoveď: vyzeralo to tak, že sa na to dá kliknúť, aj keď sa nedalo. Bolo to mätúce.* — Správne.
+
+Karty sa pri prejdení myšou nadvihli a dostali zlaté orámovanie. To je vizuálny signál, ktorý v rozhraniach znamená „toto je tlačidlo alebo odkaz". Žiadny z tých prvkov ale odkaz nie je — je to obyčajný text. Používateľ teda klikol a nič sa nestalo. Hover efekty odvtedy zostali len na skutočných tlačidlách a odkazoch.
+
+**3. Prečo číslice 1, 2, 3 nesedeli v strede krúžkov a prečo bola „3" najhoršia?**
+
+*Odpoveď: bolo to fontom, ktorý používame.* — Správne.
+
+Presnejšie: Playfair Display má predvolene **minuskové (staroslohové) číslice**. Pri nich časť číslic klesá pod účiaru, podobne ako písmeno „g" alebo „j" — a „3" je práve jedna z nich. „1" a „2" stáli na účiare, „3" pod ňu klesala, takže sa všetky tri nemohli zarovnať naraz, nech by sa CSS nastavilo akokoľvek.
+
+Riešenie: `font-variant-numeric: lining-nums` prepne písmo na **verzálne číslice**, ktoré majú všetky rovnakú výšku a stoja na účiare. Potom stačilo doladiť jeden spoločný posun (`transform: translateY(-0.04em)`), lebo účiara písma nie je presne v strede riadku. Odchýlku som odmeral tak, že som krúžok dočasne zväčšil a vykreslil doňho značku presného stredu.
+
+**4. Čo robí `scroll-margin-top: 4.5rem` pri kotvách v hlavičke?**
+
+*Odpoveď: tak by to nebolo také plynulé.* — Nesprávne, toto je dobré si zapamätať.
+
+Plynulosť zabezpečuje **iná** vlastnosť: `scroll-behavior: smooth`. `scroll-margin-top` s plynulosťou nemá nič spoločné — určuje, **kde presne sa scrollovanie zastaví**.
+
+Hlavička je `position: sticky`, drží sa navrchu obrazovky a meria 67 px. Bez tohto odsadenia by prehliadač posunul stránku tak, aby bol vrch sekcie presne na vrchu okna — lenže tam je hlavička, takže by prekryla nadpis sekcie. `scroll-margin-top` povie „zastav o 4,5 rem vyššie", takže sekcia pristane tesne pod hlavičkou. Overené meraním: sekcia zastaví 72 px od vrchu pri hlavičke vysokej 67 px.
+
+**5. Prečo na skrytie odznaku s rolou nestačil atribút `hidden` a musel pribudnúť `.nav-identity[hidden] { display: none; }`?**
+
+*Odpoveď: neviem.*
+
+Atribút `hidden` nie je kúzlo — funguje tak, že prehliadač prvku vo svojom vstavanom štýle nastaví `display: none`. Ja som ale tomu istému prvku v `style.css` nastavil `display: flex` (aby boli email a odznak vedľa seba).
+
+A tu platí pravidlo kaskády: **štýly napísané autorom stránky majú prednosť pred vstavanými štýlmi prehliadača.** Rozhoduje sa to ešte pred špecificitou, na úrovni takzvaného pôvodu štýlu. `display: flex` teda vyhralo a `hidden` nerobilo nič — odznak by bol viditeľný stále a pred načítaním údajov by v lište bliklo prázdne koliesko. Preto muselo `display: none` pribudnúť ako autorské pravidlo.
+
+**Ďalšie veci z tejto relácie (bez kvízu, ale dobré vedieť):**
+
+- **Parallax fotiek beží bez JavaScriptu.** Používa `animation-timeline: view()`, kde časovú os neurčuje čas, ale poloha prvku v okne. Narazil som pritom na pascu: `view()` meria pohyb voči najbližšiemu rodičovi, ktorý oreže obsah — a tým bol rám fotky s `overflow: hidden` (kvôli zaobleným rohom). Fotka sa v ňom nikdy neposunie, takže animácia stála. Riešením bola **pomenovaná časová os** (`view-timeline-name` na ráme, `animation-timeline: --nazov` na fotke): meria sa pohyb rámu po stránke a fotka sa naň odvolá.
+
+- **Špecificita selektorov v praxi.** Pravidlo `.icon-button { padding: 0 }` neprebilo `button.small { padding: 0.4rem 0.7rem }`, lebo `button.small` je element + trieda, kým `.icon-button` je len trieda. Ikona sa preto stlačila na 10 px namiesto 17. Oprava bola zapísať ho tiež ako element + triedu: `button.icon-button`.
+
+- **Prečo `renderIdentity()` berie session aj profil ako parametre** namiesto toho, aby si ich načítala sama: dashboard už profil načítaný má, takže by sa rovnaký dopyt do databázy poslal druhýkrát zbytočne.
+
+- **Prečo projekt nemôže bežať v podpriečinku** (napr. `http://localhost/NaPamiatku/`): stránky používajú 37 absolútnych ciest (`href="/"`, `/favicon.svg`, `/login`), ktoré sa vždy počítajú od koreňa adresy. V podpriečinku by ukazovali mimo projekt. Preto musí byť projekt v koreni — či už cez `python -m http.server`, alebo cez virtuálny host v Apache.
