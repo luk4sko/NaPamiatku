@@ -105,6 +105,42 @@ a {
   align-items: center;
 }
 
+/* Kto je práve prihlásený - v lište vedľa tlačidla na odhlásenie. */
+.nav-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Samotný atribút `hidden` by tu nestačil: `display: flex` z pravidla vyššie
+   je autorský štýl a prebije `display: none`, ktorý prvku dáva prehliadač.
+   Bez tohto riadku by v lište blikol prázdny odznak ešte pred načítaním. */
+.nav-identity[hidden] {
+  display: none;
+}
+
+/* Email môže byť ľubovoľne dlhý, preto dostane strop a prebytok sa skráti
+   trojbodkou - inak by roztlačil lištu a vytlačil z nej tlačidlá. */
+.nav-identity-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 14rem;
+}
+
+@media (max-width: 700px) {
+  .nav-identity-email { max-width: 7rem; }
+}
+
+/* Na najužších displejoch už na email miesto nie je. Rola zostáva - práve
+   tá je pri prepínaní medzi účtom majiteľa a klienta najdôležitejšia. */
+@media (max-width: 460px) {
+  .nav-identity-email { display: none; }
+}
+
 h2 {
   font-size: 1.4rem;
   margin: 2.5rem 0 1rem;

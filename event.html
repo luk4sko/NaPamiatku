@@ -12,7 +12,10 @@
     <div class="site-nav-inner">
       <a class="logo" href="/">Na<span>Pamiatku</span></a>
       <div class="top-bar-actions">
-        <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
+        <span class="nav-identity" data-identity hidden>
+          <span class="nav-identity-email" data-identity-email></span>
+          <span class="badge" data-identity-role></span>
+        </span>
         <button class="secondary small" data-logout>Odhlásiť sa</button>
       </div>
     </div>
@@ -166,6 +169,8 @@
     async function init() {
       const session = await requireAuth();
       if (!session) return;
+
+      renderIdentity(session, await loadProfile(session.user.id));
 
       const eventId = getEventId();
       if (!eventId) return showAccessDenied();

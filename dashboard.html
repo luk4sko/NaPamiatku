@@ -12,7 +12,10 @@
     <div class="site-nav-inner">
       <a class="logo" href="/">Na<span>Pamiatku</span></a>
       <div class="top-bar-actions">
-        <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
+        <span class="nav-identity" data-identity hidden>
+          <span class="nav-identity-email" data-identity-email></span>
+          <span class="badge" data-identity-role></span>
+        </span>
         <button class="secondary small" data-logout>Odhlásiť sa</button>
       </div>
     </div>
@@ -23,7 +26,6 @@
       <div class="top-bar">
         <div>
           <h1>Dashboard</h1>
-          <p class="muted" id="welcome"></p>
         </div>
       </div>
     </div>
@@ -106,8 +108,7 @@
       if (!session) return;
 
       profile = await loadProfile(session.user.id);
-      const roleLabel = profile && profile.role === "majitel" ? "Majiteľ" : "Klient";
-      document.getElementById("welcome").textContent = session.user.email + " — " + roleLabel;
+      renderIdentity(session, profile);
 
       if (profile && profile.role === "majitel") {
         document.getElementById("majitelSection").classList.remove("hidden");

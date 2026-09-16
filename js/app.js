@@ -109,6 +109,20 @@ async function loadProfile(userId) {
   return data;
 }
 
+// Vypíše do hlavičky, kto je práve prihlásený. Session aj profil berie ako
+// parametre - stránka ich už má načítané, takže sa profil nedopytuje druhýkrát.
+function renderIdentity(session, profile) {
+  const roleLabel = profile && profile.role === "majitel" ? "Majiteľ" : "Klient";
+
+  document.querySelectorAll("[data-identity]").forEach((slot) => {
+    slot.querySelector("[data-identity-email]").textContent = session.user.email;
+    slot.querySelector("[data-identity-role]").textContent = roleLabel;
+    // Skryté zostáva dovtedy, kým údaje nemáme - inak by v lište blikol
+    // prázdny odznak ešte pred odpoveďou zo servera.
+    slot.hidden = false;
+  });
+}
+
 async function logout() {
   await supabaseClient.auth.signOut();
   window.location.href = "/login";
