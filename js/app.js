@@ -21,10 +21,22 @@ function toggleTheme() {
   updateThemeButtons();
 }
 
+// Ikonky sú tenké obrysové SVG (stroke), nie emoji - emoji vykresľuje každý
+// systém inak a v tlačidle pôsobí ako cudzí prvok. currentColor znamená, že
+// sa ikona farbí podľa textu tlačidla, takže funguje v oboch režimoch.
+const SUN_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/>' +
+  '<path d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4 17 7M7 17l-1.6 1.6M18.6 18.6 17 17M7 7 5.4 5.4"/></svg>';
+
+const MOON_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+  '<path d="M20.5 14.3A8.6 8.6 0 0 1 9.7 3.5a8.6 8.6 0 1 0 10.8 10.8Z"/></svg>';
+
 function updateThemeButtons() {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-    button.textContent = isDark ? "☀️" : "🌙";
+    // Tlačidlo ponúka opak aktuálneho stavu: v tmavom režime slniečko.
+    button.innerHTML = isDark ? SUN_ICON : MOON_ICON;
     button.title = isDark ? "Prepnúť na svetlý režim" : "Prepnúť na tmavý režim";
   });
 }

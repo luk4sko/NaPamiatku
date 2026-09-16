@@ -277,6 +277,33 @@ button.large {
   font-size: 1.05rem;
 }
 
+/* Tlačidlo, v ktorom je len ikona. Pevná veľkosť drží rozmer aj v čase, keď
+   doň JS ešte nestihol ikonu vložiť - inak by lišta pri načítaní poskočila.
+
+   Zápis `button.icon-button` (nie len `.icon-button`) je tu zámerne: pravidlo
+   musí prebiť `button.small`, ktoré má tiež element + triedu. Pri samotnej
+   triede by vyhralo `button.small` a jeho odsadenie by ikonu stlačilo. */
+button.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  padding: 0;
+}
+
+/* Obrysové ikony: farbu preberajú z textu (currentColor), takže fungujú
+   v tmavom aj svetlom režime bez druhej sady súborov. */
+.icon-button svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* Formulár je flex stĺpec, takže by sa tlačidlo roztiahlo na celú šírku karty.
    Na širokých stránkach ho necháme len tak veľké, aké potrebuje... */
 form > button {
@@ -661,6 +688,20 @@ progress {
    ÚVODNÁ STRÁNKA (index.html)
    ====================================================================== */
 
+/* Odkazy v hlavičke vedú na kotvy (#ako-to-funguje a spol.). Bez tohto by
+   prehliadač na cieľ skočil okamžite a človek stratí prehľad, kam sa dostal.
+   Plynulý posun mu dá vidieť, ktorým smerom a ako ďaleko sa stránka pohla. */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hlavička je prilepená navrchu, takže by prekryla začiatok sekcie.
+   scroll-margin-top posunie cieľ zastavenia o jej výšku (67 px) nižšie -
+   nie je to odsadenie obsahu, platí výhradne pre skok na kotvu. */
+section[id] {
+  scroll-margin-top: 4.5rem;
+}
+
 .site-nav {
   position: sticky;
   top: 0;
@@ -839,6 +880,36 @@ progress {
     grid-template-columns: 1.05fr 0.95fr;
     gap: 4rem;
   }
+}
+
+/* Nábeh hero sekcie hneď po načítaní. Prvky prichádzajú po sebe, nie naraz -
+   oko tak prirodzene prejde zhora nadol až k tlačidlám. Výplň `backwards`
+   drží prvok skrytý aj počas čakania na svoj štart; bez nej by bliknul. */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero-copy > * {
+  animation: hero-rise 0.95s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.hero-copy > *:nth-child(1) { animation-delay: 0.05s; }
+.hero-copy > *:nth-child(2) { animation-delay: 0.13s; }
+.hero-copy > *:nth-child(3) { animation-delay: 0.21s; }
+.hero-copy > *:nth-child(4) { animation-delay: 0.29s; }
+.hero-copy > *:nth-child(5) { animation-delay: 0.37s; }
+
+/* Telefón s fotkami nabieha o niečo dlhšie - je to najväčší prvok na
+   obrazovke a rýchly pohyb by pri takej ploche pôsobil trhane. */
+.hero-visual {
+  animation: hero-rise 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
 }
 
 .hero h1 {
@@ -1064,25 +1135,48 @@ progress {
   display: grid;
   gap: 2rem;
   counter-reset: step;
+  /* Priemer krúžku je premenná, lebo z neho počíta výšku aj spojnica medzi
+     krokmi. Pri zmene veľkosti tak netreba prepisovať dve miesta. */
+  --step-dot: 3rem;
+  --step-gap: 2.5rem;
 }
 
 @media (min-width: 760px) {
-  .steps { grid-template-columns: repeat(3, 1fr); gap: 2.5rem; }
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--step-gap);
+  }
+
+  .step {
+    position: relative;
+  }
+
+  /* Tenká spojnica cez medzeru v mriežke, vo výške stredu krúžku. Ukazuje,
+     že kroky na seba nadväzujú - bez nej to sú tri nesúvisiace karty.
+     Smerom k ďalšiemu kroku bledne, aby nepôsobila ako orámovanie. */
+  .step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: calc(1.85rem + var(--step-dot) / 2);
+    left: 100%;
+    width: var(--step-gap);
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      var(--border-strong),
+      color-mix(in srgb, var(--border-strong) 15%, transparent)
+    );
+  }
 }
 
+/* Karta je len text, nie odkaz. Zdvih a zvýraznenie pri prejdení myšou by
+   sľubovali kliknutie, ktoré nikam nevedie - preto tu žiaden hover nie je. */
 .step {
   counter-increment: step;
   padding: 1.85rem 1.6rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-}
-
-.step:hover {
-  border-color: var(--accent);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
 }
 
 .step::before {
@@ -1090,16 +1184,31 @@ progress {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--step-dot);
+  height: var(--step-dot);
   margin-bottom: 1.15rem;
   border-radius: 50%;
   border: 1px solid var(--accent);
   color: var(--accent);
   background: var(--accent-soft);
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 600;
+
+  /* Playfair má predvolene minuskové (staroslohové) číslice: "3" klesá pod
+     účiaru, "1" a "2" nie. Preto sa v krúžku nikdy nezarovnali rovnako a
+     pôsobili posunuté. Verzálne číslice majú všetky rovnakú výšku a stoja
+     na účiare, takže ich už stačí zarovnať raz pre všetky. */
+  font-variant-numeric: lining-nums;
+
+  /* Riadkovanie z <body> (1.6) by v krúžku vyrobilo zbytočne vysoký riadok.
+     Hodnota 1 ho zmenší na samotné písmo a zarovnanie na stred je presnejšie. */
+  line-height: 1;
+
+  /* Účiara nie je v strede riadku, preto číslica sadne kúsok pod stred krúžku.
+     Odchýlku som odmeral na zväčšenom krúžku so značkou stredu: 0.04 em.
+     V em, nie v px - drží teda aj pri zmene veľkosti písma či krúžku. */
+  transform: translateY(-0.04em);
 }
 
 .step h3 {
@@ -1133,6 +1242,7 @@ progress {
   }
 }
 
+/* Rovnako ako pri .step - dlaždica nie je odkaz, takže nereaguje na myš. */
 .bento-card {
   position: relative;
   overflow: hidden;
@@ -1140,13 +1250,6 @@ progress {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.6rem;
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-}
-
-.bento-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
 }
 
 .bento-card h3 {
@@ -1160,19 +1263,18 @@ progress {
   font-size: 0.95rem;
 }
 
-/* Ikonka v dlaždici pôsobí ako súčasť dizajnu, nie ako emoji vlepené do textu. */
+/* Ikonka dlaždice je tenká obrysová kresba, nie emoji. Emoji vykresľuje každý
+   systém vlastným štýlom, takže sada ikon nikdy nepôsobí ako jeden celok. */
 .feature-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.6rem;
-  height: 2.6rem;
-  margin-bottom: 1rem;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  font-size: 1.3rem;
-  line-height: 1;
+  display: block;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-bottom: 1.1rem;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .bento-hero {
@@ -1188,10 +1290,7 @@ progress {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s ease;
 }
-
-.bento-hero:hover .bento-bg { transform: scale(1.06); }
 
 /* Tmavý prechod pod textom. Bez neho by text zmizol vždy, keď je pod ním
    svetlá časť fotky - a to sa pri fotkách nedá dopredu ustrážiť. */
@@ -1200,6 +1299,12 @@ progress {
   width: 100%;
   padding: 6rem 1.7rem 1.7rem;
   background: linear-gradient(to top, rgba(10, 8, 7, 0.93) 25%, rgba(10, 8, 7, 0.55) 65%, transparent);
+}
+
+/* Na fotke ide ikona do biela rovnako ako nadpis. Akcentová farba je
+   v svetlom režime tmavohnedá a na tmavom prechode by sa strácala. */
+.bento-hero .feature-icon {
+  stroke: #fff;
 }
 
 .bento-hero h3 {
@@ -1222,6 +1327,7 @@ progress {
   gap: 0.6rem;
 }
 
+/* Štítok je popis, nie filter ani odkaz - preto sa pod myšou nehýbe. */
 .pill {
   border: 1px solid var(--border-strong);
   border-radius: 999px;
@@ -1229,13 +1335,6 @@ progress {
   font-size: 0.925rem;
   color: var(--text-muted);
   background: var(--surface);
-  transition: border-color 0.2s, color 0.2s, transform 0.2s;
-}
-
-.pill:hover {
-  border-color: var(--accent);
-  color: var(--text);
-  transform: translateY(-2px);
 }
 
 /* Záverečná výzva */
@@ -1256,7 +1355,7 @@ progress {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.55;
+  opacity: 0.68;
 }
 
 /* Prekryv v farbe pozadia drží text čitateľný nezávisle od toho,
@@ -1276,8 +1375,10 @@ progress {
   margin: 0 0 0.85rem;
 }
 
+/* Na rozdiel od ostatných sekcií tu text leží na fotke, takže stlmená
+   farba by bola na hrane čitateľnosti. Odstup od nadpisu drží jeho veľkosť. */
 .cta p {
-  color: var(--text-muted);
+  color: var(--text);
   max-width: 34rem;
   margin: 0 auto 2rem;
   font-size: 1.05rem;
@@ -1580,14 +1681,11 @@ progress {
   box-shadow: var(--shadow);
 }
 
+/* Ukážkové fotky sa nedajú otvoriť, takže sa pri prejdení myšou nepribližujú.
+   Skutočná galéria v appke sa otvoriť dá - tam zväčšenie zmysel má. */
 .shot img {
   width: 100%;
   display: block;
-  transition: transform 0.5s ease;
-}
-
-.shot:hover img {
-  transform: scale(1.06);
 }
 
 /* Prezývka hosťa - rovnaký princíp ako v skutočnej galérii v appke. */
@@ -1609,10 +1707,15 @@ progress {
 /* Skrývame len ak beží JS (trieda .js na <html>). Bez tejto poistky by pri
    vypnutom JavaScripte zostala celá stránka neviditeľná - obsah by sa už
    nemal ako odhaliť. --d je posun štartu, aby prvky nabiehali za sebou. */
+/* Krivka cubic-bezier(0.16, 1, 0.3, 1) je „expo out": prvok vyrazí rýchlo
+   a posledný kúsok dobrzďuje veľmi pomaly. Pôsobí to ako dojazd fyzického
+   predmetu - preto ju používa väčšina dnešných rozhraní. */
 .js .reveal {
   opacity: 0;
-  transform: translateY(26px);
-  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(34px);
+  transition:
+    opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.95s cubic-bezier(0.16, 1, 0.3, 1);
   transition-delay: var(--d, 0s);
 }
 
@@ -1621,9 +1724,56 @@ progress {
   transform: none;
 }
 
+/* ---------- Posun veľkých fotiek pri scrollovaní ---------- */
+
+/* Fotka sa vo svojom ráme pomaly posúva, kým prechádza obrazovkou. Vzniká
+   dojem hĺbky - akoby ležala za stránkou a nie v nej.
+
+   Časovú os udáva `animation-timeline: view()`: prehliadač prehráva animáciu
+   podľa toho, kde sa prvok práve nachádza v okne, nie podľa času. Nepotrebuje
+   teda žiadny JS ani počúvanie scroll eventov, ktoré bývajú na mobiloch trhané.
+
+   @supports je poistka - prehliadače, ktoré túto vlastnosť nepoznajú, blok
+   preskočia a fotka zostane stáť. Nič sa nerozbije. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Časovú os musí vyhlásiť rám, nie samotná fotka. Samotné `view()` totiž
+       meria pohyb prvku voči najbližšiemu rodičovi, ktorý oreže obsah - a tým
+       je tu práve rám (má `overflow: hidden` kvôli zaobleným rohom). Fotka sa
+       v ňom nikdy neposunie, takže by animácia stála na jednom mieste.
+       Pomenovaná os `view-timeline-name` toto obchádza: meria sa pohyb rámu
+       po stránke a fotka sa naň len odvolá. */
+    .cta { view-timeline-name: --cta-photo; }
+    .bento-hero { view-timeline-name: --bento-photo; }
+
+    .cta-bg,
+    .bento-bg {
+      animation: photo-parallax linear both;
+      animation-range: entry 0% exit 100%;
+    }
+
+    /* Musí nasledovať až za skratkou `animation` - tá by inak priradenie
+       časovej osi vynulovala späť na predvolené `auto`. */
+    .cta-bg { animation-timeline: --cta-photo; }
+    .bento-bg { animation-timeline: --bento-photo; }
+  }
+}
+
+/* Zväčšenie musí byť väčšie než posun, inak by sa pri krajnej polohe
+   odhalil prázdny okraj rámu. */
+@keyframes photo-parallax {
+  from { transform: translateY(-5%) scale(1.14); }
+  to { transform: translateY(5%) scale(1.14); }
+}
+
 /* Kto má v systéme zapnuté „obmedziť pohyb" (napr. kvôli nevoľnosti
    z animácií), nedostane ani jednu z nich. */
 @media (prefers-reduced-motion: reduce) {
+  /* Späť na okamžitý skok na kotvu - plynulý posun je tiež pohyb. */
+  html {
+    scroll-behavior: auto;
+  }
+
   .js .reveal {
     opacity: 1;
     transform: none;
@@ -1631,12 +1781,12 @@ progress {
   }
 
   .marquee-track,
-  .float-card {
+  .float-card,
+  .hero-copy > *,
+  .hero-visual {
     animation: none;
   }
 
-  .bento-bg,
-  .shot img,
   .phone-set {
     transition: none;
   }
