@@ -72,7 +72,7 @@
           <div class="dropzone" id="dropzone">
             <div class="dropzone-icon"><span data-icon="upload"></span></div>
             <h3>Pridaj fotky aj ty</h3>
-            <p class="muted">Pretiahni ich sem alebo vyber zo zariadenia. Veľké fotky automaticky zmenšíme.</p>
+            <p class="muted">Pretiahni ich sem alebo vyber zo zariadenia. Veľké fotky automaticky zmenšíme. Video môže mať najviac 100 MB (asi minúta).</p>
             <label class="file-button">
               <span data-icon="image"></span>Vybrať fotky alebo videá
               <input type="file" id="photoInput" accept="image/*,video/*" multiple />
@@ -865,6 +865,9 @@
         // Video sa (na rozdiel od fotiek) neprekomprimúva - zmenšenie videa
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
         const isVideo = file.type.startsWith("video/");
+        const sizeError = videoSizeError(file);
+        if (sizeError) { list.fail(index, sizeError); showToast(sizeError, "error"); continue; }
+
         const toUpload = isVideo ? file : await compressImage(file);
         const extension = isVideo ? videoExtension(file) : "jpg";
         const path = `${currentEvent.id}/${crypto.randomUUID()}.${extension}`;

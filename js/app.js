@@ -305,6 +305,19 @@ function videoExtension(file) {
   return ALLOWED_VIDEO_EXTENSIONS.includes(extension) ? extension : "mp4";
 }
 
+// Maximálna veľkosť videa. Zhora ju obmedzuje Cloudflare Tunnel (100 MB na
+// jednu požiadavku) aj storage server (FILE_SIZE_LIMIT) - keď hosť pošle
+// väčšie video, zlyhá až po minútach nahrávania s nezrozumiteľnou chybou.
+// Kontrola v prehliadači mu to povie hneď a po slovensky. Fotky sa netýka -
+// tie sa pred nahraním zmenšujú v compressImage().
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+
+function videoSizeError(file) {
+  if (!file.type.startsWith("video/") || file.size <= MAX_VIDEO_BYTES) return "";
+  const megabytes = Math.round(file.size / 1024 / 1024);
+  return `Video má ${megabytes} MB, limit je 100 MB (približne minúta vo Full HD).`;
+}
+
 // Stiahnutie fotky. Atribút download na odkaze na cudziu doménu prehliadač
 // ignoruje, preto si súbor najprv stiahneme ako blob a až ten uložíme.
 async function downloadFile(url, filename) {
@@ -318,7 +331,9 @@ async function downloadFile(url, filename) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(objectUrl);
+  // Blob URL uvoľníme až o chvíľu: niektoré prehliadače (Firefox, Safari)
+  // si sťahovaný súbor preberajú asynchrónne a okamžité revoke by ho zrušilo.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
 }
 
 function copyToClipboard(text, messageElement) {
@@ -843,7 +858,9 @@ async function downloadAsZip(items, zipName, onProgress) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(objectUrl);
+  // Blob URL uvoľníme až o chvíľu: niektoré prehliadače (Firefox, Safari)
+  // si sťahovaný súbor preberajú asynchrónne a okamžité revoke by ho zrušilo.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
 }
 
 // Názov súboru bez diakritiky a medzier - do ZIPu a pre stiahnuté fotky.
