@@ -216,6 +216,30 @@ textarea:focus {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Zvýraznenie poľa, ktoré hosť zabudol vyplniť (napr. meno). */
+input.attention {
+  animation: attention-pulse 1.2s ease-out;
+}
+
+@keyframes attention-pulse {
+  0% {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent);
+  }
+  30% {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--danger) 0%, transparent);
+  }
+  60% {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent);
+  }
+  100% {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--danger) 0%, transparent);
+  }
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--text-muted);
@@ -1825,5 +1849,10 @@ section[id] {
 
   .phone-set {
     transition: none;
+  }
+
+  input.attention {
+    animation: none;
+    border-color: var(--danger);
   }
 }

@@ -53,7 +53,7 @@
       <div class="card">
         <label for="nickname">Vystupuješ ako</label>
         <div class="copy-row">
-          <input type="text" id="nickname" maxlength="40" placeholder="užívateľské meno" />
+          <input type="text" id="nickname" maxlength="40" />
           <button type="button" id="saveNicknameButton" class="secondary">Uložiť</button>
         </div>
         <p id="nicknameMessage" class="message"></p>
@@ -160,8 +160,24 @@
     function requireNickname(messageEl) {
       if (nickname) return true;
       showMessage(messageEl, "Najprv zadaj svoje meno hore.", "error");
-      document.getElementById("nickname").focus();
+      highlightNicknameField();
       return false;
+    }
+
+    // Plynulo posunie stránku k poľu s menom a na chvíľu ho zvýrazní,
+    // aby bolo jasné, čo od hosťa chceme.
+    function highlightNicknameField() {
+      const input = document.getElementById("nickname");
+      input.scrollIntoView({ behavior: "smooth", block: "center" });
+      input.classList.remove("attention");
+      void input.offsetWidth; // reštart animácie, ak už raz bežala
+      input.classList.add("attention");
+      // Nespoliehame sa na "animationend" - pri vypnutých animáciách
+      // (prefers-reduced-motion) by sa nikdy nespustil a pole by ostalo červené.
+      clearTimeout(highlightNicknameField.timer);
+      highlightNicknameField.timer = setTimeout(() => input.classList.remove("attention"), 1500);
+      // focus() by okamžite preskočil na pole a prerušil plynulý posun.
+      input.focus({ preventScroll: true });
     }
 
     async function init() {
@@ -248,6 +264,7 @@
 
       if (!zadane) {
         showMessage(messageEl, "Meno nemôže byť prázdne.", "error");
+        highlightNicknameField();
         return;
       }
       nickname = zadane;
