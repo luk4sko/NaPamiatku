@@ -34,8 +34,8 @@
           <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
         </div>
 
-        <h1>Prihlásenie</h1>
-        <p class="auth-intro">Zadaj email a heslo k svojmu účtu.</p>
+        <h1>Vitaj späť.</h1>
+        <p class="auth-intro">Prihlás sa a pozri, čo hostia medzitým pridali.</p>
 
         <form id="loginForm">
           <div class="field">
@@ -48,14 +48,16 @@
               <input type="password" id="password" autocomplete="current-password" required />
             </div>
           </div>
-          <button type="submit" id="submitButton">Prihlásiť sa</button>
+          <button type="submit" id="submitButton"><span data-icon="check"></span>Prihlásiť sa</button>
           <p id="message" class="message"></p>
         </form>
 
-        <div class="card">
-          <h3>Zabudnuté heslo</h3>
-          <p class="muted">Pošleme ti na email odkaz, cez ktorý si nastavíš nové heslo.</p>
-          <button type="button" class="secondary" id="resetButton">Poslať odkaz na obnovu</button>
+        <p class="muted" style="margin:1rem 0 0">
+          <button type="button" class="auth-link-button" id="forgotToggle">Zabudol si heslo?</button>
+        </p>
+        <div class="auth-extra hidden" id="forgotBox">
+          <p class="muted">Pošleme ti na email vyššie odkaz, cez ktorý si nastavíš nové heslo.</p>
+          <button type="button" class="secondary small" id="resetButton"><span data-icon="mail"></span>Poslať odkaz na obnovu</button>
           <p id="resetMessage" class="message"></p>
         </div>
 
@@ -97,6 +99,10 @@
         return;
       }
       window.location.href = "/dashboard";
+    });
+
+    document.getElementById("forgotToggle").addEventListener("click", () => {
+      document.getElementById("forgotBox").classList.toggle("hidden");
     });
 
     document.getElementById("resetButton").addEventListener("click", async () => {

@@ -22,76 +22,105 @@
         <div class="field">
           <label for="eventPassword">Heslo</label>
           <div class="password-field">
-            <input type="password" id="eventPassword" required />
+            <input type="password" id="eventPassword" required autocomplete="off" />
           </div>
         </div>
-        <button type="submit" id="passwordButton">Vstúpiť</button>
+        <button type="submit" id="passwordButton"><span data-icon="lock"></span>Vstúpiť</button>
         <p id="passwordMessage" class="message"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- 2. krok: meno. Bez neho hosť nemôže nič pridať, preto je to samostatná
+       obrazovka a nie políčko niekde na stránke. -->
+  <section id="nameStep" class="gate hidden">
+    <img class="gate-bg" src="img/pripitok-svetielka-sm.webp" alt="" aria-hidden="true" />
+    <button class="secondary small gate-theme icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
+
+    <div class="gate-card">
+      <p class="eyebrow" id="nameStepEvent"></p>
+      <h1>Ako sa voláš?</h1>
+      <p>Pod týmto menom uvidia ostatní tvoje fotky a odkazy.</p>
+      <form id="nameForm">
+        <div class="field">
+          <input type="text" id="nickname" class="name-input" maxlength="40" autocomplete="nickname" aria-label="Tvoje meno" />
+        </div>
+        <button type="submit"><span data-icon="check"></span>Pokračovať</button>
+        <p id="nicknameMessage" class="message"></p>
       </form>
     </div>
   </section>
 
   <!-- Hlavička sa ukáže až po vstupe - kým je na obrazovke brána,
        nemá nad ňou čo visieť. -->
-  <div class="page-hero hidden" id="guestHeader">
+  <header class="app-hero hidden" id="guestHeader">
+    <div class="app-hero-bg" id="heroBg"></div>
     <div class="page">
-      <div class="top-bar">
+      <div class="app-hero-top">
         <div>
+          <p class="eyebrow" style="margin-bottom:0.5rem">Vitaj na podujatí</p>
           <h1 id="eventName">NaPamiatku</h1>
-          <p class="muted" id="eventDate"></p>
+          <p class="app-hero-sub" id="eventDate"></p>
         </div>
-        <div class="top-bar-actions">
+        <div class="app-hero-actions">
+          <span class="guest-identity" id="guestIdentity">
+            <span class="avatar" id="guestAvatar"></span>
+            <span id="guestName"></span>
+            <button type="button" id="changeNameButton">zmeniť</button>
+          </span>
           <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
         </div>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div class="page">
-    <!-- 2. krok: obsah -->
+  <main class="page">
+    <!-- 3. krok: obsah -->
     <section id="mainStep" class="hidden">
-      <div class="card">
-        <label for="nickname">Vystupuješ ako</label>
-        <div class="copy-row">
-          <input type="text" id="nickname" maxlength="40" />
-          <button type="button" id="saveNicknameButton" class="secondary">Uložiť</button>
-        </div>
-        <p id="nicknameMessage" class="message"></p>
-      </div>
-
-      <div class="tabs">
-        <button class="tab active" data-tab="photos">Fotky</button>
-        <button class="tab" data-tab="guestbook">Kniha hostí</button>
-        <button class="tab hidden" data-tab="gifts" id="giftsTab">Dary</button>
+      <div class="tabs mobile-dock">
+        <button class="tab active" data-tab="fotky"><span data-icon="camera"></span>Fotky</button>
+        <button class="tab" data-tab="kniha"><span data-icon="chat"></span>Kniha hostí</button>
+        <button class="tab hidden" data-tab="dary" id="giftsTab"><span data-icon="gift"></span>Dary</button>
       </div>
 
       <!-- Fotky -->
-      <section data-panel="photos">
+      <section data-panel="fotky">
         <div class="card">
-          <div class="upload-box">
-            <p><strong>Pridaj svoje fotky</strong></p>
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon"><span data-icon="camera"></span></div>
+            <h3>Pridaj svoje fotky</h3>
             <p class="muted">Môžeš vybrať aj viac naraz. Veľké fotky automaticky zmenšíme, aby sa nahrávali rýchlo.</p>
             <label class="file-button">
-              Vybrať fotky
+              <span data-icon="image"></span>Vybrať fotky alebo videá
               <input type="file" id="photoInput" accept="image/*,video/*" multiple />
             </label>
-            <p id="uploadMessage" class="message"></p>
-            <progress id="uploadProgress" class="hidden" max="100" value="0"></progress>
+            <ul class="upload-list hidden" id="uploadList"></ul>
           </div>
         </div>
+
+        <div class="toolbar">
+          <div class="chips" id="photoFilter">
+            <button type="button" class="chip active" data-filter="all">Všetky</button>
+            <button type="button" class="chip" data-filter="mine">Moje</button>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <button type="button" class="secondary small icon-button" id="refreshButton" title="Obnoviť" aria-label="Obnoviť"><span data-icon="refresh"></span></button>
+        </div>
+
         <div id="gallery" class="gallery"></div>
       </section>
 
       <!-- Kniha hostí -->
-      <section data-panel="guestbook" class="hidden">
-        <div class="card">
-          <h3>Nechaj odkaz</h3>
+      <section data-panel="kniha" class="hidden">
+        <div class="card settings-card">
+          <h3><span data-icon="heart"></span>Nechaj odkaz</h3>
           <form id="messageForm">
             <div class="field">
               <label for="messageText">Tvoje želanie alebo odkaz</label>
-              <textarea id="messageText" maxlength="1000" required></textarea>
+              <textarea id="messageText" maxlength="1000" required placeholder="Napíš pár slov..."></textarea>
+              <p class="char-count" id="charCount">0 / 1000</p>
             </div>
-            <button type="submit" id="messageButton">Odoslať</button>
+            <button type="submit" id="messageButton"><span data-icon="chat"></span>Odoslať</button>
             <p id="messageStatus" class="message"></p>
           </form>
         </div>
@@ -99,8 +128,9 @@
       </section>
 
       <!-- Dary -->
-      <section data-panel="gifts" class="hidden">
-        <div class="card qr-box">
+      <section data-panel="dary" class="hidden">
+        <div class="card gift-card">
+          <div class="dropzone-icon"><span data-icon="gift"></span></div>
           <h3>Darovať</h3>
           <p class="muted" id="giftRecipientInfo"></p>
           <form id="giftForm">
@@ -108,20 +138,18 @@
               <label for="giftAmount">Suma v eurách (nepovinné)</label>
               <input type="number" id="giftAmount" min="1" step="1" placeholder="napr. 50" />
             </div>
-            <button type="button" id="generateGiftQr">Vytvoriť platobný QR kód</button>
+            <button type="button" id="generateGiftQr"><span data-icon="qr"></span>Vytvoriť platobný QR kód</button>
           </form>
-          <div id="giftQrBox" class="hidden" style="margin-top:1rem">
+          <div id="giftQrBox" class="hidden qr-result">
             <img id="giftQrImage" alt="Platobný QR kód" />
-            <p class="muted">Naskenuj tento kód v mobilnej aplikácii svojej banky. Platbu potvrdzuješ vo svojej banke — my sa k tvojim peniazom nikdy nedostaneme.</p>
+            <p class="muted">Naskenuj tento kód v mobilnej aplikácii svojej banky. Platbu potvrdzuješ vo svojej banke - my sa k tvojim peniazom nikdy nedostaneme.</p>
           </div>
         </div>
       </section>
     </section>
 
-    <div id="notFound" class="hidden">
-      <p class="message error">Toto podujatie neexistuje alebo už nie je dostupné.</p>
-    </div>
-  </div>
+    <div id="notFound" class="hidden"></div>
+  </main>
 
   <!-- Hosť je zároveň potenciálny budúci zákazník - nech vidí, čia služba to je.
        Kým je na obrazovke brána, pätička je skrytá - nemá pod ňou čo visieť. -->
@@ -150,34 +178,19 @@
     // pamätal údaje zvlášť pre každé podujatie.
     const PASSWORD_KEY = "napamiatku-pw-" + slug;
     const NICKNAME_KEY = "napamiatku-nick-" + slug;
+    // ID fotiek a odkazov, ktoré poslal tento prehliadač - pre filter "Moje".
+    const MINE_KEY = "napamiatku-mine-" + slug;
 
     let eventInfo = null;
     let eventPassword = null;
     let nickname = null;
+    let allPhotos = [];
+    let photoFilter = "all";
+    let mine = new Set(JSON.parse(localStorage.getItem(MINE_KEY) || "[]"));
 
-    // Hosť sa neregistruje ani neprihlasuje. Meno si musí zadať sám,
-    // bez neho nepustíme nahrávanie fotiek ani písanie odkazov.
-    function requireNickname(messageEl) {
-      if (nickname) return true;
-      showMessage(messageEl, "Najprv zadaj svoje meno hore.", "error");
-      highlightNicknameField();
-      return false;
-    }
-
-    // Plynulo posunie stránku k poľu s menom a na chvíľu ho zvýrazní,
-    // aby bolo jasné, čo od hosťa chceme.
-    function highlightNicknameField() {
-      const input = document.getElementById("nickname");
-      input.scrollIntoView({ behavior: "smooth", block: "center" });
-      input.classList.remove("attention");
-      void input.offsetWidth; // reštart animácie, ak už raz bežala
-      input.classList.add("attention");
-      // Nespoliehame sa na "animationend" - pri vypnutých animáciách
-      // (prefers-reduced-motion) by sa nikdy nespustil a pole by ostalo červené.
-      clearTimeout(highlightNicknameField.timer);
-      highlightNicknameField.timer = setTimeout(() => input.classList.remove("attention"), 1500);
-      // focus() by okamžite preskočil na pole a prerušil plynulý posun.
-      input.focus({ preventScroll: true });
+    function rememberMine(id) {
+      mine.add(id);
+      localStorage.setItem(MINE_KEY, JSON.stringify(Array.from(mine)));
     }
 
     async function init() {
@@ -207,23 +220,51 @@
     }
 
     function showNotFound() {
-      document.getElementById("guestHeader").classList.remove("hidden");
       document.getElementById("guestFooter").classList.remove("hidden");
-      document.getElementById("notFound").classList.remove("hidden");
+      const box = document.getElementById("notFound");
+      box.classList.remove("hidden");
+      box.innerHTML = emptyState({
+        iconName: "alert",
+        title: "Toto podujatie neexistuje alebo už nie je dostupné",
+        text: "Skús naskenovať QR kód znova alebo sa opýtaj organizátora na nový odkaz.",
+      });
     }
 
+    // Po hesle nasleduje meno. Ak ho už máme uložené, ideme rovno na obsah.
     async function afterOpen() {
       document.getElementById("passwordStep").classList.add("hidden");
+      document.title = eventInfo.name + " — NaPamiatku";
+      nickname = localStorage.getItem(NICKNAME_KEY) || null;
+      if (!nickname) return showNameStep();
+      showMain();
+    }
+
+    function showNameStep() {
+      document.getElementById("mainStep").classList.add("hidden");
+      document.getElementById("guestHeader").classList.add("hidden");
+      document.getElementById("guestFooter").classList.add("hidden");
+      document.getElementById("nameStepEvent").textContent = eventInfo.name;
+      document.getElementById("nickname").value = nickname || "";
+      document.getElementById("nameStep").classList.remove("hidden");
+      document.getElementById("nickname").focus();
+    }
+
+    let mainInitialised = false;
+    async function showMain() {
+      document.getElementById("nameStep").classList.add("hidden");
       document.getElementById("guestHeader").classList.remove("hidden");
       document.getElementById("guestFooter").classList.remove("hidden");
       document.getElementById("mainStep").classList.remove("hidden");
 
       document.getElementById("eventName").textContent = eventInfo.name;
-      document.getElementById("eventDate").textContent =
-        eventInfo.event_date ? formatDate(eventInfo.event_date) : "";
+      document.getElementById("eventDate").innerHTML = eventInfo.event_date
+        ? `<span>${icon("calendar")} ${escapeHtml(formatDateLong(eventInfo.event_date))}</span>`
+        : "";
+      document.getElementById("guestName").textContent = nickname;
+      document.getElementById("guestAvatar").textContent = initials(nickname);
 
-      nickname = localStorage.getItem(NICKNAME_KEY) || null;
-      document.getElementById("nickname").value = nickname || "";
+      if (mainInitialised) return;
+      mainInitialised = true;
 
       if (eventInfo.gift_enabled && eventInfo.gift_iban) {
         document.getElementById("giftsTab").classList.remove("hidden");
@@ -231,8 +272,8 @@
           eventInfo.gift_recipient ? "Príjemca: " + eventInfo.gift_recipient : "";
       }
 
-      await loadPhotos();
-      await loadMessages();
+      setupTabs();
+      await Promise.all([loadPhotos(), loadMessages()]);
     }
 
     /* ---------- Heslo ---------- */
@@ -248,7 +289,7 @@
       button.disabled = false;
 
       if (!opened) {
-        showMessage(messageEl, "Nesprávne heslo.", "error");
+        showMessage(messageEl, "Nesprávne heslo. Skús to znova.", "error");
         return;
       }
       localStorage.setItem(PASSWORD_KEY, eventPassword);
@@ -256,61 +297,78 @@
       await afterOpen();
     });
 
-    /* ---------- Prezývka ---------- */
+    /* ---------- Meno ---------- */
 
-    document.getElementById("saveNicknameButton").addEventListener("click", () => {
+    document.getElementById("nameForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = document.getElementById("nickname");
       const messageEl = document.getElementById("nicknameMessage");
-      const zadane = document.getElementById("nickname").value.trim();
+      const zadane = input.value.trim();
 
       if (!zadane) {
-        showMessage(messageEl, "Meno nemôže byť prázdne.", "error");
-        highlightNicknameField();
+        showMessage(messageEl, "Bez mena to nepôjde - aspoň krstné.", "error");
+        highlightField(input);
         return;
       }
       nickname = zadane;
       localStorage.setItem(NICKNAME_KEY, nickname);
-
-      showMessage(messageEl, "Uložené.", "ok");
-      setTimeout(() => showMessage(messageEl, ""), 2000);
+      showMessage(messageEl, "");
+      showMain();
     });
 
-    /* ---------- Záložky ---------- */
+    document.getElementById("changeNameButton").addEventListener("click", showNameStep);
 
-    document.querySelectorAll(".tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach((other) => other.classList.remove("active"));
-        tab.classList.add("active");
-        document.querySelectorAll("[data-panel]").forEach((panel) => {
-          panel.classList.toggle("hidden", panel.dataset.panel !== tab.dataset.tab);
-        });
-      });
-    });
+    // Na chvíľu zvýrazní pole, ktoré hosť zabudol vyplniť.
+    function highlightField(input) {
+      input.classList.remove("attention");
+      void input.offsetWidth; // reštart animácie, ak už raz bežala
+      input.classList.add("attention");
+      clearTimeout(highlightField.timer);
+      highlightField.timer = setTimeout(() => input.classList.remove("attention"), 1500);
+      input.focus();
+    }
 
     /* ---------- Fotky ---------- */
 
-    async function loadPhotos() {
+    async function loadPhotos(silent) {
       const gallery = document.getElementById("gallery");
+      if (!silent) gallery.innerHTML = skeletonCards(4);
+
       const { data, error } = await supabaseClient.rpc("guest_list_photos", {
         p_slug: slug,
         p_password: eventPassword,
       });
 
       if (error) {
-        gallery.innerHTML = "<p class='message error'>Chyba: " + escapeHtml(error.message) + "</p>";
+        gallery.innerHTML = emptyState({ iconName: "alert", title: "Fotky sa nepodarilo načítať", text: error.message });
         return;
       }
-      if (!data || data.length === 0) {
-        gallery.innerHTML = "<p class='empty'>Zatiaľ tu nie sú žiadne fotky. Buď prvý!</p>";
+      allPhotos = data || [];
+      renderGallery();
+      // Rozmazané pozadie hlavičky z najnovšej fotky.
+      const cover = allPhotos.find((photo) => photo.media_type !== "video");
+      document.getElementById("heroBg").style.backgroundImage = cover ? `url("${publicUrl("photos", cover.storage_path)}")` : "";
+    }
+
+    function renderGallery() {
+      const gallery = document.getElementById("gallery");
+      const photos = photoFilter === "mine" ? allPhotos.filter((photo) => mine.has(photo.id)) : allPhotos;
+
+      if (allPhotos.length === 0) {
+        gallery.innerHTML = emptyState({ iconName: "camera", title: "Zatiaľ tu nie sú žiadne fotky", text: "Buď prvý - pridaj fotku a ostatní ju uvidia hneď." });
+        return;
+      }
+      if (photos.length === 0) {
+        gallery.innerHTML = emptyState({ iconName: "image", title: "Ešte si nič nepridal", text: "Fotky, ktoré nahráš z tohto zariadenia, sa zobrazia tu." });
         return;
       }
 
       gallery.innerHTML = "";
-      for (const photo of data) {
+      for (const photo of photos) {
         // Rovnako ako v event.html: adresa ide do HTML atribútu, takže ju
         // ošetríme, aj keď sa do databázy dostáva len cez overené cesty.
         const url = escapeHtml(publicUrl("photos", photo.storage_path));
         const isVideo = photo.media_type === "video";
-        const filename = isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg";
         const mediaTag = isVideo
           ? `<video src="${url}" controls playsinline preload="metadata"></video>`
           : `<img src="${url}" alt="Fotka od ${escapeHtml(photo.nickname)}" loading="lazy" />`;
@@ -319,37 +377,42 @@
         figure.className = "photo";
         figure.innerHTML = `
           ${mediaTag}
-          <div class="photo-meta"><span>${escapeHtml(photo.nickname)}</span></div>
-          <div class="photo-actions">
-            <button class="small secondary" data-download="${url}" data-filename="${filename}">Stiahnuť</button>
-          </div>
-        `;
+          ${isVideo ? `<span class="photo-tag">${icon("video")}video</span>` : ""}
+          <div class="photo-overlay">
+            <span class="photo-overlay-name">${icon("user")}${escapeHtml(photo.nickname)}</span>
+            <div class="photo-overlay-actions">
+              <button type="button" data-download="${url}" data-filename="${isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg"}" title="Stiahnuť" aria-label="Stiahnuť">${icon("download")}</button>
+            </div>
+          </div>`;
         gallery.appendChild(figure);
       }
 
       gallery.querySelectorAll("[data-download]").forEach((button) => {
-        button.addEventListener("click", () =>
-          downloadFile(button.dataset.download, button.dataset.filename));
+        button.addEventListener("click", () => downloadFile(button.dataset.download, button.dataset.filename));
       });
       setupGalleryLightbox(gallery);
     }
 
-    document.getElementById("photoInput").addEventListener("change", async (event) => {
-      const files = Array.from(event.target.files);
-      if (files.length === 0) return;
+    document.getElementById("photoFilter").addEventListener("click", (event) => {
+      const chip = event.target.closest(".chip");
+      if (!chip) return;
+      photoFilter = chip.dataset.filter;
+      document.querySelectorAll("#photoFilter .chip").forEach((other) => other.classList.toggle("active", other === chip));
+      renderGallery();
+    });
 
-      const messageEl = document.getElementById("uploadMessage");
-      if (!requireNickname(messageEl)) {
-        event.target.value = "";
-        return;
-      }
-      const progressEl = document.getElementById("uploadProgress");
-      progressEl.classList.remove("hidden");
-      progressEl.value = 0;
+    document.getElementById("refreshButton").addEventListener("click", async () => {
+      await Promise.all([loadPhotos(true), loadMessages()]);
+      showToast("Obnovené.", "ok");
+    });
 
+    setupDropzone(document.getElementById("dropzone"), document.getElementById("photoInput"), async (files) => {
+      const list = createUploadList(document.getElementById("uploadList"), files);
       let done = 0;
-      for (const file of files) {
-        showMessage(messageEl, `Nahrávam ${done + 1} z ${files.length}...`);
+
+      for (let index = 0; index < files.length; index++) {
+        const file = files[index];
+        list.start(index);
 
         // Video sa (na rozdiel od fotiek) neprekomprimúva - zmenšenie videa
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
@@ -361,36 +424,27 @@
         const { error: uploadError } = await supabaseClient.storage
           .from("photos")
           .upload(path, toUpload, { contentType: toUpload.type || file.type });
-
-        if (uploadError) {
-          showMessage(messageEl, "Nahrávanie zlyhalo: " + uploadError.message, "error");
-          progressEl.classList.add("hidden");
-          return;
-        }
+        if (uploadError) { list.fail(index, uploadError.message); continue; }
 
         // Riadok v databáze vytvorí až funkcia, ktorá znova overí heslo eventu.
-        const { error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
+        const { data: photoId, error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
           p_slug: slug,
           p_password: eventPassword,
           p_nickname: nickname,
           p_storage_path: path,
           p_media_type: isVideo ? "video" : "photo",
         });
+        if (rpcError) { list.fail(index, rpcError.message); continue; }
 
-        if (rpcError) {
-          showMessage(messageEl, "Chyba: " + rpcError.message, "error");
-          progressEl.classList.add("hidden");
-          return;
-        }
-
+        if (photoId) rememberMine(photoId);
+        list.done(index);
         done += 1;
-        progressEl.value = (done / files.length) * 100;
       }
 
-      progressEl.classList.add("hidden");
-      showMessage(messageEl, `Ďakujeme! Nahraté fotky: ${done}`, "ok");
-      event.target.value = "";
-      await loadPhotos();
+      list.finish();
+      if (done === files.length) showToast(`Ďakujeme! Nahraté: ${done} ${plural(done, "súbor", "súbory", "súborov")}.`, "ok");
+      else showToast(`Nahraté ${done} z ${files.length}. Niektoré súbory zlyhali - skús ich znova.`, "error");
+      await loadPhotos(true);
     });
 
     /* ---------- Kniha hostí ---------- */
@@ -403,48 +457,61 @@
       });
 
       if (error) {
-        list.innerHTML = "<li class='message error'>Chyba: " + escapeHtml(error.message) + "</li>";
+        list.innerHTML = emptyState({ iconName: "alert", title: "Odkazy sa nepodarilo načítať", text: error.message });
         return;
       }
       if (!data || data.length === 0) {
-        list.innerHTML = "<li class='empty'>Zatiaľ žiadne odkazy. Napíš prvý!</li>";
+        list.innerHTML = emptyState({ iconName: "chat", title: "Zatiaľ žiadne odkazy", text: "Napíš prvé želanie - organizátorom to urobí radosť." });
         return;
       }
 
       list.innerHTML = "";
       for (const item of data) {
         const li = document.createElement("li");
-        li.className = "guest-message";
+        li.className = "bubble" + (mine.has(item.id) ? " mine" : "");
         li.innerHTML = `
-          <div class="guest-message-head">
-            <strong>${escapeHtml(item.nickname)}</strong>
-            <span class="muted">${formatDateTime(item.created_at)}</span>
-          </div>
-          <p>${escapeHtml(item.message)}</p>
-        `;
+          <span class="avatar">${escapeHtml(initials(item.nickname))}</span>
+          <div class="bubble-body">
+            <div class="bubble-head">
+              <strong>${escapeHtml(item.nickname)}</strong>
+              <span>${escapeHtml(formatDateTime(item.created_at))}</span>
+            </div>
+            <p>${escapeHtml(item.message)}</p>
+          </div>`;
         list.appendChild(li);
       }
     }
 
+    const messageText = document.getElementById("messageText");
+    messageText.addEventListener("input", () => {
+      document.getElementById("charCount").textContent = messageText.value.length + " / 1000";
+    });
+
     document.getElementById("messageForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const statusEl = document.getElementById("messageStatus");
-      if (!requireNickname(statusEl)) return;
       const button = document.getElementById("messageButton");
+      if (!messageText.value.trim()) {
+        highlightField(messageText);
+        return;
+      }
       button.disabled = true;
 
-      const { error } = await supabaseClient.rpc("guest_add_message", {
+      const { data: messageId, error } = await supabaseClient.rpc("guest_add_message", {
         p_slug: slug,
         p_password: eventPassword,
         p_nickname: nickname,
-        p_message: document.getElementById("messageText").value,
+        p_message: messageText.value,
       });
 
       button.disabled = false;
       if (error) return showMessage(statusEl, error.message, "error");
 
-      document.getElementById("messageText").value = "";
-      showMessage(statusEl, "Ďakujeme za odkaz!", "ok");
+      if (messageId) rememberMine(messageId);
+      messageText.value = "";
+      document.getElementById("charCount").textContent = "0 / 1000";
+      showMessage(statusEl, "");
+      showToast("Ďakujeme za odkaz!", "ok");
       await loadMessages();
     });
 

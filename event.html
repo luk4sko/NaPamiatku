@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NaPamiatku — Správa eventu</title>
+  <title>NaPamiatku — Event</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -12,134 +12,220 @@
     <div class="site-nav-inner">
       <a class="logo" href="/">Na<span>Pamiatku</span></a>
       <div class="top-bar-actions">
-        <span class="nav-identity" data-identity hidden>
-          <span class="nav-identity-email" data-identity-email></span>
-          <span class="badge" data-identity-role></span>
-        </span>
-        <button class="secondary small" data-logout>Odhlásiť sa</button>
+        <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
+        <div class="nav-user" data-identity hidden>
+          <button type="button" class="avatar" data-identity-toggle aria-haspopup="menu" aria-expanded="false" title="Môj účet">
+            <span data-identity-avatar></span>
+          </button>
+          <div class="nav-menu" role="menu">
+            <div class="nav-menu-head">
+              <strong data-identity-name></strong>
+              <span data-identity-email></span>
+              <span class="badge" data-identity-role></span>
+            </div>
+            <a href="/dashboard" role="menuitem"><span data-icon="grid"></span>Moje eventy</a>
+            <button type="button" data-logout role="menuitem"><span data-icon="logout"></span>Odhlásiť sa</button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
 
-  <div class="page-hero">
+  <header class="app-hero">
+    <div class="app-hero-bg" id="heroBg"></div>
     <div class="page">
-      <div class="top-bar">
+      <a class="back-link" href="/dashboard"><span data-icon="arrowLeft"></span>Moje eventy</a>
+      <div class="app-hero-top">
         <div>
-          <p class="muted"><a href="/dashboard">← Späť na dashboard</a></p>
           <h1 id="eventName">Načítavam...</h1>
-          <p class="muted" id="eventMeta"></p>
+          <p class="app-hero-sub" id="eventMeta"></p>
+        </div>
+        <div class="app-hero-actions" id="heroActions" hidden>
+          <button type="button" class="secondary" id="copyLinkHeroButton"><span data-icon="link"></span>Kopírovať odkaz</button>
+          <a class="button" id="openGuestLink" href="#" target="_blank" rel="noopener"><span data-icon="users"></span>Otvoriť ako hosť</a>
         </div>
       </div>
+      <div class="stat-tiles" id="stats" hidden>
+        <div class="stat-tile"><div class="stat-tile-icon"><span data-icon="camera"></span></div><div><strong id="statPhotos">0</strong><span>fotiek</span></div></div>
+        <div class="stat-tile"><div class="stat-tile-icon"><span data-icon="video"></span></div><div><strong id="statVideos">0</strong><span>videí</span></div></div>
+        <div class="stat-tile"><div class="stat-tile-icon"><span data-icon="chat"></span></div><div><strong id="statMessages">0</strong><span>odkazov</span></div></div>
+        <div class="stat-tile"><div class="stat-tile-icon"><span data-icon="users"></span></div><div><strong id="statGuests">0</strong><span>hostí</span></div></div>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <div class="page">
-    <div id="accessDenied" class="hidden">
-      <p class="message error">Tento event neexistuje alebo k nemu nemáš prístup.</p>
-    </div>
+  <main class="page">
+    <div id="accessDenied" class="hidden"></div>
 
     <div id="content" class="hidden">
-      <div class="tabs">
-        <button class="tab active" data-tab="photos">Fotky</button>
-        <button class="tab" data-tab="guestbook">Kniha hostí</button>
-        <button class="tab" data-tab="share">QR kód</button>
-        <button class="tab" data-tab="settings">Nastavenia</button>
+      <div class="tabs mobile-dock">
+        <button class="tab active" data-tab="fotky"><span data-icon="camera"></span>Fotky</button>
+        <button class="tab" data-tab="kniha"><span data-icon="chat"></span>Kniha hostí</button>
+        <button class="tab" data-tab="qr"><span data-icon="qr"></span>QR kód</button>
+        <button class="tab" data-tab="nastavenia"><span data-icon="settings"></span>Nastavenia</button>
       </div>
 
-      <!-- Fotky -->
-      <section data-panel="photos">
+      <!-- ---------- Fotky ---------- -->
+      <section data-panel="fotky">
         <div class="card">
-          <div class="upload-box">
-            <p class="muted">Môžeš pridať fotky aj ty ako organizátor.</p>
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon"><span data-icon="upload"></span></div>
+            <h3>Pridaj fotky aj ty</h3>
+            <p class="muted">Pretiahni ich sem alebo vyber zo zariadenia. Veľké fotky automaticky zmenšíme.</p>
             <label class="file-button">
-              Vybrať fotky
+              <span data-icon="image"></span>Vybrať fotky alebo videá
               <input type="file" id="photoInput" accept="image/*,video/*" multiple />
             </label>
-            <p id="uploadMessage" class="message"></p>
-            <progress id="uploadProgress" class="hidden" max="100" value="0"></progress>
+            <ul class="upload-list hidden" id="uploadList"></ul>
           </div>
         </div>
+
+        <div class="toolbar">
+          <div class="chips" id="mediaFilter">
+            <button type="button" class="chip active" data-filter="all">Všetko</button>
+            <button type="button" class="chip" data-filter="photo">Fotky</button>
+            <button type="button" class="chip" data-filter="video">Videá</button>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <button type="button" class="chip" id="liveToggle" title="Každých 30 sekúnd skontroluje nové fotky a odkazy"><span data-icon="refresh"></span>Živé obnovovanie</button>
+          <button type="button" class="secondary small icon-button" id="refreshButton" title="Obnoviť" aria-label="Obnoviť"><span data-icon="refresh"></span></button>
+          <button type="button" class="secondary small" id="selectButton"><span data-icon="select"></span>Vybrať</button>
+          <button type="button" class="secondary small" id="downloadAllButton"><span data-icon="zip"></span>Stiahnuť všetko</button>
+        </div>
+
         <div id="gallery" class="gallery"></div>
+
+        <div class="selection-bar hidden" id="selectionBar">
+          <span id="selectionCount">0 vybratých</span>
+          <div class="toolbar-spacer"></div>
+          <button type="button" class="small secondary" id="selectAllButton">Vybrať všetko</button>
+          <button type="button" class="small" id="downloadSelectedButton"><span data-icon="download"></span>Stiahnuť</button>
+          <button type="button" class="small danger" id="deleteSelectedButton"><span data-icon="trash"></span>Zmazať</button>
+          <button type="button" class="small secondary icon-button" id="cancelSelectButton" aria-label="Zrušiť výber"><span data-icon="x"></span></button>
+        </div>
       </section>
 
-      <!-- Kniha hostí -->
-      <section data-panel="guestbook" class="hidden">
+      <!-- ---------- Kniha hostí ---------- -->
+      <section data-panel="kniha" class="hidden">
+        <div class="toolbar">
+          <p class="muted" style="margin:0">Želania a odkazy od hostí. Ostávajú ako pamiatka aj po oslave.</p>
+          <div class="toolbar-spacer"></div>
+          <button type="button" class="secondary small" id="printBookButton"><span data-icon="print"></span>Vytlačiť</button>
+          <button type="button" class="secondary small" id="exportBookButton"><span data-icon="download"></span>Uložiť ako text</button>
+        </div>
         <ul id="messageList" class="message-list"></ul>
       </section>
 
-      <!-- QR kód -->
-      <section data-panel="share" class="hidden">
-        <div class="card qr-box">
-          <h3>QR kód pre hostí</h3>
-          <p class="muted">Vytlač ho a polož na stoly. Hosť ho naskenuje a zadá heslo eventu.</p>
-          <img id="qrImage" alt="QR kód eventu" />
-          <div class="button-row" style="justify-content: center; margin-top: 0.75rem;">
-            <button id="downloadQrButton" type="button">Stiahnuť QR kód</button>
+      <!-- ---------- QR kód a zdieľanie ---------- -->
+      <section data-panel="qr" class="hidden">
+        <div class="share-grid">
+          <div class="card qr-card">
+            <h3>QR kód pre hostí</h3>
+            <p class="muted">Hosť ho naskenuje mobilom, zadá heslo a môže pridávať fotky.</p>
+            <img id="qrImage" alt="QR kód eventu" />
+            <div class="button-row">
+              <button type="button" id="downloadQrButton"><span data-icon="download"></span>Stiahnuť PNG</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="card settings-card">
+              <h3><span data-icon="link"></span>Odkaz pre hostí</h3>
+              <p class="muted">Pre tých, čo QR kód nenaskenujú - pošli im odkaz správou.</p>
+              <div class="copy-row">
+                <input type="text" id="guestLink" readonly />
+                <button type="button" id="copyLinkButton" class="secondary"><span data-icon="copy"></span>Kopírovať</button>
+              </div>
+              <p id="copyMessage" class="message"></p>
+            </div>
+
+            <div class="card settings-card">
+              <h3><span data-icon="print"></span>Kartička na stôl</h3>
+              <p class="muted">Vytlač kartičku s QR kódom a krátkym návodom a polož ju na stoly.</p>
+              <div class="field">
+                <label for="printPassword">Heslo na kartičke (voliteľné)</label>
+                <input type="text" id="printPassword" maxlength="40" autocomplete="off" placeholder="napr. lucka2026" />
+                <p class="muted" style="margin:0;font-size:0.8rem">Heslo sa nikam neukladá - ide len do tlače v tomto prehliadači.</p>
+              </div>
+              <div class="button-row" style="margin-top:1rem">
+                <button type="button" id="printCardButton"><span data-icon="print"></span>Vytlačiť kartičku</button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="card">
-          <label for="guestLink">Odkaz pre hostí</label>
-          <div class="copy-row">
-            <input type="text" id="guestLink" readonly />
-            <button type="button" id="copyLinkButton" class="secondary">Kopírovať</button>
-          </div>
-          <p id="copyMessage" class="message"></p>
-        </div>
-
-        <div class="card">
-          <h3>Zneplatniť odkaz</h3>
+        <div class="card settings-card danger-zone">
+          <h3><span data-icon="alert"></span>Zneplatniť odkaz</h3>
           <p class="muted">Vygeneruje nový odkaz a QR kód. Starý prestane fungovať, ale fotky a odkazy hostí zostanú zachované.</p>
-          <button type="button" class="danger" id="regenerateButton">Vygenerovať nový odkaz</button>
+          <button type="button" class="danger" id="regenerateButton"><span data-icon="refresh"></span>Vygenerovať nový odkaz</button>
         </div>
       </section>
 
-      <!-- Nastavenia -->
-      <section data-panel="settings" class="hidden">
-        <div class="card">
-          <h3>Heslo eventu</h3>
-          <p class="muted">Heslo, ktoré zadávajú hostia po naskenovaní QR kódu.</p>
+      <!-- ---------- Nastavenia ---------- -->
+      <section data-panel="nastavenia" class="hidden">
+        <div class="card settings-card">
+          <h3><span data-icon="pencil"></span>Základné údaje</h3>
+          <p class="muted">Názov a dátum vidia hostia po vstupe na stránku eventu.</p>
+          <form id="detailsForm">
+            <div class="field-row">
+              <div class="field">
+                <label for="detailsName">Názov eventu</label>
+                <input type="text" id="detailsName" required maxlength="80" />
+              </div>
+              <div class="field">
+                <label for="detailsDate">Dátum</label>
+                <input type="date" id="detailsDate" />
+              </div>
+            </div>
+            <button type="submit"><span data-icon="check"></span>Uložiť</button>
+            <p id="detailsMessage" class="message"></p>
+          </form>
+        </div>
+
+        <div class="card settings-card">
+          <h3><span data-icon="key"></span>Heslo eventu</h3>
+          <p class="muted">Heslo, ktoré zadávajú hostia po naskenovaní QR kódu. Vyber jednoduché - budeš ho hovoriť nahlas.</p>
           <form id="passwordForm">
             <div class="field">
               <label for="newEventPassword">Nové heslo (aspoň 4 znaky)</label>
               <div class="password-field">
-                <input type="password" id="newEventPassword" minlength="4" required />
+                <input type="password" id="newEventPassword" minlength="4" required autocomplete="off" />
               </div>
             </div>
-            <button type="submit">Zmeniť heslo</button>
+            <button type="submit"><span data-icon="check"></span>Zmeniť heslo</button>
             <p id="passwordMessage" class="message"></p>
           </form>
         </div>
 
-        <div class="card">
-          <h3>Dary (platobný QR kód)</h3>
-          <p class="muted">Ak zapneš dary, hostia uvidia v sekcii „Dary“ platobný QR kód. Sumu si zvolia sami vo svojej bankovej aplikácii.</p>
+        <div class="card settings-card">
+          <h3><span data-icon="gift"></span>Dary</h3>
+          <p class="muted">Hostia uvidia platobný QR kód. Sumu si zvolia sami vo svojej bankovej aplikácii - k peniazom sa nikdy nedostaneme my ani NaPamiatku.</p>
           <form id="giftForm">
-            <div class="field">
-              <label>
-                <input type="checkbox" id="giftEnabled" style="width:auto" />
-                Zobraziť hosťom možnosť darovať
-              </label>
-            </div>
-            <div class="field">
-              <label for="giftIban">IBAN</label>
-              <input type="text" id="giftIban" placeholder="SK00 0000 0000 0000 0000 0000" />
-            </div>
-            <div class="field">
-              <label for="giftRecipient">Meno príjemcu</label>
-              <input type="text" id="giftRecipient" maxlength="70" />
+            <label class="switch">
+              <input type="checkbox" id="giftEnabled" />
+              Zobraziť hosťom možnosť darovať
+            </label>
+            <div class="field-row">
+              <div class="field">
+                <label for="giftIban">IBAN</label>
+                <input type="text" id="giftIban" placeholder="SK00 0000 0000 0000 0000 0000" />
+              </div>
+              <div class="field">
+                <label for="giftRecipient">Meno príjemcu</label>
+                <input type="text" id="giftRecipient" maxlength="70" />
+              </div>
             </div>
             <div class="field">
               <label for="giftMessage">Správa pre príjemcu (voliteľné)</label>
               <input type="text" id="giftMessage" maxlength="140" placeholder="Svadobný dar" />
             </div>
-            <button type="submit">Uložiť</button>
+            <button type="submit"><span data-icon="check"></span>Uložiť</button>
             <p id="giftMessageStatus" class="message"></p>
           </form>
         </div>
       </section>
     </div>
-  </div>
+  </main>
 
   <footer class="site-footer">
     <div class="site-footer-inner">
@@ -161,6 +247,14 @@
   <script src="js/app.js"></script>
   <script>
     let currentEvent = null;
+    // Fotky a odkazy držíme v pamäti - filter, výber aj štatistiky bežia
+    // nad týmito poľami bez ďalších dopytov.
+    let allPhotos = [];
+    let allMessages = [];
+    let mediaFilter = "all";
+    let selecting = false;
+    const selectedIds = new Set();
+    let liveTimer = null;
 
     function getEventId() {
       return new URLSearchParams(window.location.search).get("id");
@@ -169,7 +263,6 @@
     async function init() {
       const session = await requireAuth();
       if (!session) return;
-
       renderIdentity(session, await loadProfile(session.user.id));
 
       const eventId = getEventId();
@@ -186,80 +279,139 @@
       if (error || !event) return showAccessDenied();
 
       currentEvent = event;
+      document.title = "NaPamiatku — " + event.name;
       renderHeader();
       renderShare();
+      renderDetails();
       renderGiftSettings();
-      await loadPhotos();
-      await loadMessages();
-
       document.getElementById("content").classList.remove("hidden");
+      setupTabs();
+      await Promise.all([loadPhotos(), loadMessages()]);
     }
 
     function showAccessDenied() {
       document.getElementById("eventName").textContent = "Event";
       document.getElementById("accessDenied").classList.remove("hidden");
+      document.getElementById("accessDenied").innerHTML = emptyState({
+        iconName: "lock",
+        title: "Tento event neexistuje alebo k nemu nemáš prístup",
+        text: "Skontroluj odkaz alebo sa vráť na zoznam svojich eventov.",
+        action: '<a class="button" href="/dashboard">' + icon("arrowLeft") + "Moje eventy</a>",
+      });
     }
 
     function renderHeader() {
       document.getElementById("eventName").textContent = currentEvent.name;
       const parts = [];
-      if (currentEvent.event_date) parts.push("Dátum: " + formatDate(currentEvent.event_date));
-      parts.push(currentEvent.status === "approved" ? "schválený" : currentEvent.status);
-      document.getElementById("eventMeta").textContent = parts.join(" · ");
+      if (currentEvent.event_date) {
+        parts.push(icon("calendar") + " " + escapeHtml(formatDateLong(currentEvent.event_date)) +
+          " · " + escapeHtml(relativeDate(currentEvent.event_date)));
+      }
+      const statusLabel = { approved: "schválený", pending: "čaká na schválenie", rejected: "zamietnutý" }[currentEvent.status] || currentEvent.status;
+      parts.push(`<span class="badge ${currentEvent.status}">${escapeHtml(statusLabel)}</span>`);
+      document.getElementById("eventMeta").innerHTML = parts.map((part) => "<span>" + part + "</span>").join("");
+      document.getElementById("heroActions").hidden = false;
+      document.getElementById("stats").hidden = false;
     }
 
-    /* ---------- Záložky ---------- */
-    document.querySelectorAll(".tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach((other) => other.classList.remove("active"));
-        tab.classList.add("active");
-        document.querySelectorAll("[data-panel]").forEach((panel) => {
-          panel.classList.toggle("hidden", panel.dataset.panel !== tab.dataset.tab);
-        });
-      });
-    });
+    // Štatistiky v hlavičke: fotky, videá, odkazy a koľko rôznych ľudí prispelo.
+    function renderStats() {
+      const photos = allPhotos.filter((photo) => photo.media_type !== "video").length;
+      const videos = allPhotos.length - photos;
+      const guests = new Set();
+      allPhotos.forEach((photo) => { if (photo.uploaded_by_nickname && photo.uploaded_by_nickname !== "Organizátor") guests.add(photo.uploaded_by_nickname.trim().toLowerCase()); });
+      allMessages.forEach((message) => { if (message.nickname) guests.add(message.nickname.trim().toLowerCase()); });
+
+      document.getElementById("statPhotos").textContent = photos;
+      document.getElementById("statVideos").textContent = videos;
+      document.getElementById("statMessages").textContent = allMessages.length;
+      document.getElementById("statGuests").textContent = guests.size;
+
+      // Rozmazané pozadie hlavičky z najnovšej fotky.
+      const cover = allPhotos.find((photo) => photo.media_type !== "video");
+      document.getElementById("heroBg").style.backgroundImage = cover ? `url("${publicUrl("photos", cover.storage_path)}")` : "";
+    }
 
     /* ---------- Zdieľanie / QR ---------- */
 
     function guestUrl() {
-      return window.location.origin + "/guest" +
-        "?slug=" + encodeURIComponent(currentEvent.slug);
+      return window.location.origin + "/guest?slug=" + encodeURIComponent(currentEvent.slug);
     }
 
     async function renderShare() {
       document.getElementById("guestLink").value = guestUrl();
+      document.getElementById("openGuestLink").href = guestUrl();
       document.getElementById("qrImage").src = await makeQrDataUrl(guestUrl(), 600);
     }
 
     document.getElementById("copyLinkButton").addEventListener("click", () => {
       copyToClipboard(guestUrl(), document.getElementById("copyMessage"));
     });
+    document.getElementById("copyLinkHeroButton").addEventListener("click", () => {
+      navigator.clipboard.writeText(guestUrl()).then(() => showToast("Odkaz pre hostí je skopírovaný.", "ok"));
+    });
 
     document.getElementById("downloadQrButton").addEventListener("click", async () => {
       const dataUrl = await makeQrDataUrl(guestUrl(), 1000);
       const link = document.createElement("a");
       link.href = dataUrl;
-      link.download = "qr-" + currentEvent.name.replace(/[^a-z0-9]/gi, "-").toLowerCase() + ".png";
+      link.download = "qr-" + safeFilename(currentEvent.name) + ".png";
       link.click();
     });
 
+    // Tlačiteľná kartička: dočasný prvok priamo v <body>, pri tlači sa
+    // cez CSS skryje všetko ostatné. Heslo ide len z políčka do tlače.
+    document.getElementById("printCardButton").addEventListener("click", async () => {
+      const password = document.getElementById("printPassword").value.trim();
+      const qr = await makeQrDataUrl(guestUrl(), 800);
+      printSheet(`
+        <span class="logo">Na<span>Pamiatku</span></span>
+        <h1>${escapeHtml(currentEvent.name)}</h1>
+        <p class="print-date">${currentEvent.event_date ? escapeHtml(formatDateLong(currentEvent.event_date)) : ""}</p>
+        <img src="${qr}" alt="QR kód" />
+        <ol class="print-steps">
+          <li>1. Naskenuj kód mobilom</li>
+          <li>2. Zadaj heslo${password ? "" : " od organizátora"}</li>
+          <li>3. Pridaj svoje fotky a odkaz</li>
+        </ol>
+        ${password ? `<div class="print-password">${escapeHtml(password)}</div>` : ""}
+        <p class="print-url">${escapeHtml(guestUrl())}</p>`);
+    });
+
+    function printSheet(innerHtml) {
+      const sheet = document.createElement("div");
+      sheet.className = "print-card";
+      sheet.innerHTML = innerHtml;
+      document.body.appendChild(sheet);
+      const cleanup = () => sheet.remove();
+      window.addEventListener("afterprint", cleanup, { once: true });
+      // Obrázky (QR) musia byť načítané skôr, než sa otvorí dialóg tlače.
+      const images = Array.from(sheet.querySelectorAll("img"));
+      Promise.all(images.map((img) => img.complete ? null : new Promise((resolve) => { img.onload = img.onerror = resolve; })))
+        .then(() => window.print());
+    }
+
     document.getElementById("regenerateButton").addEventListener("click", async () => {
-      if (!confirm("Naozaj vygenerovať nový odkaz? Staré QR kódy prestanú fungovať.")) return;
-
-      const { data, error } = await supabaseClient.rpc("regenerate_event_slug", {
-        p_event_id: currentEvent.id,
+      const ok = await confirmDialog({
+        title: "Vygenerovať nový odkaz?",
+        text: "Staré QR kódy a odkazy prestanú fungovať. Fotky a odkazy hostí zostanú.",
+        confirmLabel: "Vygenerovať",
+        danger: true,
       });
-      if (error) return alert("Chyba: " + error.message);
-
+      if (!ok) return;
+      const { data, error } = await supabaseClient.rpc("regenerate_event_slug", { p_event_id: currentEvent.id });
+      if (error) return showToast("Chyba: " + error.message, "error");
       currentEvent.slug = data;
       await renderShare();
-      alert("Hotovo. Nezabudni vytlačiť nový QR kód.");
+      showToast("Nový odkaz je pripravený. Nezabudni vytlačiť nový QR kód.", "ok");
     });
 
     /* ---------- Fotky ---------- */
 
-    async function loadPhotos() {
+    async function loadPhotos(silent) {
       const gallery = document.getElementById("gallery");
+      if (!silent) gallery.innerHTML = skeletonCards(4, "photo-skeleton");
+
       const { data, error } = await supabaseClient
         .from("photos")
         .select("id, storage_path, uploaded_by_nickname, created_at, media_type")
@@ -267,16 +419,49 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        gallery.innerHTML = "<p class='message error'>Chyba: " + escapeHtml(error.message) + "</p>";
+        gallery.innerHTML = emptyState({ iconName: "alert", title: "Fotky sa nepodarilo načítať", text: error.message });
         return;
       }
-      if (data.length === 0) {
-        gallery.innerHTML = "<p class='empty'>Zatiaľ žiadne fotky. Zdieľaj QR kód s hosťami.</p>";
+
+      // Pri tichom obnovení (živé obnovovanie) neprekresľujeme, ak sa nič
+      // nezmenilo - inak by galéria každých 30 sekúnd blikla.
+      const signature = data.map((photo) => photo.id).join(",");
+      if (silent && signature === allPhotos.map((photo) => photo.id).join(",")) return;
+      const added = silent ? data.length - allPhotos.length : 0;
+
+      allPhotos = data;
+      renderStats();
+      renderGallery();
+      if (added > 0) showToast(`Pribudli nové súbory: ${added}`, "ok");
+    }
+
+    function visiblePhotos() {
+      return allPhotos.filter((photo) => {
+        if (mediaFilter === "all") return true;
+        return (photo.media_type === "video") === (mediaFilter === "video");
+      });
+    }
+
+    function renderGallery() {
+      const gallery = document.getElementById("gallery");
+      const photos = visiblePhotos();
+
+      if (allPhotos.length === 0) {
+        gallery.innerHTML = emptyState({
+          iconName: "camera",
+          title: "Zatiaľ žiadne fotky",
+          text: "Vytlač QR kód, polož ho na stoly a nechaj hostí fotiť. Fotky sa tu objavia hneď po nahratí.",
+          action: `<button type="button" onclick="document.querySelector('[data-tab=qr]').click()">${icon("qr")}Zobraziť QR kód</button>`,
+        });
+        return;
+      }
+      if (photos.length === 0) {
+        gallery.innerHTML = emptyState({ iconName: "video", title: mediaFilter === "video" ? "Žiadne videá" : "Žiadne fotky", text: "V tomto filtri zatiaľ nič nie je." });
         return;
       }
 
       gallery.innerHTML = "";
-      for (const photo of data) {
+      for (const photo of photos) {
         const nickname = photo.uploaded_by_nickname || "Hosť";
         // storage_path ide do HTML atribútu, preto ho aj tu ošetríme. Do
         // databázy sa síce dostane len cez overené cesty, ale spoliehať sa
@@ -284,61 +469,193 @@
         // znamená spustený cudzí kód v prehliadači.
         const url = escapeHtml(publicUrl("photos", photo.storage_path));
         const isVideo = photo.media_type === "video";
-        const filename = isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg";
         const mediaTag = isVideo
           ? `<video src="${url}" controls playsinline preload="metadata"></video>`
           : `<img src="${url}" alt="Fotka od ${escapeHtml(nickname)}" loading="lazy" />`;
 
         const figure = document.createElement("figure");
-        figure.className = "photo";
+        figure.className = "photo" + (selectedIds.has(photo.id) ? " selected" : "");
+        figure.dataset.id = photo.id;
         figure.innerHTML = `
           ${mediaTag}
-          <div class="photo-meta"><span>${escapeHtml(nickname)}</span></div>
-          <div class="photo-actions">
-            <button class="small secondary" data-download="${url}" data-filename="${filename}">Stiahnuť</button>
-            <button class="small danger" data-delete="${photo.id}" data-path="${escapeHtml(photo.storage_path)}">Zmazať</button>
-          </div>
-        `;
+          ${isVideo ? `<span class="photo-tag">${icon("video")}video</span>` : ""}
+          <button type="button" class="photo-check" aria-label="Vybrať">${icon("check")}</button>
+          <div class="photo-overlay">
+            <span class="photo-overlay-name">${icon("user")}${escapeHtml(nickname)}</span>
+            <div class="photo-overlay-actions">
+              <button type="button" data-download="${photo.id}" title="Stiahnuť" aria-label="Stiahnuť">${icon("download")}</button>
+              <button type="button" class="delete" data-delete="${photo.id}" title="Zmazať" aria-label="Zmazať">${icon("trash")}</button>
+            </div>
+          </div>`;
         gallery.appendChild(figure);
       }
 
       gallery.querySelectorAll("[data-download]").forEach((button) => {
-        button.addEventListener("click", () =>
-          downloadFile(button.dataset.download, button.dataset.filename));
+        button.addEventListener("click", () => {
+          const photo = allPhotos.find((item) => item.id === button.dataset.download);
+          downloadFile(publicUrl("photos", photo.storage_path), photoFilename(photo));
+        });
       });
       gallery.querySelectorAll("[data-delete]").forEach((button) => {
-        button.addEventListener("click", () => deletePhoto(button.dataset.delete, button.dataset.path));
+        button.addEventListener("click", () => deletePhotos([button.dataset.delete]));
+      });
+      gallery.querySelectorAll(".photo-check").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          toggleSelected(button.closest(".photo").dataset.id);
+        });
       });
       setupGalleryLightbox(gallery);
     }
 
-    async function deletePhoto(photoId, storagePath) {
-      if (!confirm("Naozaj zmazať túto fotku?")) return;
-
-      // Najprv súbor, potom databázový riadok. Keby zlyhal druhý krok,
-      // uvidíme rozbitú fotku a vieme to opraviť; opačné poradie by po sebe
-      // nechalo neviditeľný súbor, o ktorom by appka už nevedela.
-      const { error: storageError } = await supabaseClient.storage.from("photos").remove([storagePath]);
-      if (storageError) return alert("Chyba pri mazaní súboru: " + storageError.message);
-
-      const { error } = await supabaseClient.from("photos").delete().eq("id", photoId);
-      if (error) return alert("Chyba: " + error.message);
-
-      await loadPhotos();
+    function photoFilename(photo, index) {
+      const extension = photo.storage_path.split(".").pop().toLowerCase();
+      const prefix = index !== undefined ? String(index + 1).padStart(3, "0") + "-" : "";
+      return prefix + safeFilename(photo.uploaded_by_nickname || "host") + "-" + photo.id.slice(0, 6) + "." + extension;
     }
 
-    document.getElementById("photoInput").addEventListener("change", async (event) => {
-      const files = Array.from(event.target.files);
-      if (files.length === 0) return;
+    async function deletePhotos(ids) {
+      const count = ids.length;
+      const ok = await confirmDialog({
+        title: count === 1 ? "Zmazať túto fotku?" : `Zmazať ${count} ${plural(count, "súbor", "súbory", "súborov")}?`,
+        text: "Zmazané súbory sa už nedajú obnoviť.",
+        confirmLabel: "Zmazať",
+        danger: true,
+      });
+      if (!ok) return;
 
-      const messageEl = document.getElementById("uploadMessage");
-      const progressEl = document.getElementById("uploadProgress");
-      progressEl.classList.remove("hidden");
-      progressEl.value = 0;
+      // Najprv súbory, potom databázové riadky. Keby zlyhal druhý krok,
+      // uvidíme rozbité fotky a vieme to opraviť; opačné poradie by po sebe
+      // nechalo neviditeľné súbory, o ktorých by appka už nevedela.
+      const paths = ids.map((id) => allPhotos.find((photo) => photo.id === id).storage_path);
+      const { error: storageError } = await supabaseClient.storage.from("photos").remove(paths);
+      if (storageError) return showToast("Chyba pri mazaní súboru: " + storageError.message, "error");
+      const { error } = await supabaseClient.from("photos").delete().in("id", ids);
+      if (error) return showToast("Chyba: " + error.message, "error");
 
+      ids.forEach((id) => selectedIds.delete(id));
+      showToast(count === 1 ? "Fotka zmazaná." : `Zmazané: ${count}`, "ok");
+      await loadPhotos();
+      updateSelectionBar();
+    }
+
+    // Filter Všetko / Fotky / Videá
+    document.getElementById("mediaFilter").addEventListener("click", (event) => {
+      const chip = event.target.closest(".chip");
+      if (!chip) return;
+      mediaFilter = chip.dataset.filter;
+      document.querySelectorAll("#mediaFilter .chip").forEach((other) => other.classList.toggle("active", other === chip));
+      renderGallery();
+    });
+
+    document.getElementById("refreshButton").addEventListener("click", async () => {
+      await Promise.all([loadPhotos(true), loadMessages(true)]);
+      showToast("Obnovené.", "ok");
+    });
+
+    // Živé obnovovanie: každých 30 s tichý dopyt. Kým je karta v pozadí,
+    // prehliadač intervaly aj tak spomaľuje, ale radšej ich úplne preskočíme.
+    document.getElementById("liveToggle").addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      const on = !button.classList.contains("active");
+      button.classList.toggle("active", on);
+      clearInterval(liveTimer);
+      if (on) {
+        liveTimer = setInterval(() => {
+          if (document.hidden) return;
+          loadPhotos(true);
+          loadMessages(true);
+        }, 30000);
+        showToast("Živé obnovovanie zapnuté - nové fotky sa ukážu samé.", "ok");
+      }
+    });
+
+    /* ---------- Výber viacerých fotiek ---------- */
+
+    function setSelecting(on) {
+      selecting = on;
+      document.getElementById("gallery").classList.toggle("selecting", on);
+      document.getElementById("selectButton").classList.toggle("active", on);
+      if (!on) {
+        selectedIds.clear();
+        document.querySelectorAll(".photo.selected").forEach((figure) => figure.classList.remove("selected"));
+      }
+      updateSelectionBar();
+    }
+
+    function toggleSelected(id) {
+      if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+      const figure = document.querySelector(`.photo[data-id="${id}"]`);
+      if (figure) figure.classList.toggle("selected", selectedIds.has(id));
+      updateSelectionBar();
+    }
+
+    function updateSelectionBar() {
+      const bar = document.getElementById("selectionBar");
+      bar.classList.toggle("hidden", !selecting);
+      const count = selectedIds.size;
+      document.getElementById("selectionCount").textContent = count + " " + plural(count, "vybratý", "vybraté", "vybratých");
+      document.getElementById("downloadSelectedButton").disabled = count === 0;
+      document.getElementById("deleteSelectedButton").disabled = count === 0;
+    }
+
+    // V režime výberu klik na fotku vyberá namiesto otvorenia lightboxu.
+    // Poslucháč v zachytávacej fáze (tretí parameter true) zbehne skôr než
+    // klik na samotný <img> a zastaví ho.
+    document.getElementById("gallery").addEventListener("click", (event) => {
+      if (!selecting) return;
+      const figure = event.target.closest(".photo");
+      if (!figure || event.target.closest(".photo-overlay")) return;
+      event.stopPropagation();
+      event.preventDefault();
+      toggleSelected(figure.dataset.id);
+    }, true);
+
+    document.getElementById("selectButton").addEventListener("click", () => setSelecting(!selecting));
+    document.getElementById("cancelSelectButton").addEventListener("click", () => setSelecting(false));
+    document.getElementById("selectAllButton").addEventListener("click", () => {
+      visiblePhotos().forEach((photo) => selectedIds.add(photo.id));
+      document.querySelectorAll(".photo").forEach((figure) => figure.classList.add("selected"));
+      updateSelectionBar();
+    });
+    document.getElementById("deleteSelectedButton").addEventListener("click", () => deletePhotos(Array.from(selectedIds)));
+    document.getElementById("downloadSelectedButton").addEventListener("click", () => {
+      zipPhotos(allPhotos.filter((photo) => selectedIds.has(photo.id)), document.getElementById("downloadSelectedButton"));
+    });
+    document.getElementById("downloadAllButton").addEventListener("click", () => {
+      zipPhotos(visiblePhotos(), document.getElementById("downloadAllButton"));
+    });
+
+    async function zipPhotos(photos, button) {
+      if (photos.length === 0) return showToast("Nie je čo stiahnuť.", "error");
+      const original = button.innerHTML;
+      button.disabled = true;
+      try {
+        const items = photos.map((photo, index) => ({
+          url: publicUrl("photos", photo.storage_path),
+          filename: photoFilename(photo, index),
+        }));
+        await downloadAsZip(items, safeFilename(currentEvent.name) + "-fotky.zip", (done, total) => {
+          button.innerHTML = `<span class="spinner"></span> ${done} / ${total}`;
+        });
+        showToast(`ZIP so ${photos.length} ${plural(photos.length, "súborom", "súbormi", "súbormi")} je stiahnutý.`, "ok");
+      } catch (error) {
+        showToast("Sťahovanie zlyhalo: " + error.message, "error");
+      } finally {
+        button.disabled = false;
+        button.innerHTML = original;
+      }
+    }
+
+    /* ---------- Nahrávanie ---------- */
+
+    setupDropzone(document.getElementById("dropzone"), document.getElementById("photoInput"), async (files) => {
+      const list = createUploadList(document.getElementById("uploadList"), files);
       let done = 0;
-      for (const file of files) {
-        showMessage(messageEl, `Nahrávam ${done + 1} z ${files.length}...`);
+
+      for (let index = 0; index < files.length; index++) {
+        const file = files[index];
+        list.start(index);
 
         // Video sa (na rozdiel od fotiek) neprekomprimúva - zmenšenie videa
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
@@ -350,12 +667,7 @@
         const { error: uploadError } = await supabaseClient.storage
           .from("photos")
           .upload(path, toUpload, { contentType: toUpload.type || file.type });
-
-        if (uploadError) {
-          showMessage(messageEl, "Chyba pri nahrávaní: " + uploadError.message, "error");
-          progressEl.classList.add("hidden");
-          return;
-        }
+        if (uploadError) { list.fail(index, uploadError.message); continue; }
 
         const { error: insertError } = await supabaseClient.from("photos").insert({
           event_id: currentEvent.id,
@@ -363,25 +675,21 @@
           uploaded_by_nickname: "Organizátor",
           media_type: isVideo ? "video" : "photo",
         });
-        if (insertError) {
-          showMessage(messageEl, "Chyba: " + insertError.message, "error");
-          progressEl.classList.add("hidden");
-          return;
-        }
+        if (insertError) { list.fail(index, insertError.message); continue; }
 
+        list.done(index);
         done += 1;
-        progressEl.value = (done / files.length) * 100;
       }
 
-      progressEl.classList.add("hidden");
-      showMessage(messageEl, `Nahraté (${done}).`, "ok");
-      event.target.value = "";
-      await loadPhotos();
+      list.finish();
+      if (done === files.length) showToast(`Nahraté: ${done} ${plural(done, "súbor", "súbory", "súborov")}.`, "ok");
+      else showToast(`Nahraté ${done} z ${files.length}. Niektoré súbory zlyhali.`, "error");
+      await loadPhotos(true);
     });
 
     /* ---------- Kniha hostí ---------- */
 
-    async function loadMessages() {
+    async function loadMessages(silent) {
       const list = document.getElementById("messageList");
       const { data, error } = await supabaseClient
         .from("guestbook_messages")
@@ -390,44 +698,111 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        list.innerHTML = "<li class='message error'>Chyba: " + escapeHtml(error.message) + "</li>";
+        list.innerHTML = emptyState({ iconName: "alert", title: "Odkazy sa nepodarilo načítať", text: error.message });
         return;
       }
-      if (data.length === 0) {
-        list.innerHTML = "<li class='empty'>Zatiaľ žiadne odkazy.</li>";
+      const signature = data.map((item) => item.id).join(",");
+      if (silent && signature === allMessages.map((item) => item.id).join(",")) return;
+
+      allMessages = data;
+      renderStats();
+      renderMessages();
+    }
+
+    function renderMessages() {
+      const list = document.getElementById("messageList");
+      if (allMessages.length === 0) {
+        list.innerHTML = emptyState({ iconName: "chat", title: "Zatiaľ žiadne odkazy", text: "Hostia môžu na svojej stránke nechať želanie alebo odkaz. Všetko sa zobrazí tu." });
         return;
       }
 
       list.innerHTML = "";
-      for (const item of data) {
+      for (const item of allMessages) {
         const nickname = item.nickname || "Hosť";
         const li = document.createElement("li");
-        li.className = "guest-message";
+        li.className = "bubble";
         li.innerHTML = `
-          <div class="guest-message-head">
-            <strong>${escapeHtml(nickname)}</strong>
-            <span class="muted">${formatDateTime(item.created_at)}</span>
-          </div>
-          <p>${escapeHtml(item.message)}</p>
-          <div class="button-row" style="margin-top:0.5rem">
-            <button class="small danger" data-delete-message="${item.id}">Zmazať</button>
-          </div>
-        `;
+          <span class="avatar">${escapeHtml(initials(nickname))}</span>
+          <div class="bubble-body">
+            <div class="bubble-head">
+              <strong>${escapeHtml(nickname)}</strong>
+              <span>${escapeHtml(formatDateTime(item.created_at))}</span>
+            </div>
+            <p>${escapeHtml(item.message)}</p>
+            <div class="bubble-actions">
+              <button type="button" data-delete-message="${item.id}">${icon("trash")}Zmazať</button>
+            </div>
+          </div>`;
         list.appendChild(li);
       }
 
       list.querySelectorAll("[data-delete-message]").forEach((button) => {
         button.addEventListener("click", async () => {
-          if (!confirm("Zmazať tento odkaz?")) return;
-          const { error: deleteError } = await supabaseClient
-            .from("guestbook_messages").delete().eq("id", button.dataset.deleteMessage);
-          if (deleteError) return alert("Chyba: " + deleteError.message);
+          const ok = await confirmDialog({ title: "Zmazať tento odkaz?", text: "Odkaz sa už nedá obnoviť.", confirmLabel: "Zmazať", danger: true });
+          if (!ok) return;
+          const { error } = await supabaseClient.from("guestbook_messages").delete().eq("id", button.dataset.deleteMessage);
+          if (error) return showToast("Chyba: " + error.message, "error");
+          showToast("Odkaz zmazaný.", "ok");
           await loadMessages();
         });
       });
     }
 
+    // Kniha hostí ako textový súbor - pamiatka, ktorá nezávisí od appky.
+    document.getElementById("exportBookButton").addEventListener("click", () => {
+      if (allMessages.length === 0) return showToast("Kniha hostí je zatiaľ prázdna.", "error");
+      const lines = [currentEvent.name, currentEvent.event_date ? formatDateLong(currentEvent.event_date) : "", "", "Kniha hostí", "".padEnd(40, "-"), ""];
+      [...allMessages].reverse().forEach((item) => {
+        lines.push(`${item.nickname || "Hosť"} (${formatDateTime(item.created_at)})`, item.message, "");
+      });
+      const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = safeFilename(currentEvent.name) + "-kniha-hosti.txt";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    document.getElementById("printBookButton").addEventListener("click", () => {
+      if (allMessages.length === 0) return showToast("Kniha hostí je zatiaľ prázdna.", "error");
+      const entries = [...allMessages].reverse().map((item) => `
+        <li>
+          <strong>${escapeHtml(item.nickname || "Hosť")}</strong>
+          <span>${escapeHtml(formatDateTime(item.created_at))}</span>
+          <p>${escapeHtml(item.message)}</p>
+        </li>`).join("");
+      printSheet(`
+        <span class="logo">Na<span>Pamiatku</span></span>
+        <h1>${escapeHtml(currentEvent.name)}</h1>
+        <p class="print-date">Kniha hostí${currentEvent.event_date ? " · " + escapeHtml(formatDateLong(currentEvent.event_date)) : ""}</p>
+        <ul class="print-book">${entries}</ul>`);
+    });
+
     /* ---------- Nastavenia ---------- */
+
+    function renderDetails() {
+      document.getElementById("detailsName").value = currentEvent.name;
+      document.getElementById("detailsDate").value = currentEvent.event_date || "";
+    }
+
+    document.getElementById("detailsForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const messageEl = document.getElementById("detailsMessage");
+      const updates = {
+        name: document.getElementById("detailsName").value.trim(),
+        event_date: document.getElementById("detailsDate").value || null,
+      };
+      if (!updates.name) return showMessage(messageEl, "Názov nemôže byť prázdny.", "error");
+
+      const { error } = await supabaseClient.from("events").update(updates).eq("id", currentEvent.id);
+      if (error) return showMessage(messageEl, error.message, "error");
+
+      Object.assign(currentEvent, updates);
+      document.title = "NaPamiatku — " + currentEvent.name;
+      renderHeader();
+      showMessage(messageEl, "");
+      showToast("Údaje eventu uložené.", "ok");
+    });
 
     document.getElementById("passwordForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -437,9 +812,9 @@
         p_password: document.getElementById("newEventPassword").value,
       });
       if (error) return showMessage(messageEl, error.message, "error");
-
       document.getElementById("passwordForm").reset();
-      showMessage(messageEl, "Heslo eventu zmenené.", "ok");
+      showMessage(messageEl, "");
+      showToast("Heslo eventu zmenené. Nezabudni ho povedať hosťom.", "ok");
     });
 
     function renderGiftSettings() {
@@ -465,12 +840,11 @@
         gift_recipient: document.getElementById("giftRecipient").value.trim() || null,
         gift_message: document.getElementById("giftMessage").value.trim() || null,
       };
-
       const { error } = await supabaseClient.from("events").update(updates).eq("id", currentEvent.id);
       if (error) return showMessage(messageEl, error.message, "error");
-
       Object.assign(currentEvent, updates);
-      showMessage(messageEl, "Uložené.", "ok");
+      showMessage(messageEl, "");
+      showToast(enabled ? "Dary sú zapnuté." : "Dary sú vypnuté.", "ok");
     });
 
     init();

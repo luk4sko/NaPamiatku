@@ -29,9 +29,9 @@ Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť 
 | `register.html` | Registrácia Klienta (email → odkaz na nastavenie hesla) |
 | `login.html` | Prihlásenie + obnova hesla |
 | `set-password.html` | Nastavenie hesla po pozvánke / po obnove |
-| `dashboard.html` | Podľa role: schvaľovanie a správa účtov (Majiteľ) / žiadosť o event (Klient) |
-| `event.html` | Správa jedného eventu — fotky, kniha hostí, QR kód, nastavenia, dary |
-| `guest.html` | Verejná stránka pre hostí (cez `?slug=`) |
+| `dashboard.html` | Prehľad eventov s náhľadmi a počtami fotiek; podľa role aj schvaľovanie žiadostí a správa účtov (Majiteľ) |
+| `event.html` | Správa jedného eventu — fotky (filter, výber, ZIP, živé obnovovanie), kniha hostí (tlač, export), QR kód + tlačiteľná kartička, nastavenia, dary |
+| `guest.html` | Verejná stránka pre hostí (cez `?slug=`): heslo → meno → fotky, kniha hostí, dary |
 
 ## Databázová schéma
 

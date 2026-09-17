@@ -16,11 +16,18 @@
     </div>
   </nav>
 
-  <div class="page" style="text-align: center; padding-top: 4rem; padding-bottom: 4rem;">
-    <h1>404 — stránka neexistuje</h1>
-    <p class="muted">Adresa, ktorú hľadáš, tu nie je. Možno bola preklep, alebo odkaz už neplatí.</p>
-    <p style="margin-top: 1.5rem;"><a href="/"><button type="button">Späť na úvod</button></a></p>
-  </div>
+  <main class="not-found">
+    <div class="not-found-inner">
+      <p class="not-found-code">404</p>
+      <div class="empty-state-icon"><span data-icon="search"></span></div>
+      <h1>Túto stránku sme nenašli</h1>
+      <p class="muted">Adresa, ktorú hľadáš, tu nie je. Možno bola preklep, alebo odkaz už neplatí. Ak si sem prišiel cez QR kód, opýtaj sa organizátora na nový.</p>
+      <div class="button-row">
+        <a class="button" href="/"><span data-icon="arrowLeft"></span>Späť na úvod</a>
+        <a class="button" href="/dashboard"><span data-icon="grid"></span>Moje eventy</a>
+      </div>
+    </div>
+  </main>
 
   <script src="js/app.js"></script>
 </body>

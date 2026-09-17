@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NaPamiatku — Dashboard</title>
+  <title>NaPamiatku — Moje eventy</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -12,75 +12,134 @@
     <div class="site-nav-inner">
       <a class="logo" href="/">Na<span>Pamiatku</span></a>
       <div class="top-bar-actions">
-        <span class="nav-identity" data-identity hidden>
-          <span class="nav-identity-email" data-identity-email></span>
-          <span class="badge" data-identity-role></span>
-        </span>
-        <button class="secondary small" data-logout>Odhlásiť sa</button>
+        <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
+        <div class="nav-user" data-identity hidden>
+          <button type="button" class="avatar" data-identity-toggle aria-haspopup="menu" aria-expanded="false" title="Môj účet">
+            <span data-identity-avatar></span>
+          </button>
+          <div class="nav-menu" role="menu">
+            <div class="nav-menu-head">
+              <strong data-identity-name></strong>
+              <span data-identity-email></span>
+              <span class="badge" data-identity-role></span>
+            </div>
+            <a href="/dashboard" role="menuitem"><span data-icon="grid"></span>Moje eventy</a>
+            <button type="button" data-logout role="menuitem"><span data-icon="logout"></span>Odhlásiť sa</button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
 
-  <div class="page-hero">
+  <header class="app-hero">
     <div class="page">
-      <div class="top-bar">
+      <div class="app-hero-top">
         <div>
-          <h1>Dashboard</h1>
+          <h1 id="greeting">Vitaj <em>späť</em>.</h1>
+          <p class="app-hero-sub" id="summary"></p>
+        </div>
+        <div class="app-hero-actions">
+          <button type="button" id="newEventButton"><span data-icon="plus"></span>Nový event</button>
         </div>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div class="page">
-    <!-- ---------- Časť len pre Majiteľa ---------- -->
-    <section id="majitelSection" class="hidden">
-      <h2>Žiadosti o schválenie</h2>
+  <main class="page">
+    <!-- Záložky vidí len majiteľ - klient má iba svoje eventy. -->
+    <div class="tabs hidden" id="ownerTabs">
+      <button class="tab active" data-tab="events"><span data-icon="grid"></span>Eventy</button>
+      <button class="tab" data-tab="requests"><span data-icon="inbox"></span>Žiadosti <span class="tab-count alert" id="pendingCount"></span></button>
+      <button class="tab" data-tab="accounts"><span data-icon="users"></span>Účty</button>
+    </div>
+
+    <!-- ---------- Eventy ---------- -->
+    <section data-panel="events">
+      <div id="clientPending"></div>
+
+      <div class="toolbar">
+        <label class="search-field">
+          <span data-icon="search"></span>
+          <input type="search" id="searchInput" placeholder="Hľadať event..." aria-label="Hľadať event" />
+        </label>
+        <div class="toolbar-spacer"></div>
+        <div class="chips" id="eventFilter">
+          <button type="button" class="chip active" data-filter="all">Všetky</button>
+          <button type="button" class="chip" data-filter="upcoming">Nadchádzajúce</button>
+          <button type="button" class="chip" data-filter="past">Prebehnuté</button>
+        </div>
+      </div>
+
+      <ul id="eventList" class="event-grid"></ul>
+    </section>
+
+    <!-- ---------- Žiadosti (len majiteľ) ---------- -->
+    <section data-panel="requests" class="hidden">
+      <div class="app-section-head">
+        <h2><span data-icon="inbox"></span>Žiadosti o schválenie</h2>
+      </div>
       <div id="pendingList"></div>
+    </section>
 
-      <h2>Vytvoriť účet pre klienta</h2>
+    <!-- ---------- Účty (len majiteľ) ---------- -->
+    <section data-panel="accounts" class="hidden">
+      <div class="app-section-head">
+        <h2><span data-icon="mail"></span>Pozvať klienta</h2>
+      </div>
       <div class="card">
-        <p class="muted">Klientovi pošleme email s odkazom, cez ktorý si sám nastaví heslo. Ty jeho heslo nikdy neuvidíš.</p>
+        <p class="muted" style="margin-top:0">Klientovi pošleme email s odkazom, cez ktorý si sám nastaví heslo. Ty jeho heslo nikdy neuvidíš.</p>
         <form id="inviteForm">
           <div class="field">
             <label for="clientEmail">Email klienta</label>
-            <input type="email" id="clientEmail" required />
+            <input type="email" id="clientEmail" required placeholder="klient@example.com" />
           </div>
-          <button type="submit" id="inviteButton">Poslať pozvánku</button>
+          <button type="submit" id="inviteButton"><span data-icon="mail"></span>Poslať pozvánku</button>
           <p id="inviteMessage" class="message"></p>
         </form>
       </div>
 
-      <h2>Všetky účty</h2>
+      <div class="app-section-head">
+        <h2><span data-icon="users"></span>Všetky účty</h2>
+      </div>
       <div id="profileList"></div>
     </section>
+  </main>
 
-    <!-- ---------- Žiadosť o event (Klient aj Majiteľ) ---------- -->
-    <h2>Požiadať o nový event</h2>
-    <div class="card">
-      <p class="muted" id="requestHint">Žiadosť musí schváliť prevádzkovateľ. Heslo eventu budú zadávať hostia po naskenovaní QR kódu — vyber jednoduché, ktoré im vieš povedať.</p>
+  <!-- ---------- Dialóg: nový event ---------- -->
+  <dialog class="dialog" id="newEventDialog">
+    <div class="dialog-form">
+      <div class="dialog-head">
+        <div>
+          <h3>Nový event</h3>
+          <p class="muted" id="requestHint">Žiadosť schváli prevádzkovateľ. Heslo budú zadávať hostia po naskenovaní QR kódu — vyber jednoduché, ktoré im vieš povedať.</p>
+        </div>
+        <button type="button" class="secondary small icon-button" data-dialog-close aria-label="Zavrieť"><span data-icon="x"></span></button>
+      </div>
       <form id="requestForm">
         <div class="field">
           <label for="eventName">Názov eventu</label>
-          <input type="text" id="eventName" required maxlength="80" />
+          <input type="text" id="eventName" required maxlength="80" placeholder="napr. Svadba Lucia & Marek" />
         </div>
-        <div class="field">
-          <label for="eventDate">Dátum (voliteľné)</label>
-          <input type="date" id="eventDate" />
-        </div>
-        <div class="field">
-          <label for="eventPassword">Heslo eventu pre hostí (aspoň 4 znaky)</label>
-          <div class="password-field">
-            <input type="password" id="eventPassword" minlength="4" required />
+        <div class="field-row">
+          <div class="field">
+            <label for="eventDate">Dátum (voliteľné)</label>
+            <input type="date" id="eventDate" />
+          </div>
+          <div class="field">
+            <label for="eventPassword">Heslo pre hostí (aspoň 4 znaky)</label>
+            <div class="password-field">
+              <input type="password" id="eventPassword" minlength="4" required autocomplete="off" />
+            </div>
           </div>
         </div>
-        <button type="submit" id="requestButton">Odoslať žiadosť</button>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" data-dialog-close>Zrušiť</button>
+          <button type="submit" id="requestButton"><span data-icon="check"></span><span id="requestButtonLabel">Odoslať žiadosť</span></button>
+        </div>
         <p id="requestMessage" class="message"></p>
       </form>
     </div>
-
-    <h2 id="eventsHeading">Moje eventy</h2>
-    <ul id="eventList" class="event-list"></ul>
-  </div>
+  </dialog>
 
   <footer class="site-footer">
     <div class="site-footer-inner">
@@ -102,6 +161,12 @@
   <script src="js/app.js"></script>
   <script>
     let profile = null;
+    let isOwner = false;
+    // Všetky eventy aj so štatistikami - vyhľadávanie a filter bežia nad
+    // týmto poľom v prehliadači, bez ďalších dopytov na server.
+    let allEvents = [];
+    let searchQuery = "";
+    let activeFilter = "all";
 
     async function init() {
       const session = await requireAuth();
@@ -109,57 +174,174 @@
 
       profile = await loadProfile(session.user.id);
       renderIdentity(session, profile);
+      renderGreeting();
 
-      if (profile && profile.role === "majitel") {
-        document.getElementById("majitelSection").classList.remove("hidden");
-        document.getElementById("eventsHeading").textContent = "Všetky eventy";
+      isOwner = !!(profile && profile.role === "majitel");
+      if (isOwner) {
+        document.getElementById("ownerTabs").classList.remove("hidden");
         document.getElementById("requestHint").textContent =
           "Ako majiteľ svoj event schváliš sám hneď po vytvorení.";
-        await loadPending();
-        await loadProfiles();
+        document.getElementById("requestButtonLabel").textContent = "Vytvoriť event";
+        setupTabs();
+        await Promise.all([loadEvents(), loadPending(), loadProfiles()]);
+      } else {
+        await loadEvents();
       }
+    }
 
-      await loadEvents();
+    // "Ahoj, Lukáš." - krstné meno z profilu; bez mena neutrálne "Vitaj späť."
+    function renderGreeting() {
+      const firstName = profile && profile.full_name ? profile.full_name.trim().split(/\s+/)[0] : "";
+      document.getElementById("greeting").innerHTML = firstName
+        ? `Ahoj, <em>${escapeHtml(firstName)}</em>.`
+        : "Vitaj <em>späť</em>.";
+    }
+
+    function renderSummary() {
+      const approved = allEvents.filter((event) => event.status === "approved");
+      const photos = approved.reduce((sum, event) => sum + event.photoCount + event.videoCount, 0);
+      const messages = approved.reduce((sum, event) => sum + event.messageCount, 0);
+      const parts = [];
+      parts.push(icon("calendar") + " " + approved.length + " " + plural(approved.length, "event", "eventy", "eventov"));
+      parts.push(icon("camera") + " " + photos + " " + plural(photos, "fotka", "fotky", "fotiek"));
+      parts.push(icon("chat") + " " + messages + " " + plural(messages, "odkaz", "odkazy", "odkazov"));
+      document.getElementById("summary").innerHTML = parts.map((part) => "<span>" + part + "</span>").join("");
     }
 
     /* ---------- Eventy ---------- */
 
     async function loadEvents() {
       const listEl = document.getElementById("eventList");
-      listEl.innerHTML = "<li class='muted'>Načítavam...</li>";
+      listEl.innerHTML = skeletonCards(3);
 
       // Nefiltrujeme podľa používateľa - o tom, ktoré eventy uvidí,
       // rozhoduje RLS politika v databáze (majiteľ všetky, klient svoje).
-      const { data, error } = await supabaseClient
-        .from("events")
-        .select("id, name, event_date, status, client_id")
-        .order("created_at", { ascending: false });
+      const [eventsResult, photosResult, messagesResult] = await Promise.all([
+        supabaseClient.from("events").select("id, name, event_date, status, client_id, created_at").order("created_at", { ascending: false }),
+        supabaseClient.from("photos").select("event_id, storage_path, media_type, created_at").order("created_at", { ascending: false }),
+        supabaseClient.from("guestbook_messages").select("event_id"),
+      ]);
 
-      if (error) {
-        listEl.innerHTML = "<li class='message error'>Chyba: " + escapeHtml(error.message) + "</li>";
+      if (eventsResult.error) {
+        listEl.innerHTML = emptyState({ iconName: "alert", title: "Eventy sa nepodarilo načítať", text: eventsResult.error.message });
         return;
       }
 
-      const visible = data.filter((event) => event.status !== "pending");
+      // Fotky a odkazy si rozdelíme podľa eventu: počty + prvá (najnovšia)
+      // fotka ako obrázok na kartu.
+      const stats = {};
+      const statFor = (id) => (stats[id] = stats[id] || { photoCount: 0, videoCount: 0, messageCount: 0, cover: null });
+      (photosResult.data || []).forEach((photo) => {
+        const stat = statFor(photo.event_id);
+        if (photo.media_type === "video") stat.videoCount += 1;
+        else {
+          stat.photoCount += 1;
+          if (!stat.cover) stat.cover = publicUrl("photos", photo.storage_path);
+        }
+      });
+      (messagesResult.data || []).forEach((message) => { statFor(message.event_id).messageCount += 1; });
 
+      allEvents = eventsResult.data.map((event) => Object.assign({}, event, statFor(event.id)));
+      renderSummary();
+      renderClientPending();
+      renderEvents();
+    }
+
+    function eventMatchesFilter(event) {
+      if (searchQuery && !event.name.toLowerCase().includes(searchQuery)) return false;
+      if (activeFilter === "all") return true;
+      if (!event.event_date) return activeFilter === "upcoming";
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isPast = new Date(event.event_date) < today;
+      return activeFilter === "past" ? isPast : !isPast;
+    }
+
+    function renderEvents() {
+      const listEl = document.getElementById("eventList");
+      // Čakajúce žiadosti klienta sú zvlášť nad zoznamom, sem nepatria.
+      const visible = allEvents.filter((event) => event.status !== "pending" && eventMatchesFilter(event));
+
+      if (allEvents.filter((event) => event.status !== "pending").length === 0) {
+        listEl.innerHTML = emptyState({
+          iconName: "sparkles",
+          title: "Zatiaľ tu nie je žiadny event",
+          text: isOwner
+            ? "Vytvor prvý event a máš QR kód pre hostí za minútu."
+            : "Požiadaj o svoj prvý event. Po schválení dostaneš QR kód pre hostí.",
+          action: `<button type="button" onclick="openNewEvent()">${icon("plus")}Nový event</button>`,
+        });
+        return;
+      }
       if (visible.length === 0) {
-        listEl.innerHTML = "<li class='empty'>Zatiaľ tu nie je žiadny event.</li>";
+        listEl.innerHTML = emptyState({ iconName: "search", title: "Nič sa nenašlo", text: "Skús iný názov alebo filter." });
         return;
       }
 
       listEl.innerHTML = "";
       for (const event of visible) {
         const li = document.createElement("li");
-        li.className = "card";
+        const cover = event.cover ? ` style="background-image:url('${escapeHtml(event.cover)}')"` : "";
+        const dateText = event.event_date
+          ? `${formatDateLong(event.event_date)} · ${relativeDate(event.event_date)}`
+          : "Dátum nezadaný";
+        const badge = event.status === "rejected" ? '<span class="badge rejected">zamietnutý</span>' : "";
         li.innerHTML = `
-          <a class="event-link" href="/event?id=${encodeURIComponent(event.id)}">
-            <h3>${escapeHtml(event.name)} <span class="badge ${event.status}">${event.status === "approved" ? "schválený" : "zamietnutý"}</span></h3>
-            <p class="muted">${event.event_date ? "Dátum: " + formatDate(event.event_date) : "Dátum nezadaný"}</p>
-          </a>
-        `;
+          <a class="event-card" href="/event?id=${encodeURIComponent(event.id)}">
+            <div class="event-card-cover"${cover}>${event.cover ? "" : icon("camera")}${badge}</div>
+            <div class="event-card-body">
+              <h3>${escapeHtml(event.name)}</h3>
+              <div class="event-card-meta">${icon("calendar")}<span>${escapeHtml(dateText)}</span></div>
+              <div class="event-card-stats">
+                <span>${icon("camera")}${event.photoCount}</span>
+                <span>${icon("video")}${event.videoCount}</span>
+                <span>${icon("chat")}${event.messageCount}</span>
+              </div>
+            </div>
+          </a>`;
         listEl.appendChild(li);
       }
     }
+
+    // Klient po odoslaní žiadosti potrebuje vidieť, že sa niečo deje.
+    function renderClientPending() {
+      const container = document.getElementById("clientPending");
+      if (isOwner) { container.innerHTML = ""; return; }
+      const pending = allEvents.filter((event) => event.status === "pending");
+      container.innerHTML = pending.map((event) => `
+        <div class="notice">
+          ${icon("hourglass")}
+          <p>
+            <strong>${escapeHtml(event.name)} čaká na schválenie</strong>
+            Žiadosť sme odoslali ${escapeHtml(formatDateTime(event.created_at))}. Hneď po schválení sa event objaví nižšie aj s QR kódom pre hostí.
+          </p>
+        </div>`).join("");
+    }
+
+    document.getElementById("searchInput").addEventListener("input", (event) => {
+      searchQuery = event.target.value.trim().toLowerCase();
+      renderEvents();
+    });
+
+    document.getElementById("eventFilter").addEventListener("click", (event) => {
+      const chip = event.target.closest(".chip");
+      if (!chip) return;
+      activeFilter = chip.dataset.filter;
+      document.querySelectorAll("#eventFilter .chip").forEach((other) => other.classList.toggle("active", other === chip));
+      renderEvents();
+    });
+
+    /* ---------- Nový event ---------- */
+
+    const newEventDialog = document.getElementById("newEventDialog");
+    setupDialog(newEventDialog);
+
+    function openNewEvent() {
+      showMessage(document.getElementById("requestMessage"), "");
+      newEventDialog.showModal();
+      document.getElementById("eventName").focus();
+    }
+    document.getElementById("newEventButton").addEventListener("click", openNewEvent);
 
     document.getElementById("requestForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -181,24 +363,24 @@
       }
 
       // Majiteľ nemusí čakať na schválenie od nikoho - schváli si to sám.
-      if (profile && profile.role === "majitel") {
+      if (isOwner) {
         await supabaseClient.rpc("set_event_status", { p_event_id: newEventId, p_status: "approved" });
       }
 
       button.disabled = false;
       document.getElementById("requestForm").reset();
-      showMessage(messageEl,
-        profile && profile.role === "majitel" ? "Event vytvorený." : "Žiadosť odoslaná, čaká na schválenie.",
-        "ok");
+      newEventDialog.close();
+      showToast(isOwner ? "Event je vytvorený." : "Žiadosť odoslaná, čaká na schválenie.", "ok");
 
       await loadEvents();
-      if (profile && profile.role === "majitel") await loadPending();
+      if (isOwner) await loadPending();
     });
 
     /* ---------- Schvaľovanie (len Majiteľ) ---------- */
 
     async function loadPending() {
       const container = document.getElementById("pendingList");
+      const countEl = document.getElementById("pendingCount");
       const { data, error } = await supabaseClient
         .from("events")
         .select("id, name, event_date, client_id, created_at")
@@ -206,11 +388,12 @@
         .order("created_at", { ascending: true });
 
       if (error) {
-        container.innerHTML = "<p class='message error'>Chyba: " + escapeHtml(error.message) + "</p>";
+        container.innerHTML = emptyState({ iconName: "alert", title: "Žiadosti sa nepodarilo načítať", text: error.message });
         return;
       }
+      countEl.textContent = data.length ? String(data.length) : "";
       if (data.length === 0) {
-        container.innerHTML = "<p class='muted'>Žiadne čakajúce žiadosti.</p>";
+        container.innerHTML = emptyState({ iconName: "check", title: "Všetko vybavené", text: "Momentálne nečaká žiadna žiadosť." });
         return;
       }
 
@@ -223,19 +406,21 @@
       for (const event of data) {
         const client = byId[event.client_id];
         const card = document.createElement("div");
-        card.className = "card";
+        card.className = "request-card";
         card.innerHTML = `
-          <h3>${escapeHtml(event.name)} <span class="badge pending">čaká</span></h3>
-          <p class="muted">
-            Žiada: ${escapeHtml(client ? (client.full_name || client.email) : "neznámy")}<br />
-            ${event.event_date ? "Dátum: " + formatDate(event.event_date) + "<br />" : ""}
-            Odoslané: ${formatDateTime(event.created_at)}
-          </p>
-          <div class="button-row">
-            <button class="small" data-approve="${event.id}">Schváliť</button>
-            <button class="small secondary" data-reject="${event.id}">Zamietnuť</button>
-          </div>
-        `;
+          <div class="request-card-icon">${icon("hourglass")}</div>
+          <div class="request-card-body">
+            <h3>${escapeHtml(event.name)}</h3>
+            <p class="muted">
+              Žiada ${escapeHtml(client ? (client.full_name || client.email) : "neznámy")}
+              ${event.event_date ? " · " + escapeHtml(formatDateLong(event.event_date)) : ""}
+              · odoslané ${escapeHtml(formatDateTime(event.created_at))}
+            </p>
+            <div class="button-row">
+              <button class="small" data-approve="${event.id}">${icon("check")}Schváliť</button>
+              <button class="small secondary" data-reject="${event.id}">${icon("x")}Zamietnuť</button>
+            </div>
+          </div>`;
         container.appendChild(card);
       }
 
@@ -243,7 +428,15 @@
         button.addEventListener("click", () => changeStatus(button.dataset.approve, "approved"));
       });
       container.querySelectorAll("[data-reject]").forEach((button) => {
-        button.addEventListener("click", () => changeStatus(button.dataset.reject, "rejected"));
+        button.addEventListener("click", async () => {
+          const ok = await confirmDialog({
+            title: "Zamietnuť žiadosť?",
+            text: "Klient uvidí event ako zamietnutý. Hostia sa k nemu nedostanú.",
+            confirmLabel: "Zamietnuť",
+            danger: true,
+          });
+          if (ok) changeStatus(button.dataset.reject, "rejected");
+        });
       });
     }
 
@@ -252,12 +445,9 @@
         p_event_id: eventId,
         p_status: status,
       });
-      if (error) {
-        alert("Chyba: " + error.message);
-        return;
-      }
-      await loadPending();
-      await loadEvents();
+      if (error) return showToast("Chyba: " + error.message, "error");
+      showToast(status === "approved" ? "Event schválený." : "Žiadosť zamietnutá.", "ok");
+      await Promise.all([loadPending(), loadEvents()]);
     }
 
     /* ---------- Účty klientov (len Majiteľ) ---------- */
@@ -288,7 +478,7 @@
         return;
       }
       document.getElementById("inviteForm").reset();
-      showMessage(messageEl, "Pozvánka odoslaná na " + email, "ok");
+      showToast("Pozvánka odoslaná na " + email, "ok");
     });
 
     async function loadProfiles() {
@@ -299,19 +489,22 @@
         .order("created_at", { ascending: true });
 
       if (error) {
-        container.innerHTML = "<p class='message error'>Chyba: " + escapeHtml(error.message) + "</p>";
+        container.innerHTML = emptyState({ iconName: "alert", title: "Účty sa nepodarilo načítať", text: error.message });
         return;
       }
 
       container.innerHTML = "";
       for (const item of data) {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <h3>${escapeHtml(item.full_name || item.email)} <span class="badge">${escapeHtml(item.role)}</span></h3>
-          <p class="muted">${escapeHtml(item.email)} · vytvorený ${formatDate(item.created_at)}</p>
-        `;
-        container.appendChild(card);
+        const row = document.createElement("div");
+        row.className = "account-row";
+        row.innerHTML = `
+          <span class="avatar">${escapeHtml(initials(item.full_name, item.email))}</span>
+          <div class="account-row-body">
+            <strong>${escapeHtml(item.full_name || item.email)}</strong>
+            <span>${escapeHtml(item.email)} · od ${escapeHtml(formatDate(item.created_at))}</span>
+          </div>
+          <span class="badge">${item.role === "majitel" ? "Majiteľ" : "Klient"}</span>`;
+        container.appendChild(row);
       }
     }
 
