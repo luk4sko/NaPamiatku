@@ -3815,28 +3815,32 @@ span.avatar:hover {
 }
 
 /* Jedna strana kartičky. Rozmery sú v milimetroch, lebo je to fyzický
-   predmet - na obrazovke sa len zmenšuje transformáciou. */
+   predmet - na obrazovke sa len zmenšuje transformáciou. Základ je polovica
+   A4 (210 × 148,5 mm); pre A5 sa celá strana pri tlači zmenší cez zoom. */
 .tent-face {
-  --tent-bg: #ffffff;
+  --tent-bg: #fffdfa;
   --tent-text: #1c1917;
   --tent-muted: #6f6459;
   --tent-accent: #9a6b3d;
-  --tent-soft: #f5efe7;
-  --tent-border: #e7ded3;
+  --tent-soft: #f6efe6;
+  --tent-border: #e2d6c7;
+  --tent-glow: rgba(154, 107, 61, 0.10);
   box-sizing: border-box;
   width: 210mm;
   height: 148.5mm;
-  padding: 12mm 16mm 12mm;
+  padding: 14mm 16mm 13mm;
   display: grid;
-  grid-template-columns: 82mm 1fr;
+  grid-template-columns: 78mm 1fr;
   column-gap: 12mm;
   align-items: center;
   position: relative;
   overflow: hidden;
-  background: var(--tent-bg);
+  background:
+    radial-gradient(90mm 70mm at 0% 100%, var(--tent-glow), transparent 70%),
+    radial-gradient(70mm 60mm at 100% 0%, var(--tent-glow), transparent 70%),
+    var(--tent-bg);
   color: var(--tent-text);
   font-family: "Inter", system-ui, sans-serif;
-  border-top: 3.5mm solid var(--tent-accent);
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }
@@ -3844,46 +3848,118 @@ span.avatar:hover {
 .tent-face.dark {
   --tent-bg: #14110f;
   --tent-text: #f5f0ea;
-  --tent-muted: #a2988c;
+  --tent-muted: #a89d90;
   --tent-accent: #c89b6a;
   --tent-soft: #221c18;
-  --tent-border: #3a312b;
+  --tent-border: #3d332c;
+  --tent-glow: rgba(200, 155, 106, 0.14);
+}
+
+/* Tenký rámik kúsok od okraja - kartička pôsobí ako pozvánka, nie ako
+   vytlačená webová stránka. Rohy rámika zvýrazňujú krátke zlaté čiarky. */
+.tent-face::before {
+  content: "";
+  position: absolute;
+  inset: 5mm;
+  border: 0.35mm solid var(--tent-border);
+  border-radius: 3mm;
+  pointer-events: none;
+}
+
+.tent-face::after {
+  content: "";
+  position: absolute;
+  inset: 5mm;
+  border-radius: 3mm;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--tent-accent), var(--tent-accent)) top left / 9mm 0.5mm no-repeat,
+    linear-gradient(var(--tent-accent), var(--tent-accent)) top left / 0.5mm 9mm no-repeat,
+    linear-gradient(var(--tent-accent), var(--tent-accent)) top right / 9mm 0.5mm no-repeat,
+    linear-gradient(var(--tent-accent), var(--tent-accent)) top right / 0.5mm 9mm no-repeat,
+    linear-gradient(var(--tent-accent), var(--tent-accent)) bottom left / 9mm 0.5mm no-repeat,
+    linear-gradient(var(--tent-accent), var(--tent-accent)) bottom left / 0.5mm 9mm no-repeat,
+    linear-gradient(var(--tent-accent), var(--tent-accent)) bottom right / 9mm 0.5mm no-repeat,
+    linear-gradient(var(--tent-accent), var(--tent-accent)) bottom right / 0.5mm 9mm no-repeat;
 }
 
 .tent-qr {
-  width: 82mm;
-  height: 82mm;
+  position: relative;
+  z-index: 1;
+  width: 78mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3mm;
+}
+
+.tent-qr img {
+  display: block;
+  width: 78mm;
+  height: 78mm;
   padding: 4mm;
   box-sizing: border-box;
   background: #fff;
   border-radius: 4mm;
   border: 0.4mm solid var(--tent-border);
+  box-shadow: 0 2mm 6mm rgba(0, 0, 0, 0.08);
 }
 
-.tent-qr img {
-  display: block;
-  width: 100%;
-  height: 100%;
+.tent-qr-caption {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5mm;
+  font-size: 8.5pt;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tent-muted);
+}
+
+.tent-qr-caption svg {
+  width: 3.6mm;
+  height: 3.6mm;
+  fill: none;
+  stroke: var(--tent-accent);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .tent-body {
+  position: relative;
+  z-index: 1;
   min-width: 0;
 }
 
 .tent-eyebrow {
-  margin: 0 0 2mm;
-  font-size: 10pt;
+  margin: 0 0 2.5mm;
+  display: flex;
+  align-items: center;
+  gap: 2.5mm;
+  font-size: 9.5pt;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--tent-accent);
+}
+
+/* Krátka zlatá čiarka pred nadpiskom. */
+.tent-eyebrow::before {
+  content: "";
+  width: 7mm;
+  height: 0.5mm;
+  background: var(--tent-accent);
 }
 
 .tent-body h2 {
   margin: 0;
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 24pt;
-  line-height: 1.15;
+  font-size: 25pt;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
   color: var(--tent-text);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -3892,19 +3968,22 @@ span.avatar:hover {
 }
 
 .tent-date {
-  margin: 1.5mm 0 0;
-  font-size: 12pt;
+  margin: 2mm 0 0;
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 12.5pt;
   color: var(--tent-muted);
 }
 
 .tent-steps {
   list-style: none;
-  padding: 0;
+  padding: 6mm 0 0;
   margin: 6mm 0 0;
+  border-top: 0.35mm solid var(--tent-border);
   display: flex;
   flex-direction: column;
   gap: 3mm;
-  font-size: 13.5pt;
+  font-size: 12.5pt;
   line-height: 1.3;
 }
 
@@ -3916,15 +3995,15 @@ span.avatar:hover {
 
 .tent-steps span {
   flex-shrink: 0;
-  width: 8mm;
-  height: 8mm;
+  width: 7.5mm;
+  height: 7.5mm;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--tent-accent);
   color: #fff;
-  font-size: 9.5pt;
+  font-size: 9pt;
   font-weight: 700;
 }
 
@@ -3948,9 +4027,9 @@ span.avatar:hover {
 }
 
 .tent-password small {
-  font-size: 8.5pt;
+  font-size: 8pt;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--tent-muted);
   margin-bottom: 0.5mm;
@@ -3960,18 +4039,20 @@ span.avatar:hover {
   position: absolute;
   left: 16mm;
   right: 16mm;
-  bottom: 6mm;
+  bottom: 7mm;
   margin: 0;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 9.5pt;
+  font-size: 9pt;
   color: var(--tent-muted);
+  z-index: 1;
 }
 
 .tent-logo {
   font-family: "Playfair Display", Georgia, serif;
   font-size: 12pt;
+  font-weight: 700;
   color: var(--tent-text);
 }
 
@@ -3979,17 +4060,13 @@ span.avatar:hover {
   color: var(--tent-accent);
 }
 
-/* Tlač: na obrazovke skryté; A4 na šírku = dve kartičky vedľa seba,
-   každá s hornou stranou otočenou hore nohami (po preložení stojí správne). */
+/* Tlač: na obrazovke skryté. List na výšku, kartička cez celý list,
+   horná polovica otočená o 180° (po preložení stojí správne). */
 .print-tent {
   display: none;
 }
 
 @media print {
-  body > *:not(.print-card):not(.print-tent) {
-    display: none !important;
-  }
-
   .print-tent {
     display: block;
     width: 210mm;
@@ -4009,7 +4086,6 @@ span.avatar:hover {
     flex-shrink: 0;
   }
 
-  /* Horná polovica hore nohami - po preložení stojí správne. */
   .tent-card .tent-face:first-child {
     transform: rotate(180deg);
   }
@@ -4020,14 +4096,32 @@ span.avatar:hover {
     top: 148.5mm;
     left: 0;
     right: 0;
-    /* Leží na zlatom pruhu (horné okraje oboch strán sa stretávajú
-       v preložení), preto je čiara aj popis biele. */
-    border-top: 0.4mm dashed rgba(255, 255, 255, 0.85);
+    border-top: 0.4mm dashed #b8aca0;
     font-size: 7pt;
-    color: rgba(255, 255, 255, 0.9);
+    color: #b8aca0;
     text-align: center;
     line-height: 1;
     padding-top: 1mm;
+  }
+
+  /* A5: rovnaká kartička zmenšená na 148 / 210 = 70,5 %. Zoom zmenší
+     aj rozloženie (nie len obraz), takže milimetre sedia na A5 papier. */
+  .print-tent.a5 {
+    width: 148mm;
+    height: 210mm;
+  }
+
+  .print-tent.a5 .tent-card {
+    width: 148mm;
+    height: 210mm;
+  }
+
+  .print-tent.a5 .tent-face {
+    zoom: 0.7048;
+  }
+
+  .print-tent.a5 .tent-fold {
+    top: 105mm;
   }
 }
 
@@ -4069,4 +4163,12 @@ span.avatar:hover {
 
 .share-body .message:empty {
   display: none;
+}
+
+/* Doplnok v čipe (napr. rozmer kartičky) - menší a tlmený. */
+.chip small {
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.75;
+  margin-left: 0.15rem;
 }
