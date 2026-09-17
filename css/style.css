@@ -3232,7 +3232,7 @@ a.button:hover {
 }
 
 @media print {
-  body > *:not(.print-card) {
+  body > *:not(.print-card):not(.print-tent) {
     display: none !important;
   }
 
@@ -3824,19 +3824,19 @@ span.avatar:hover {
   --tent-soft: #f5efe7;
   --tent-border: #e7ded3;
   box-sizing: border-box;
-  width: 148mm;
-  height: 105mm;
-  padding: 8mm 10mm 8mm;
+  width: 210mm;
+  height: 148.5mm;
+  padding: 12mm 16mm 12mm;
   display: grid;
-  grid-template-columns: 58mm 1fr;
-  column-gap: 8mm;
+  grid-template-columns: 82mm 1fr;
+  column-gap: 12mm;
   align-items: center;
   position: relative;
   overflow: hidden;
   background: var(--tent-bg);
   color: var(--tent-text);
   font-family: "Inter", system-ui, sans-serif;
-  border-top: 2.5mm solid var(--tent-accent);
+  border-top: 3.5mm solid var(--tent-accent);
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }
@@ -3851,12 +3851,12 @@ span.avatar:hover {
 }
 
 .tent-qr {
-  width: 58mm;
-  height: 58mm;
-  padding: 3mm;
+  width: 82mm;
+  height: 82mm;
+  padding: 4mm;
   box-sizing: border-box;
   background: #fff;
-  border-radius: 3mm;
+  border-radius: 4mm;
   border: 0.4mm solid var(--tent-border);
 }
 
@@ -3871,8 +3871,8 @@ span.avatar:hover {
 }
 
 .tent-eyebrow {
-  margin: 0 0 1.5mm;
-  font-size: 8pt;
+  margin: 0 0 2mm;
+  font-size: 10pt;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -3882,7 +3882,7 @@ span.avatar:hover {
 .tent-body h2 {
   margin: 0;
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 17pt;
+  font-size: 24pt;
   line-height: 1.15;
   color: var(--tent-text);
   display: -webkit-box;
@@ -3892,39 +3892,39 @@ span.avatar:hover {
 }
 
 .tent-date {
-  margin: 1mm 0 0;
-  font-size: 8.5pt;
+  margin: 1.5mm 0 0;
+  font-size: 12pt;
   color: var(--tent-muted);
 }
 
 .tent-steps {
   list-style: none;
   padding: 0;
-  margin: 4mm 0 0;
+  margin: 6mm 0 0;
   display: flex;
   flex-direction: column;
-  gap: 2mm;
-  font-size: 10pt;
+  gap: 3mm;
+  font-size: 13.5pt;
   line-height: 1.3;
 }
 
 .tent-steps li {
   display: flex;
   align-items: center;
-  gap: 2.5mm;
+  gap: 3.5mm;
 }
 
 .tent-steps span {
   flex-shrink: 0;
-  width: 5.5mm;
-  height: 5.5mm;
+  width: 8mm;
+  height: 8mm;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--tent-accent);
   color: #fff;
-  font-size: 7pt;
+  font-size: 9.5pt;
   font-weight: 700;
 }
 
@@ -3935,12 +3935,12 @@ span.avatar:hover {
 .tent-password {
   display: inline-flex;
   flex-direction: column;
-  margin-top: 4mm;
-  padding: 1.6mm 4mm;
-  border: 0.5mm dashed var(--tent-accent);
-  border-radius: 2.5mm;
+  margin-top: 6mm;
+  padding: 2.5mm 6mm;
+  border: 0.6mm dashed var(--tent-accent);
+  border-radius: 3.5mm;
   background: var(--tent-soft);
-  font-size: 11pt;
+  font-size: 16pt;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--tent-accent);
@@ -3948,7 +3948,7 @@ span.avatar:hover {
 }
 
 .tent-password small {
-  font-size: 6.5pt;
+  font-size: 8.5pt;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -3958,20 +3958,20 @@ span.avatar:hover {
 
 .tent-footer {
   position: absolute;
-  left: 10mm;
-  right: 10mm;
-  bottom: 4.5mm;
+  left: 16mm;
+  right: 16mm;
+  bottom: 6mm;
   margin: 0;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 7pt;
+  font-size: 9.5pt;
   color: var(--tent-muted);
 }
 
 .tent-logo {
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 9pt;
+  font-size: 12pt;
   color: var(--tent-text);
 }
 
@@ -3991,46 +3991,43 @@ span.avatar:hover {
   }
 
   .print-tent {
-    display: flex;
-    width: 297mm;
-    height: 210mm;
+    display: block;
+    width: 210mm;
+    height: 297mm;
     background: #fff;
   }
 
   .tent-card {
     position: relative;
-    width: 148.5mm;
-    height: 210mm;
+    width: 210mm;
+    height: 297mm;
     display: flex;
     flex-direction: column;
-    align-items: center;
-  }
-
-  /* Strihová čiara medzi kartičkami. */
-  .tent-card + .tent-card {
-    border-left: 0.3mm dashed #b8aca0;
   }
 
   .tent-card .tent-face {
     flex-shrink: 0;
   }
 
+  /* Horná polovica hore nohami - po preložení stojí správne. */
   .tent-card .tent-face:first-child {
     transform: rotate(180deg);
   }
 
-  /* Čiara preloženia v strede + malý popis. */
+  /* Čiarkovaná čiara presne v strede listu = tu preložiť. */
   .tent-fold {
     position: absolute;
-    top: 105mm;
+    top: 148.5mm;
     left: 0;
     right: 0;
-    border-top: 0.3mm dashed #b8aca0;
-    font-size: 6pt;
-    color: #b8aca0;
+    /* Leží na zlatom pruhu (horné okraje oboch strán sa stretávajú
+       v preložení), preto je čiara aj popis biele. */
+    border-top: 0.4mm dashed rgba(255, 255, 255, 0.85);
+    font-size: 7pt;
+    color: rgba(255, 255, 255, 0.9);
     text-align: center;
     line-height: 1;
-    padding-top: 0.8mm;
+    padding-top: 1mm;
   }
 }
 

@@ -139,11 +139,11 @@
 
         <div class="card settings-card">
           <h3><span data-icon="print"></span>Kartička na stôl</h3>
-          <p class="muted">Skladacia kartička, ktorá stojí na stole ako „stan“. Na jeden list A4 sa zmestia dve - vytlač, rozstrihni v strede a prelož.</p>
+          <p class="muted">Vytlač na A4, prelož napoly po čiarkovanej čiare a postav na stôl ako menovku. Obe strany sú rovnaké, takže je čitateľná z oboch strán stola.</p>
           <div class="tent-layout">
             <div>
               <div class="tent-preview" id="tentPreview"></div>
-              <p class="muted tent-note">Náhľad jednej strany (14,8 × 10,5 cm). Obe strany kartičky sú rovnaké.</p>
+              <p class="muted tent-note">Náhľad jednej strany (21 × 14,8 cm - polovica A4).</p>
             </div>
             <div class="tent-options">
               <div class="field">
@@ -159,9 +159,9 @@
                 <p class="muted" style="margin:0;font-size:0.8rem">Heslo sa nikam neukladá - ide len do náhľadu a tlače v tomto prehliadači.</p>
               </div>
               <div class="button-row">
-                <button type="button" id="printCardButton"><span data-icon="print"></span>Vytlačiť (2 ks na A4)</button>
+                <button type="button" id="printCardButton"><span data-icon="print"></span>Vytlačiť kartičku</button>
               </div>
-              <p class="muted" style="margin:0;font-size:0.8rem">V dialógu tlače nechaj A4 na šírku a vypni okraje. Tmavú verziu tlač na hrubší papier - má veľa farby.</p>
+              <p class="muted" style="margin:0;font-size:0.8rem">V dialógu tlače nechaj A4 na výšku a okraje „žiadne“. Tmavú verziu tlač na hrubší papier - má veľa farby.</p>
             </div>
           </div>
         </div>
@@ -408,7 +408,7 @@
     }
 
     // Náhľad je skutočná kartička v milimetroch, len zmenšená transformáciou,
-    // aby sa zmestila do stĺpca. 148 mm = 559 px pri 96 dpi.
+    // aby sa zmestila do stĺpca. 210 mm = 794 px pri 96 dpi.
     async function renderTentPreview() {
       if (!tentQrDataUrl) tentQrDataUrl = await makeQrDataUrl(guestUrl(), 600);
       const preview = document.getElementById("tentPreview");
@@ -420,10 +420,10 @@
       const preview = document.getElementById("tentPreview");
       const face = preview.querySelector(".tent-face");
       if (!face) return;
-      const faceWidthPx = 148 * 96 / 25.4;
+      const faceWidthPx = 210 * 96 / 25.4;
       const scale = preview.clientWidth / faceWidthPx;
       face.style.transform = `scale(${scale})`;
-      preview.style.height = (105 * 96 / 25.4 * scale) + "px";
+      preview.style.height = (148.5 * 96 / 25.4 * scale) + "px";
     }
     window.addEventListener("resize", fitTentPreview);
 
@@ -438,12 +438,12 @@
     document.querySelectorAll("#tentTheme .chip").forEach((chip) => chip.classList.toggle("active", chip.dataset.theme === tentTheme));
     document.getElementById("printPassword").addEventListener("input", renderTentPreview);
 
-    // Tlač: A4 na šírku, dve kartičky vedľa seba. Každá má hornú stranu
-    // otočenú o 180°, aby po preložení v strede stáli obe strany správne.
+    // Tlač: jeden A4 na výšku, kartička cez celý list. Horná polovica je
+    // otočená o 180°, aby po preložení v strede stáli obe strany správne.
     document.getElementById("printCardButton").addEventListener("click", async () => {
       tentQrDataUrl = await makeQrDataUrl(guestUrl(), 800);
-      const card = `<div class="tent-card">${tentFaceHtml()}${tentFaceHtml()}<span class="tent-fold">prelož</span></div>`;
-      printSheet(card + card, "print-tent", "A4 landscape");
+      const card = `<div class="tent-card">${tentFaceHtml()}${tentFaceHtml()}<span class="tent-fold">prelož tu</span></div>`;
+      printSheet(card, "print-tent", "A4 portrait");
     });
 
     // Dočasný prvok priamo v <body>; pri tlači sa cez CSS skryje všetko
