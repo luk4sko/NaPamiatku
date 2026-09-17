@@ -53,7 +53,7 @@
       <div class="card">
         <label for="nickname">Vystupuješ ako</label>
         <div class="copy-row">
-          <input type="text" id="nickname" maxlength="40" placeholder="tvoje meno alebo prezývka" />
+          <input type="text" id="nickname" maxlength="40" placeholder="užívateľské meno" />
           <button type="button" id="saveNicknameButton" class="secondary">Uložiť</button>
         </div>
         <p id="nicknameMessage" class="message"></p>
@@ -208,10 +208,6 @@
 
       nickname = localStorage.getItem(NICKNAME_KEY) || null;
       document.getElementById("nickname").value = nickname || "";
-      if (!nickname) {
-        showMessage(document.getElementById("nicknameMessage"),
-          "Zadaj meno, pod ktorým sa zobrazia tvoje fotky a odkazy.");
-      }
 
       if (eventInfo.gift_enabled && eventInfo.gift_iban) {
         document.getElementById("giftsTab").classList.remove("hidden");
