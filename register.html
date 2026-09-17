@@ -13,6 +13,7 @@
   <meta property="og:url" content="https://napamiatku.com/register" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="stylesheet" href="css/style.css" />
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
 </head>
 <body>
   <div class="auth">
@@ -60,6 +61,10 @@
               <input type="password" id="passwordConfirm" autocomplete="new-password" minlength="6" required />
             </div>
           </div>
+          <label class="consent">
+            <input type="checkbox" id="termsConsent" required />
+            <span>Súhlasím s <a href="/podmienky" target="_blank">obchodnými podmienkami</a> a beriem na vedomie <a href="/ochrana-osobnych-udajov" target="_blank">informácie o ochrane osobných údajov</a>. Mám aspoň 16 rokov.</span>
+          </label>
           <button type="submit" id="submitButton"><span data-icon="sparkles"></span>Vytvoriť účet</button>
           <p id="message" class="message"></p>
         </form>
@@ -67,6 +72,7 @@
         <div class="auth-foot">
           <p>Už máš účet? <a href="/login">Prihlás sa</a></p>
           <p><a href="/">← Späť na úvod</a></p>
+          <p class="auth-legal"><a href="/podmienky">Podmienky</a> · <a href="/ochrana-osobnych-udajov">Ochrana osobných údajov</a> · <a href="/cookies">Cookies</a></p>
         </div>
       </div>
     </main>

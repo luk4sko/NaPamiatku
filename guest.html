@@ -6,6 +6,7 @@
   <title>NaPamiatku</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
 </head>
 <body>
   <!-- 1. krok: brána s heslom. Toto je úplne prvá vec, ktorú hosť po
@@ -47,6 +48,7 @@
         </div>
         <button type="submit"><span data-icon="check"></span>Pokračovať</button>
         <p id="nicknameMessage" class="message"></p>
+        <p class="consent" style="margin:0">Pokračovaním súhlasíš s <a href="/podmienky#obsah" target="_blank">pravidlami obsahu</a>. Nahrávaj len fotky, ktoré si sám odfotil a s ktorých zdieľaním ľudia na nich súhlasia.</p>
       </form>
     </div>
   </section>
@@ -95,6 +97,7 @@
               <input type="file" id="photoInput" accept="image/*,video/*" multiple />
             </label>
             <ul class="upload-list hidden" id="uploadList"></ul>
+            <p class="muted upload-terms">Nahrávaj len vlastné fotky z tohto podujatia. Nevhodný obsah môže ktokoľvek nahlásiť a organizátor ho zmaže. <a href="/podmienky#obsah" target="_blank">Pravidlá</a></p>
           </div>
         </div>
 
@@ -151,6 +154,34 @@
     <div id="notFound" class="hidden"></div>
   </main>
 
+  <!-- Dialóg: nahlásenie fotky -->
+  <dialog class="dialog" id="reportDialog">
+    <div class="dialog-form">
+      <div class="dialog-head">
+        <div>
+          <h3>Nahlásiť fotku</h3>
+          <p class="muted">Napíš, čo je na nej nevhodné (napr. som na nej a neželám si to, nahota, urážlivý obsah). Organizátor nahlásenie dostane hneď.</p>
+        </div>
+        <button type="button" class="secondary small icon-button" data-dialog-close aria-label="Zavrieť"><span data-icon="x"></span></button>
+      </div>
+      <form id="reportForm">
+        <div class="field">
+          <label for="reportReason">Dôvod</label>
+          <textarea id="reportReason" maxlength="500" minlength="3" required placeholder="Čo je na fotke nevhodné?"></textarea>
+        </div>
+        <div class="field">
+          <label for="reportContact">Tvoj kontakt (nepovinné)</label>
+          <input type="text" id="reportContact" maxlength="200" placeholder="e-mail alebo telefón, ak chceš vedieť výsledok" />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" data-dialog-close>Zrušiť</button>
+          <button type="submit" id="reportButton" class="danger-solid"><span data-icon="flag"></span>Nahlásiť</button>
+        </div>
+        <p id="reportMessage" class="message"></p>
+      </form>
+    </div>
+  </dialog>
+
   <!-- Hosť je zároveň potenciálny budúci zákazník - nech vidí, čia služba to je.
        Kým je na obrazovke brána, pätička je skrytá - nemá pod ňou čo visieť. -->
   <footer class="site-footer hidden" id="guestFooter">
@@ -165,6 +196,15 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
         </a>
       </div>
+    </div>
+    <div class="site-footer-legal">
+      <span>Prevádzkovateľ: Lukáš Brtko · <a href="mailto:info@napamiatku.com">info@napamiatku.com</a></span>
+      <nav aria-label="Právne informácie">
+        <a href="/podmienky">Podmienky</a>
+        <a href="/ochrana-osobnych-udajov">Ochrana osobných údajov</a>
+        <a href="/cookies">Cookies</a>
+        <a href="javascript:Cookiebot.renew()">Nastavenia cookies</a>
+      </nav>
     </div>
   </footer>
 
@@ -385,6 +425,7 @@
             <span class="photo-overlay-name">${icon("user")}${escapeHtml(photo.nickname)}</span>
             <div class="photo-overlay-actions">
               <button type="button" data-download="${url}" data-filename="${isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg"}" title="Stiahnuť" aria-label="Stiahnuť">${icon("download")}</button>
+              <button type="button" class="delete" data-report="${photo.id}" title="Nahlásiť nevhodný obsah" aria-label="Nahlásiť">${icon("flag")}</button>
             </div>
           </div>`;
         gallery.appendChild(figure);
@@ -392,6 +433,9 @@
 
       gallery.querySelectorAll("[data-download]").forEach((button) => {
         button.addEventListener("click", () => downloadFile(button.dataset.download, button.dataset.filename));
+      });
+      gallery.querySelectorAll("[data-report]").forEach((button) => {
+        button.addEventListener("click", () => openReportDialog(button.dataset.report));
       });
       setupGalleryLightbox(gallery);
       renderLoadMore(gallery, photos.length, () => { galleryLimit += GALLERY_PAGE; renderGallery(); });
@@ -450,6 +494,42 @@
       if (done === files.length) showToast(`Ďakujeme! Nahraté: ${done} ${plural(done, "súbor", "súbory", "súborov")}.`, "ok");
       else showToast(`Nahraté ${done} z ${files.length}. Niektoré súbory zlyhali - skús ich znova.`, "error");
       await loadPhotos(true);
+    });
+
+    /* ---------- Nahlásenie fotky ---------- */
+
+    // Ktokoľvek s heslom eventu môže fotku nahlásiť (DSA - "notice and action").
+    // Nahlásenie uloží databázová funkcia, ktorá znova overí heslo eventu.
+    const reportDialog = document.getElementById("reportDialog");
+    setupDialog(reportDialog);
+    let reportPhotoId = null;
+
+    function openReportDialog(photoId) {
+      reportPhotoId = photoId;
+      document.getElementById("reportForm").reset();
+      showMessage(document.getElementById("reportMessage"), "");
+      reportDialog.showModal();
+      document.getElementById("reportReason").focus();
+    }
+
+    document.getElementById("reportForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = document.getElementById("reportButton");
+      const messageEl = document.getElementById("reportMessage");
+      button.disabled = true;
+
+      const { error } = await supabaseClient.rpc("guest_report_photo", {
+        p_slug: slug,
+        p_password: eventPassword,
+        p_photo_id: reportPhotoId,
+        p_reason: document.getElementById("reportReason").value.trim(),
+        p_contact: document.getElementById("reportContact").value.trim() || null,
+      });
+
+      button.disabled = false;
+      if (error) return showMessage(messageEl, error.message, "error");
+      reportDialog.close();
+      showToast("Ďakujeme, nahlásenie sme odovzdali organizátorovi.", "ok");
     });
 
     /* ---------- Kniha hostí ---------- */

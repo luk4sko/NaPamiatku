@@ -6,6 +6,7 @@
   <title>NaPamiatku — Event</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
+  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
 </head>
 <body>
   <nav class="site-nav">
@@ -79,6 +80,8 @@
             <ul class="upload-list hidden" id="uploadList"></ul>
           </div>
         </div>
+
+        <div id="reportsPanel" class="hidden"></div>
 
         <div class="toolbar">
           <div class="chips" id="mediaFilter">
@@ -259,6 +262,15 @@
         </a>
       </div>
     </div>
+    <div class="site-footer-legal">
+      <span>Prevádzkovateľ: Lukáš Brtko · <a href="mailto:info@napamiatku.com">info@napamiatku.com</a></span>
+      <nav aria-label="Právne informácie">
+        <a href="/podmienky">Podmienky</a>
+        <a href="/ochrana-osobnych-udajov">Ochrana osobných údajov</a>
+        <a href="/cookies">Cookies</a>
+        <a href="javascript:Cookiebot.renew()">Nastavenia cookies</a>
+      </nav>
+    </div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -270,6 +282,8 @@
     // nad týmito poľami bez ďalších dopytov.
     let allPhotos = [];
     let allMessages = [];
+    // Otvorené nahlásenia fotiek od hostí (DSA - organizátor ich musí vybaviť).
+    let openReports = [];
     let mediaFilter = "all";
     // Galéria sa vykresľuje po dávkach - pri stovkách fotiek by naraz
     // vytvorené <img> prvky stránku na chvíľu zasekli.
@@ -544,6 +558,71 @@
       renderStats();
       renderGallery();
       if (added > 0) showToast(`Pribudli nové súbory: ${added}`, "ok");
+      await loadReports();
+    }
+
+    /* ---------- Nahlásené fotky ---------- */
+
+    async function loadReports() {
+      const { data, error } = await supabaseClient
+        .from("photo_reports")
+        .select("id, photo_id, reason, reporter_contact, created_at")
+        .eq("event_id", currentEvent.id)
+        .is("resolved_at", null)
+        .order("created_at", { ascending: false });
+      // Ak migrácia ešte nebeží, panel jednoducho nezobrazíme.
+      openReports = error ? [] : (data || []);
+      renderReports();
+    }
+
+    function renderReports() {
+      const panel = document.getElementById("reportsPanel");
+      const reports = openReports.filter((report) => allPhotos.some((photo) => photo.id === report.photo_id));
+      panel.classList.toggle("hidden", reports.length === 0);
+      if (reports.length === 0) { panel.innerHTML = ""; return; }
+
+      panel.innerHTML = `
+        <div class="notice reports-notice">
+          ${icon("flag")}
+          <div style="flex:1;min-width:0">
+            <strong>Nahlásené fotky (${reports.length})</strong>
+            <p>Hostia nahlásili tieto fotky ako nevhodné. Pozri si ich a rozhodni - máš na to 48 hodín.</p>
+            <ul class="report-list">
+              ${reports.map((report) => {
+                const photo = allPhotos.find((item) => item.id === report.photo_id);
+                const url = escapeHtml(publicUrl("photos", photo.storage_path));
+                const thumb = photo.media_type === "video" ? `<video src="${url}" muted preload="metadata"></video>` : `<img src="${url}" alt="" loading="lazy" />`;
+                return `
+                  <li class="report-item" data-report-id="${report.id}">
+                    <span class="report-thumb">${thumb}</span>
+                    <div class="report-body">
+                      <p><strong>Dôvod:</strong> ${escapeHtml(report.reason)}</p>
+                      <p class="muted">${escapeHtml(formatDateTime(report.created_at))}${report.reporter_contact ? " · kontakt: " + escapeHtml(report.reporter_contact) : ""}${photo.uploaded_by_nickname ? " · nahral " + escapeHtml(photo.uploaded_by_nickname) : ""}</p>
+                    </div>
+                    <div class="button-row">
+                      <button type="button" class="small danger" data-report-delete="${report.id}" data-photo="${photo.id}">${icon("trash")}Zmazať fotku</button>
+                      <button type="button" class="small secondary" data-report-keep="${report.id}">${icon("check")}Ponechať</button>
+                    </div>
+                  </li>`;
+              }).join("")}
+            </ul>
+          </div>
+        </div>`;
+
+      panel.querySelectorAll("[data-report-delete]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          await deletePhotos([button.dataset.photo]);
+        });
+      });
+      panel.querySelectorAll("[data-report-keep]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const { error } = await supabaseClient.from("photo_reports")
+            .update({ resolved_at: new Date().toISOString() }).eq("id", button.dataset.reportKeep);
+          if (error) return showToast("Chyba: " + error.message, "error");
+          showToast("Nahlásenie uzavreté, fotka zostáva.", "ok");
+          await loadReports();
+        });
+      });
     }
 
     function visiblePhotos() {

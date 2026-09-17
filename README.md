@@ -32,6 +32,9 @@ Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť 
 | `dashboard.html` | Prehľad eventov s náhľadmi a počtami fotiek; podľa role aj schvaľovanie žiadostí a správa účtov (Majiteľ) |
 | `event.html` | Správa jedného eventu — fotky (filter, výber, ZIP, živé obnovovanie), kniha hostí (tlač, export), QR kód + tlačiteľná kartička, nastavenia, dary |
 | `guest.html` | Verejná stránka pre hostí (cez `?slug=`): heslo → meno → fotky, kniha hostí, dary |
+| `podmienky.html` | Obchodné podmienky, pravidlá obsahu a nahlasovanie (DSA), sprostredkovateľská doložka |
+| `ochrana-osobnych-udajov.html` | Zásady ochrany osobných údajov (GDPR čl. 13) |
+| `cookies.html` | Informácie o cookies a úložisku prehliadača + vyhlásenie Cookiebot |
 
 ## Databázová schéma
 

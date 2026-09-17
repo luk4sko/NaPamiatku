@@ -566,6 +566,7 @@ const ICONS = {
   moon: '<path d="M20.5 14.3A8.6 8.6 0 0 1 9.7 3.5a8.6 8.6 0 1 0 10.8 10.8Z"/>',
   list: '<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
   sort: '<path d="M4 6h16M7 12h10M10 18h4"/>',
+  flag: '<path d="M5 21V4M5 4h11l-1.5 3.5L16 11H5"/>',
 };
 
 function icon(name, className) {
