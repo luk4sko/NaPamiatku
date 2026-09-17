@@ -4716,3 +4716,15 @@ mark.todo {
 #CybotCookiebotDialog hr {
   border-color: var(--border) !important;
 }
+
+/* Svetlé (#d6d6d6) oddeľovacie čiary v zozname kategórií a cookies. */
+#CybotCookiebotDialog .CookieCard,
+#CybotCookiebotDialog .CybotCookiebotDialogGpcContainer,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieInfoFooter,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyEmptyCategoryMessage,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieContainerTypes,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieContainerTypesLink,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentIABv2Tabs,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentIABv2Tab {
+  border-color: var(--border) !important;
+}
