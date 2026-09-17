@@ -118,38 +118,50 @@
 
       <!-- ---------- QR kód a zdieľanie ---------- -->
       <section data-panel="qr" class="hidden">
-        <div class="share-grid">
-          <div class="card qr-card">
-            <h3>QR kód pre hostí</h3>
-            <p class="muted">Hosť ho naskenuje mobilom, zadá heslo a môže pridávať fotky.</p>
+        <div class="card settings-card share-card">
+          <div class="qr-card">
             <img id="qrImage" alt="QR kód eventu" />
-            <div class="button-row">
-              <button type="button" id="downloadQrButton"><span data-icon="download"></span>Stiahnuť PNG</button>
-            </div>
+            <button type="button" id="downloadQrButton" class="secondary small"><span data-icon="download"></span>Stiahnuť PNG</button>
           </div>
-
-          <div>
-            <div class="card settings-card">
-              <h3><span data-icon="link"></span>Odkaz pre hostí</h3>
-              <p class="muted">Pre tých, čo QR kód nenaskenujú - pošli im odkaz správou.</p>
+          <div class="share-body">
+            <h3><span data-icon="qr"></span>QR kód a odkaz pre hostí</h3>
+            <p class="muted">Hosť naskenuje kód mobilom, zadá heslo a môže pridávať fotky. Kto kód nenaskenuje, dostane odkaz správou.</p>
+            <div class="field">
+              <label for="guestLink">Odkaz pre hostí</label>
               <div class="copy-row">
                 <input type="text" id="guestLink" readonly />
                 <button type="button" id="copyLinkButton" class="secondary"><span data-icon="copy"></span>Kopírovať</button>
               </div>
               <p id="copyMessage" class="message"></p>
             </div>
+          </div>
+        </div>
 
-            <div class="card settings-card">
-              <h3><span data-icon="print"></span>Kartička na stôl</h3>
-              <p class="muted">Vytlač kartičku s QR kódom a krátkym návodom a polož ju na stoly.</p>
+        <div class="card settings-card">
+          <h3><span data-icon="print"></span>Kartička na stôl</h3>
+          <p class="muted">Skladacia kartička, ktorá stojí na stole ako „stan“. Na jeden list A4 sa zmestia dve - vytlač, rozstrihni v strede a prelož.</p>
+          <div class="tent-layout">
+            <div>
+              <div class="tent-preview" id="tentPreview"></div>
+              <p class="muted tent-note">Náhľad jednej strany (14,8 × 10,5 cm). Obe strany kartičky sú rovnaké.</p>
+            </div>
+            <div class="tent-options">
+              <div class="field">
+                <label>Farebná verzia</label>
+                <div class="chips" id="tentTheme">
+                  <button type="button" class="chip active" data-theme="light"><span data-icon="sparkles"></span>Svetlá</button>
+                  <button type="button" class="chip" data-theme="dark"><span data-icon="moon"></span>Tmavá</button>
+                </div>
+              </div>
               <div class="field">
                 <label for="printPassword">Heslo na kartičke (voliteľné)</label>
                 <input type="text" id="printPassword" maxlength="40" autocomplete="off" placeholder="napr. lucka2026" />
-                <p class="muted" style="margin:0;font-size:0.8rem">Heslo sa nikam neukladá - ide len do tlače v tomto prehliadači.</p>
+                <p class="muted" style="margin:0;font-size:0.8rem">Heslo sa nikam neukladá - ide len do náhľadu a tlače v tomto prehliadači.</p>
               </div>
-              <div class="button-row" style="margin-top:1rem">
-                <button type="button" id="printCardButton"><span data-icon="print"></span>Vytlačiť kartičku</button>
+              <div class="button-row">
+                <button type="button" id="printCardButton"><span data-icon="print"></span>Vytlačiť (2 ks na A4)</button>
               </div>
+              <p class="muted" style="margin:0;font-size:0.8rem">V dialógu tlače nechaj A4 na šírku a vypni okraje. Tmavú verziu tlač na hrubší papier - má veľa farby.</p>
             </div>
           </div>
         </div>
@@ -252,6 +264,10 @@
     let allPhotos = [];
     let allMessages = [];
     let mediaFilter = "all";
+    // Galéria sa vykresľuje po dávkach - pri stovkách fotiek by naraz
+    // vytvorené <img> prvky stránku na chvíľu zasekli.
+    const GALLERY_PAGE = 48;
+    let galleryLimit = GALLERY_PAGE;
     let selecting = false;
     const selectedIds = new Set();
     let liveTimer = null;
@@ -286,6 +302,11 @@
       renderGiftSettings();
       document.getElementById("content").classList.remove("hidden");
       setupTabs();
+      // Náhľad kartičky sa dá zmerať až keď je záložka viditeľná.
+      document.addEventListener("tabchange", (event) => {
+        if (event.detail === "qr") renderTentPreview();
+      });
+      if (location.hash === "#qr") renderTentPreview();
       await Promise.all([loadPhotos(), loadMessages()]);
     }
 
@@ -359,31 +380,85 @@
       link.click();
     });
 
-    // Tlačiteľná kartička: dočasný prvok priamo v <body>, pri tlači sa
-    // cez CSS skryje všetko ostatné. Heslo ide len z políčka do tlače.
-    document.getElementById("printCardButton").addEventListener("click", async () => {
+    /* ---------- Kartička na stôl (skladací "stan") ---------- */
+
+    // Jedna strana kartičky: 148 × 105 mm (A6 na šírku). Rovnaké HTML sa
+    // používa na náhľad na obrazovke aj do tlače - čo vidíš, to sa vytlačí.
+    let tentTheme = localStorage.getItem("napamiatku-tent-theme") || "light";
+    let tentQrDataUrl = "";
+
+    function tentFaceHtml() {
       const password = document.getElementById("printPassword").value.trim();
-      const qr = await makeQrDataUrl(guestUrl(), 800);
-      printSheet(`
-        <span class="logo">Na<span>Pamiatku</span></span>
-        <h1>${escapeHtml(currentEvent.name)}</h1>
-        <p class="print-date">${currentEvent.event_date ? escapeHtml(formatDateLong(currentEvent.event_date)) : ""}</p>
-        <img src="${qr}" alt="QR kód" />
-        <ol class="print-steps">
-          <li>1. Naskenuj kód mobilom</li>
-          <li>2. Zadaj heslo${password ? "" : " od organizátora"}</li>
-          <li>3. Pridaj svoje fotky a odkaz</li>
-        </ol>
-        ${password ? `<div class="print-password">${escapeHtml(password)}</div>` : ""}
-        <p class="print-url">${escapeHtml(guestUrl())}</p>`);
+      return `
+        <div class="tent-face ${tentTheme}">
+          <div class="tent-qr"><img src="${tentQrDataUrl}" alt="QR kód" /></div>
+          <div class="tent-body">
+            <p class="tent-eyebrow">Pridaj svoje fotky</p>
+            <h2>${escapeHtml(currentEvent.name)}</h2>
+            ${currentEvent.event_date ? `<p class="tent-date">${escapeHtml(formatDateLong(currentEvent.event_date))}</p>` : ""}
+            <ol class="tent-steps">
+              <li><span>1</span>Naskenuj kód mobilom</li>
+              <li><span>2</span>Zadaj heslo${password ? "" : " od organizátora"}</li>
+              <li><span>3</span>Pridaj fotky a odkaz</li>
+            </ol>
+            ${password ? `<div class="tent-password"><small>Heslo</small>${escapeHtml(password)}</div>` : ""}
+          </div>
+          <p class="tent-footer"><span class="tent-logo">Na<b>Pamiatku</b></span><span>${escapeHtml(guestUrl().replace(/^https?:\/\//, ""))}</span></p>
+        </div>`;
+    }
+
+    // Náhľad je skutočná kartička v milimetroch, len zmenšená transformáciou,
+    // aby sa zmestila do stĺpca. 148 mm = 559 px pri 96 dpi.
+    async function renderTentPreview() {
+      if (!tentQrDataUrl) tentQrDataUrl = await makeQrDataUrl(guestUrl(), 600);
+      const preview = document.getElementById("tentPreview");
+      preview.innerHTML = tentFaceHtml();
+      fitTentPreview();
+    }
+
+    function fitTentPreview() {
+      const preview = document.getElementById("tentPreview");
+      const face = preview.querySelector(".tent-face");
+      if (!face) return;
+      const faceWidthPx = 148 * 96 / 25.4;
+      const scale = preview.clientWidth / faceWidthPx;
+      face.style.transform = `scale(${scale})`;
+      preview.style.height = (105 * 96 / 25.4 * scale) + "px";
+    }
+    window.addEventListener("resize", fitTentPreview);
+
+    document.getElementById("tentTheme").addEventListener("click", (event) => {
+      const chip = event.target.closest(".chip");
+      if (!chip) return;
+      tentTheme = chip.dataset.theme;
+      localStorage.setItem("napamiatku-tent-theme", tentTheme);
+      document.querySelectorAll("#tentTheme .chip").forEach((other) => other.classList.toggle("active", other === chip));
+      renderTentPreview();
+    });
+    document.querySelectorAll("#tentTheme .chip").forEach((chip) => chip.classList.toggle("active", chip.dataset.theme === tentTheme));
+    document.getElementById("printPassword").addEventListener("input", renderTentPreview);
+
+    // Tlač: A4 na šírku, dve kartičky vedľa seba. Každá má hornú stranu
+    // otočenú o 180°, aby po preložení v strede stáli obe strany správne.
+    document.getElementById("printCardButton").addEventListener("click", async () => {
+      tentQrDataUrl = await makeQrDataUrl(guestUrl(), 800);
+      const card = `<div class="tent-card">${tentFaceHtml()}${tentFaceHtml()}<span class="tent-fold">prelož</span></div>`;
+      printSheet(card + card, "print-tent", "A4 landscape");
     });
 
-    function printSheet(innerHtml) {
+    // Dočasný prvok priamo v <body>; pri tlači sa cez CSS skryje všetko
+    // ostatné. Veľkosť strany sa nastaví len na čas tlače (@page je globálne).
+    function printSheet(innerHtml, className, pageSize) {
       const sheet = document.createElement("div");
-      sheet.className = "print-card";
+      sheet.className = className || "print-card";
       sheet.innerHTML = innerHtml;
       document.body.appendChild(sheet);
-      const cleanup = () => sheet.remove();
+
+      const pageStyle = document.createElement("style");
+      pageStyle.textContent = `@page { size: ${pageSize || "A4 portrait"}; margin: ${pageSize ? "0" : "15mm"}; }`;
+      document.head.appendChild(pageStyle);
+
+      const cleanup = () => { sheet.remove(); pageStyle.remove(); };
       window.addEventListener("afterprint", cleanup, { once: true });
       // Obrázky (QR) musia byť načítané skôr, než sa otvorí dialóg tlače.
       const images = Array.from(sheet.querySelectorAll("img"));
@@ -402,7 +477,9 @@
       const { data, error } = await supabaseClient.rpc("regenerate_event_slug", { p_event_id: currentEvent.id });
       if (error) return showToast("Chyba: " + error.message, "error");
       currentEvent.slug = data;
+      tentQrDataUrl = "";
       await renderShare();
+      if (!document.querySelector('[data-panel="qr"]').classList.contains("hidden")) renderTentPreview();
       showToast("Nový odkaz je pripravený. Nezabudni vytlačiť nový QR kód.", "ok");
     });
 
@@ -461,7 +538,7 @@
       }
 
       gallery.innerHTML = "";
-      for (const photo of photos) {
+      for (const photo of photos.slice(0, galleryLimit)) {
         const nickname = photo.uploaded_by_nickname || "Hosť";
         // storage_path ide do HTML atribútu, preto ho aj tu ošetríme. Do
         // databázy sa síce dostane len cez overené cesty, ale spoliehať sa
@@ -506,6 +583,7 @@
         });
       });
       setupGalleryLightbox(gallery);
+      renderLoadMore(gallery, photos.length, () => { galleryLimit += GALLERY_PAGE; renderGallery(); });
     }
 
     function photoFilename(photo, index) {
@@ -544,6 +622,7 @@
       const chip = event.target.closest(".chip");
       if (!chip) return;
       mediaFilter = chip.dataset.filter;
+      galleryLimit = GALLERY_PAGE;
       document.querySelectorAll("#mediaFilter .chip").forEach((other) => other.classList.toggle("active", other === chip));
       renderGallery();
     });
@@ -775,7 +854,7 @@
         <span class="logo">Na<span>Pamiatku</span></span>
         <h1>${escapeHtml(currentEvent.name)}</h1>
         <p class="print-date">Kniha hostí${currentEvent.event_date ? " · " + escapeHtml(formatDateLong(currentEvent.event_date)) : ""}</p>
-        <ul class="print-book">${entries}</ul>`);
+        <ul class="print-book">${entries}</ul>`, "print-card");
     });
 
     /* ---------- Nastavenia ---------- */

@@ -186,6 +186,9 @@
     let nickname = null;
     let allPhotos = [];
     let photoFilter = "all";
+    // Galéria po dávkach - pri stovkách fotiek by sa mobil na chvíľu zasekol.
+    const GALLERY_PAGE = 48;
+    let galleryLimit = GALLERY_PAGE;
     let mine = new Set(JSON.parse(localStorage.getItem(MINE_KEY) || "[]"));
 
     function rememberMine(id) {
@@ -364,7 +367,7 @@
       }
 
       gallery.innerHTML = "";
-      for (const photo of photos) {
+      for (const photo of photos.slice(0, galleryLimit)) {
         // Rovnako ako v event.html: adresa ide do HTML atribútu, takže ju
         // ošetríme, aj keď sa do databázy dostáva len cez overené cesty.
         const url = escapeHtml(publicUrl("photos", photo.storage_path));
@@ -391,12 +394,14 @@
         button.addEventListener("click", () => downloadFile(button.dataset.download, button.dataset.filename));
       });
       setupGalleryLightbox(gallery);
+      renderLoadMore(gallery, photos.length, () => { galleryLimit += GALLERY_PAGE; renderGallery(); });
     }
 
     document.getElementById("photoFilter").addEventListener("click", (event) => {
       const chip = event.target.closest(".chip");
       if (!chip) return;
       photoFilter = chip.dataset.filter;
+      galleryLimit = GALLERY_PAGE;
       document.querySelectorAll("#photoFilter .chip").forEach((other) => other.classList.toggle("active", other === chip));
       renderGallery();
     });

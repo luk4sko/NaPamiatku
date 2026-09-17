@@ -60,16 +60,34 @@
       <div class="toolbar">
         <label class="search-field">
           <span data-icon="search"></span>
-          <input type="search" id="searchInput" placeholder="Hľadať event..." aria-label="Hľadať event" />
+          <input type="search" id="searchInput" placeholder="Hľadať podľa názvu alebo klienta..." aria-label="Hľadať event" />
+        </label>
+        <label class="select-field" title="Zoradiť">
+          <span data-icon="sort"></span>
+          <select id="sortSelect" aria-label="Zoradiť">
+            <option value="newest">Naposledy pridané</option>
+            <option value="date">Podľa dátumu eventu</option>
+            <option value="name">Podľa názvu</option>
+            <option value="photos">Najviac fotiek</option>
+          </select>
         </label>
         <div class="toolbar-spacer"></div>
+        <div class="view-toggle" id="viewToggle" role="group" aria-label="Zobrazenie">
+          <button type="button" class="active" data-view="grid" title="Mriežka" aria-label="Mriežka"><span data-icon="grid"></span></button>
+          <button type="button" data-view="list" title="Zoznam" aria-label="Zoznam"><span data-icon="list"></span></button>
+        </div>
+      </div>
+
+      <div class="toolbar toolbar-filters">
         <div class="chips" id="eventFilter">
           <button type="button" class="chip active" data-filter="all">Všetky</button>
           <button type="button" class="chip" data-filter="upcoming">Nadchádzajúce</button>
           <button type="button" class="chip" data-filter="past">Prebehnuté</button>
+          <button type="button" class="chip hidden" data-filter="rejected" id="rejectedChip">Zamietnuté</button>
         </div>
+        <div class="toolbar-spacer"></div>
+        <p class="muted result-count" id="resultCount"></p>
       </div>
-
       <ul id="eventList" class="event-grid"></ul>
     </section>
 
@@ -165,8 +183,17 @@
     // Všetky eventy aj so štatistikami - vyhľadávanie a filter bežia nad
     // týmto poľom v prehliadači, bez ďalších dopytov na server.
     let allEvents = [];
+    let profilesById = {};
     let searchQuery = "";
     let activeFilter = "all";
+    // Zoradenie a spôsob zobrazenia si pamätáme - kto má desiatky eventov,
+    // nechce si to nastavovať pri každom otvorení.
+    let sortBy = localStorage.getItem("napamiatku-dash-sort") || "newest";
+    let viewMode = localStorage.getItem("napamiatku-dash-view") || "grid";
+    // Karty sa vykresľujú po dávkach; pri stovke eventov by sa inak stránka
+    // na chvíľu zasekla a väčšinu by aj tak nikto nescrolloval.
+    const PAGE_SIZE = 24;
+    let listLimit = PAGE_SIZE;
 
     async function init() {
       const session = await requireAuth();
@@ -176,14 +203,20 @@
       renderIdentity(session, profile);
       renderGreeting();
 
+      document.getElementById("sortSelect").value = sortBy;
+      applyViewMode();
+
       isOwner = !!(profile && profile.role === "majitel");
       if (isOwner) {
         document.getElementById("ownerTabs").classList.remove("hidden");
+        document.getElementById("rejectedChip").classList.remove("hidden");
         document.getElementById("requestHint").textContent =
           "Ako majiteľ svoj event schváliš sám hneď po vytvorení.";
         document.getElementById("requestButtonLabel").textContent = "Vytvoriť event";
         setupTabs();
-        await Promise.all([loadEvents(), loadPending(), loadProfiles()]);
+        // Profily najprv - karty eventov ukazujú aj meno klienta.
+        await loadProfiles();
+        await Promise.all([loadEvents(), loadPending()]);
       } else {
         await loadEvents();
       }
@@ -216,10 +249,9 @@
 
       // Nefiltrujeme podľa používateľa - o tom, ktoré eventy uvidí,
       // rozhoduje RLS politika v databáze (majiteľ všetky, klient svoje).
-      const [eventsResult, photosResult, messagesResult] = await Promise.all([
+      const [eventsResult, stats] = await Promise.all([
         supabaseClient.from("events").select("id, name, event_date, status, client_id, created_at").order("created_at", { ascending: false }),
-        supabaseClient.from("photos").select("event_id, storage_path, media_type, created_at").order("created_at", { ascending: false }),
-        supabaseClient.from("guestbook_messages").select("event_id"),
+        loadEventStats(),
       ]);
 
       if (eventsResult.error) {
@@ -227,9 +259,43 @@
         return;
       }
 
-      // Fotky a odkazy si rozdelíme podľa eventu: počty + prvá (najnovšia)
-      // fotka ako obrázok na kartu.
+      const emptyStat = { photoCount: 0, videoCount: 0, messageCount: 0, cover: null };
+      allEvents = eventsResult.data.map((event) => {
+        const client = profilesById[event.client_id];
+        return Object.assign({}, event, stats[event.id] || emptyStat, {
+          clientLabel: client ? (client.full_name || client.email) : "",
+          searchText: (event.name + " " + (client ? client.full_name + " " + client.email : "")).toLowerCase(),
+        });
+      });
+      renderSummary();
+      renderClientPending();
+      renderEvents();
+    }
+
+    // Počty fotiek/odkazov a obrázok na kartu. Databázová funkcia vráti
+    // jeden riadok na event, takže prehliadač nesťahuje každú fotku zvlášť.
+    // Ak funkcia v databáze ešte nie je (migrácia nebola spustená), spadne
+    // to späť na starý spôsob - dashboard funguje, len prenesie viac dát.
+    async function loadEventStats() {
       const stats = {};
+      const { data, error } = await supabaseClient.rpc("dashboard_event_stats");
+      if (!error && data) {
+        data.forEach((row) => {
+          stats[row.event_id] = {
+            photoCount: Number(row.photo_count) || 0,
+            videoCount: Number(row.video_count) || 0,
+            messageCount: Number(row.message_count) || 0,
+            cover: row.cover_path ? publicUrl("photos", row.cover_path) : null,
+          };
+        });
+        return stats;
+      }
+
+      console.warn("dashboard_event_stats nie je k dispozícii, rátam v prehliadači:", error && error.message);
+      const [photosResult, messagesResult] = await Promise.all([
+        supabaseClient.from("photos").select("event_id, storage_path, media_type, created_at").order("created_at", { ascending: false }),
+        supabaseClient.from("guestbook_messages").select("event_id"),
+      ]);
       const statFor = (id) => (stats[id] = stats[id] || { photoCount: 0, videoCount: 0, messageCount: 0, cover: null });
       (photosResult.data || []).forEach((photo) => {
         const stat = statFor(photo.event_id);
@@ -240,15 +306,13 @@
         }
       });
       (messagesResult.data || []).forEach((message) => { statFor(message.event_id).messageCount += 1; });
-
-      allEvents = eventsResult.data.map((event) => Object.assign({}, event, statFor(event.id)));
-      renderSummary();
-      renderClientPending();
-      renderEvents();
+      return stats;
     }
 
     function eventMatchesFilter(event) {
-      if (searchQuery && !event.name.toLowerCase().includes(searchQuery)) return false;
+      if (searchQuery && !event.searchText.includes(searchQuery)) return false;
+      if (activeFilter === "rejected") return event.status === "rejected";
+      if (event.status === "rejected") return activeFilter === "all";
       if (activeFilter === "all") return true;
       if (!event.event_date) return activeFilter === "upcoming";
       const today = new Date();
@@ -257,10 +321,32 @@
       return activeFilter === "past" ? isPast : !isPast;
     }
 
+    function sortEvents(events) {
+      const byName = (a, b) => a.name.localeCompare(b.name, "sk");
+      const sorted = [...events];
+      if (sortBy === "name") sorted.sort(byName);
+      else if (sortBy === "photos") sorted.sort((a, b) => (b.photoCount + b.videoCount) - (a.photoCount + a.videoCount) || byName(a, b));
+      else if (sortBy === "date") {
+        // Najbližšie nadchádzajúce prvé, potom minulé od najnovšieho; bez dátumu na konci.
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const key = (event) => {
+          if (!event.event_date) return [2, 0];
+          const diff = new Date(event.event_date) - today;
+          return diff >= 0 ? [0, diff] : [1, -diff];
+        };
+        sorted.sort((a, b) => { const ka = key(a), kb = key(b); return ka[0] - kb[0] || ka[1] - kb[1] || byName(a, b); });
+      }
+      // "newest" = poradie z databázy (created_at desc).
+      return sorted;
+    }
+
     function renderEvents() {
       const listEl = document.getElementById("eventList");
+      const countEl = document.getElementById("resultCount");
       // Čakajúce žiadosti klienta sú zvlášť nad zoznamom, sem nepatria.
-      const visible = allEvents.filter((event) => event.status !== "pending" && eventMatchesFilter(event));
+      const visible = sortEvents(allEvents.filter((event) => event.status !== "pending" && eventMatchesFilter(event)));
+      countEl.textContent = "";
 
       if (allEvents.filter((event) => event.status !== "pending").length === 0) {
         listEl.innerHTML = emptyState({
@@ -278,29 +364,44 @@
         return;
       }
 
+      const total = allEvents.filter((event) => event.status !== "pending").length;
+      countEl.textContent = visible.length === total
+        ? `${total} ${plural(total, "event", "eventy", "eventov")}`
+        : `${visible.length} z ${total} ${plural(total, "eventu", "eventov", "eventov")}`;
+
       listEl.innerHTML = "";
-      for (const event of visible) {
+      for (const event of visible.slice(0, listLimit)) {
         const li = document.createElement("li");
         const cover = event.cover ? ` style="background-image:url('${escapeHtml(event.cover)}')"` : "";
-        const dateText = event.event_date
-          ? `${formatDateLong(event.event_date)} · ${relativeDate(event.event_date)}`
-          : "Dátum nezadaný";
+        const dateText = event.event_date ? formatDateLong(event.event_date) : "Dátum nezadaný";
+        const relative = event.event_date ? relativeDate(event.event_date) : "";
         const badge = event.status === "rejected" ? '<span class="badge rejected">zamietnutý</span>' : "";
+        const client = isOwner && event.clientLabel
+          ? `<div class="event-card-meta event-card-client">${icon("user")}<span>${escapeHtml(event.clientLabel)}</span></div>` : "";
         li.innerHTML = `
           <a class="event-card" href="/event?id=${encodeURIComponent(event.id)}">
             <div class="event-card-cover"${cover}>${event.cover ? "" : icon("camera")}${badge}</div>
             <div class="event-card-body">
               <h3>${escapeHtml(event.name)}</h3>
-              <div class="event-card-meta">${icon("calendar")}<span>${escapeHtml(dateText)}</span></div>
+              <div class="event-card-meta">${icon("calendar")}<span>${escapeHtml(dateText)}${relative ? ` <em>· ${escapeHtml(relative)}</em>` : ""}</span></div>
+              ${client}
               <div class="event-card-stats">
-                <span>${icon("camera")}${event.photoCount}</span>
-                <span>${icon("video")}${event.videoCount}</span>
-                <span>${icon("chat")}${event.messageCount}</span>
+                <span title="Fotky">${icon("camera")}${event.photoCount}</span>
+                <span title="Videá">${icon("video")}${event.videoCount}</span>
+                <span title="Odkazy">${icon("chat")}${event.messageCount}</span>
               </div>
             </div>
           </a>`;
         listEl.appendChild(li);
       }
+      renderLoadMore(listEl, visible.length, () => { listLimit += PAGE_SIZE; renderEvents(); });
+    }
+
+    function applyViewMode() {
+      document.getElementById("eventList").classList.toggle("list", viewMode === "list");
+      document.querySelectorAll("#viewToggle button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.view === viewMode);
+      });
     }
 
     // Klient po odoslaní žiadosti potrebuje vidieť, že sa niečo deje.
@@ -320,6 +421,7 @@
 
     document.getElementById("searchInput").addEventListener("input", (event) => {
       searchQuery = event.target.value.trim().toLowerCase();
+      listLimit = PAGE_SIZE;
       renderEvents();
     });
 
@@ -327,8 +429,24 @@
       const chip = event.target.closest(".chip");
       if (!chip) return;
       activeFilter = chip.dataset.filter;
+      listLimit = PAGE_SIZE;
       document.querySelectorAll("#eventFilter .chip").forEach((other) => other.classList.toggle("active", other === chip));
       renderEvents();
+    });
+
+    document.getElementById("sortSelect").addEventListener("change", (event) => {
+      sortBy = event.target.value;
+      localStorage.setItem("napamiatku-dash-sort", sortBy);
+      listLimit = PAGE_SIZE;
+      renderEvents();
+    });
+
+    document.getElementById("viewToggle").addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      viewMode = button.dataset.view;
+      localStorage.setItem("napamiatku-dash-view", viewMode);
+      applyViewMode();
     });
 
     /* ---------- Nový event ---------- */
@@ -397,14 +515,10 @@
         return;
       }
 
-      // K žiadostiam dohľadáme emaily klientov, nech majiteľ vie, kto žiada.
-      const { data: profiles } = await supabaseClient.from("profiles").select("id, email, full_name");
-      const byId = {};
-      (profiles || []).forEach((item) => { byId[item.id] = item; });
-
       container.innerHTML = "";
       for (const event of data) {
-        const client = byId[event.client_id];
+        // Profily sú načítané v loadProfiles(); majiteľ vidí, kto žiada.
+        const client = profilesById[event.client_id];
         const card = document.createElement("div");
         card.className = "request-card";
         card.innerHTML = `
@@ -492,6 +606,8 @@
         container.innerHTML = emptyState({ iconName: "alert", title: "Účty sa nepodarilo načítať", text: error.message });
         return;
       }
+      profilesById = {};
+      data.forEach((item) => { profilesById[item.id] = item; });
 
       container.innerHTML = "";
       for (const item of data) {

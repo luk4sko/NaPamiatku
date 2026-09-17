@@ -562,6 +562,10 @@ const ICONS = {
   zip: '<path d="M6 3.5h8l4.5 4.5v11A1.5 1.5 0 0 1 17 20.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z"/><path d="M14 3.5V8h4.5M10 7h2M10 10h2M10 13h2M10 16h2"/>',
   alert: '<path d="M12 4 2.8 19.5h18.4L12 4Z"/><path d="M12 10v4M12 17h.01"/>',
   info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
+  sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4 17 7M7 17l-1.6 1.6M18.6 18.6 17 17M7 7 5.4 5.4"/>',
+  moon: '<path d="M20.5 14.3A8.6 8.6 0 0 1 9.7 3.5a8.6 8.6 0 1 0 10.8 10.8Z"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
+  sort: '<path d="M4 6h16M7 12h10M10 18h4"/>',
 };
 
 function icon(name, className) {
@@ -572,9 +576,10 @@ function icon(name, className) {
 // Doplní ikony do prvkov s data-icon="názov" - v HTML tak stačí napísať
 // <span data-icon="camera"></span> a nemusí sa tam kopírovať celé SVG.
 function hydrateIcons(root) {
+  // Zástupný <span> sa nahradí priamo <svg>, aby bola ikona priamym
+  // potomkom tlačidla - na tom stojí pravidlo button:has(> .ui-icon).
   (root || document).querySelectorAll("[data-icon]").forEach((el) => {
-    el.innerHTML = icon(el.dataset.icon);
-    el.removeAttribute("data-icon");
+    el.outerHTML = icon(el.dataset.icon);
   });
 }
 
@@ -695,6 +700,33 @@ function setupTabs(root) {
   const initial = tabs.find((tab) => tab.dataset.tab === fromHash && !tab.classList.contains("hidden"));
   activate(initial ? initial.dataset.tab : tabs[0].dataset.tab, false);
   return activate;
+}
+
+/* ---------- Dávkové vykresľovanie dlhých zoznamov ---------- */
+
+// Pod zoznam pridá "Zobraziť ďalšie (zvyšok)" a zároveň sleduje, či sa
+// tlačidlo dostalo do výrezu okna - vtedy načíta ďalšiu dávku samo.
+// Používateľ tak scrolluje plynulo, ale stránka nikdy nevykreslí všetko naraz.
+function renderLoadMore(container, total, onMore) {
+  const shown = container.querySelectorAll(".photo, .event-card").length;
+  if (shown >= total) return;
+  const remaining = total - shown;
+  // V <ul> musí byť <li>, inde stačí <div>.
+  const wrap = document.createElement(container.tagName === "UL" ? "li" : "div");
+  wrap.className = "load-more";
+  wrap.innerHTML = `<button type="button" class="secondary">${icon("download")}Zobraziť ďalšie (${remaining})</button>`;
+  wrap.querySelector("button").addEventListener("click", onMore);
+  container.appendChild(wrap);
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect();
+        onMore();
+      }
+    }, { rootMargin: "400px" });
+    observer.observe(wrap);
+  }
 }
 
 /* ---------- Drag & drop pre nahrávanie ---------- */
