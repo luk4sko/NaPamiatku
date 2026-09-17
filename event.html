@@ -245,6 +245,13 @@
             <p id="giftMessageStatus" class="message"></p>
           </form>
         </div>
+
+        <div class="card settings-card danger-zone hidden" id="deleteEventCard">
+          <h3><span data-icon="trash"></span>Zmazať event</h3>
+          <p class="muted">Nenávratne zmaže event aj so všetkými fotkami, videami, odkazmi a nahláseniami. Odkaz a QR kód prestanú fungovať. Pred zmazaním si obsah stiahni ako ZIP.</p>
+          <button type="button" class="danger" id="deleteEventButton"><span data-icon="trash"></span>Zmazať celý event</button>
+          <p id="deleteEventMessage" class="message"></p>
+        </div>
       </section>
     </div>
   </main>
@@ -268,7 +275,7 @@
         <a href="/podmienky">Podmienky</a>
         <a href="/ochrana-osobnych-udajov">Ochrana osobných údajov</a>
         <a href="/cookies">Cookies</a>
-        <a href="javascript:Cookiebot.renew()">Nastavenia cookies</a>
+        <a href="/cookies" data-cookie-settings>Nastavenia cookies</a>
       </nav>
     </div>
   </footer>
@@ -278,6 +285,7 @@
   <script src="js/app.js"></script>
   <script>
     let currentEvent = null;
+    let currentProfile = null;
     // Fotky a odkazy držíme v pamäti - filter, výber aj štatistiky bežia
     // nad týmito poľami bez ďalších dopytov.
     let allPhotos = [];
@@ -300,7 +308,8 @@
     async function init() {
       const session = await requireAuth();
       if (!session) return;
-      renderIdentity(session, await loadProfile(session.user.id));
+      currentProfile = await loadProfile(session.user.id);
+      renderIdentity(session, currentProfile);
 
       const eventId = getEventId();
       if (!eventId) return showAccessDenied();
@@ -322,6 +331,10 @@
       renderDetails();
       renderGiftSettings();
       document.getElementById("content").classList.remove("hidden");
+      // Zmazať celý event smie len majiteľ (RLS politika events_delete_majitel).
+      if (currentProfile && currentProfile.role === "majitel") {
+        document.getElementById("deleteEventCard").classList.remove("hidden");
+      }
       setupTabs();
       // Náhľad kartičky sa dá zmerať až keď je záložka viditeľná.
       document.addEventListener("tabchange", (event) => {
@@ -1007,6 +1020,44 @@
       document.getElementById("passwordForm").reset();
       showMessage(messageEl, "");
       showToast("Heslo eventu zmenené. Nezabudni ho povedať hosťom.", "ok");
+    });
+
+    /* ---------- Zmazanie eventu (len majiteľ) ---------- */
+
+    document.getElementById("deleteEventButton").addEventListener("click", async () => {
+      const total = allPhotos.length;
+      const ok = await confirmDialog({
+        title: `Zmazať event „${currentEvent.name}“?`,
+        text: `Zmaže sa ${total} ${plural(total, "súbor", "súbory", "súborov")}, ${allMessages.length} ${plural(allMessages.length, "odkaz", "odkazy", "odkazov")} a celý event. Toto sa nedá vrátiť späť.`,
+        confirmLabel: "Áno, zmazať event",
+        danger: true,
+      });
+      if (!ok) return;
+
+      const button = document.getElementById("deleteEventButton");
+      const messageEl = document.getElementById("deleteEventMessage");
+      button.disabled = true;
+      clearInterval(liveTimer);
+
+      // Najprv súbory v úložisku (po dávkach), až potom riadok eventu -
+      // databáza potom sama zmaže fotky, odkazy a nahlásenia (ON DELETE CASCADE).
+      // Opačné poradie by nechalo v úložisku súbory, o ktorých už nikto nevie.
+      const { data: rows, error: listError } = await supabaseClient
+        .from("photos").select("storage_path").eq("event_id", currentEvent.id);
+      if (listError) { button.disabled = false; return showMessage(messageEl, listError.message, "error"); }
+
+      const paths = (rows || []).map((row) => row.storage_path);
+      for (let i = 0; i < paths.length; i += 100) {
+        showMessage(messageEl, `Mažem súbory ${Math.min(i + 100, paths.length)} / ${paths.length}...`);
+        const { error: storageError } = await supabaseClient.storage.from("photos").remove(paths.slice(i, i + 100));
+        if (storageError) { button.disabled = false; return showMessage(messageEl, "Chyba pri mazaní súborov: " + storageError.message, "error"); }
+      }
+
+      const { error } = await supabaseClient.from("events").delete().eq("id", currentEvent.id);
+      if (error) { button.disabled = false; return showMessage(messageEl, error.message, "error"); }
+
+      showMessage(messageEl, "Event zmazaný, presmerúvam...", "ok");
+      window.location.href = "/dashboard";
     });
 
     function renderGiftSettings() {

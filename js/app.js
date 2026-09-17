@@ -633,13 +633,24 @@ function confirmDialog({ title, text, confirmLabel, cancelLabel, danger }) {
     dialog.querySelector('[value="cancel"]').textContent = cancelLabel || "Zrušiť";
     dialog.querySelector('[value="ok"]').textContent = confirmLabel || "Potvrdiť";
 
+    // Výsledok berieme priamo z odoslania formulára (event.submitter = stlačené
+    // tlačidlo). Udalosť "close" dialógu je len záloha pre Escape a klik mimo
+    // okna - prehliadač ju v skrytej karte doručí až neskôr, a nechceme čakať.
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+      dialog.remove();
+    };
+    dialog.querySelector("form").addEventListener("submit", (event) => {
+      finish(!!event.submitter && event.submitter.value === "ok");
+    });
+    dialog.addEventListener("close", () => finish(dialog.returnValue === "ok"));
+    dialog.addEventListener("cancel", () => finish(false));
     // Klik na tmavé pozadie mimo okna = zrušiť.
     dialog.addEventListener("click", (event) => {
-      if (event.target === dialog) dialog.close("cancel");
-    });
-    dialog.addEventListener("close", () => {
-      resolve(dialog.returnValue === "ok");
-      dialog.remove();
+      if (event.target === dialog) finish(false);
     });
     document.body.appendChild(dialog);
     dialog.showModal();
@@ -901,6 +912,17 @@ document.addEventListener("DOMContentLoaded", () => {
   hydrateIcons();
   document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
     button.addEventListener("click", toggleTheme);
+  });
+
+  // "Nastavenia cookies": otvorí lištu Cookiebotu; ak ju blokuje ad-blocker
+  // (skript sa nenačíta), odkaz normálne prejde na stránku /cookies.
+  document.querySelectorAll("[data-cookie-settings]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (window.Cookiebot && typeof Cookiebot.renew === "function") {
+        event.preventDefault();
+        Cookiebot.renew();
+      }
+    });
   });
 
   // Lišta po odscrollovaní stmavne a dostane tieň (rovnako ako na úvode).
