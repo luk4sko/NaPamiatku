@@ -4564,3 +4564,155 @@ mark.todo {
 .auth-legal a {
   color: var(--text-muted);
 }
+
+/* ---------- Cookiebot: kompaktná karta v rohu ----------
+   Predvolená lišta je 900 px široké okno v strede obrazovky. Tu je z nej
+   malá karta vľavo dole; na mobile cez celú šírku pri spodnom okraji. */
+
+#CybotCookiebotDialog {
+  width: min(30rem, calc(100vw - 2rem)) !important;
+  max-width: 30rem !important;
+  max-height: min(78vh, 34rem) !important;
+  top: auto !important;
+  bottom: 1rem !important;
+  left: 1rem !important;
+  right: auto !important;
+  transform: none !important;
+  border-radius: 16px !important;
+}
+
+@media (max-width: 640px) {
+  #CybotCookiebotDialog {
+    width: calc(100vw - 1.5rem) !important;
+    max-width: none !important;
+    bottom: 0.75rem !important;
+    left: 0.75rem !important;
+  }
+}
+
+/* Hlavička s logami - nižšia, logá stlmené. */
+#CybotCookiebotDialog #CybotCookiebotDialogHeader {
+  padding: 0.55rem 1rem !important;
+}
+
+#CybotCookiebotDialog #CybotCookiebotDialogHeader img,
+#CybotCookiebotDialog .CybotCookiebotDialogBodyLogo,
+#CybotCookiebotDialog #CybotCookiebotDialogPoweredbyImage {
+  height: 1.1rem !important;
+  width: auto !important;
+  opacity: 0.4 !important;
+}
+
+#CybotCookiebotDialog #CybotCookiebotDialogNav .CybotCookiebotDialogNavItemLink {
+  padding: 0.5rem 0.5rem !important;
+  font-size: 0.78rem !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotScrollContainer,
+#CybotCookiebotDialog #CybotCookiebotDialogTabContent,
+#CybotCookiebotDialog .CybotCookiebotDialogTabPanel {
+  padding: 0.7rem 1rem !important;
+}
+
+#CybotCookiebotDialog #CybotCookiebotDialogBodyContentTitle {
+  font-size: 1rem !important;
+  margin: 0 0 0.3rem !important;
+}
+
+#CybotCookiebotDialog #CybotCookiebotDialogBodyContentText,
+#CybotCookiebotDialog .CybotCookiebotDialogBodyLevelButtonDescription,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieTypeIntro,
+#CybotCookiebotDialog #CybotCookiebotDialogDetailBodyContentTextAbout,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieContainerHeader + div {
+  font-size: 0.78rem !important;
+  line-height: 1.45 !important;
+}
+
+#CybotCookiebotDialog #CybotCookiebotDialogBodyLevelButtonsSelectPane {
+  padding: 0.4rem 0 !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotDialogBodyLevelButtonWrapper {
+  padding: 0.3rem 0.4rem !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotDialogBodyLevelButtonWrapper label {
+  font-size: 0.66rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotDialogBodyLevelButtonSlider {
+  transform: scale(0.8);
+}
+
+#CybotCookiebotDialog #CybotCookiebotDialogFooter {
+  padding: 0.55rem 1rem 0.85rem !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotDialogBodyButton {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.8rem !important;
+  border-radius: 9px !important;
+}
+
+#CybotCookiebotDialog #CybotCookiebotDialogPoweredbyCybot,
+#CybotCookiebotDialog #CybotCookiebotDialogPoweredByText {
+  font-size: 0.62rem !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieContainerHeader {
+  font-size: 0.9rem !important;
+}
+
+/* Biele prechody ("fader") na okrajoch posúvateľných častí a biely
+   posuvník: skoro neviditeľné, vo farbe karty. */
+#CybotCookiebotDialog .CybotCookiebotFader {
+  background: linear-gradient(to top, color-mix(in srgb, var(--surface) 55%, transparent), transparent) !important;
+  height: 1.5rem !important;
+  opacity: 0.5 !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotFaderLeft {
+  background: linear-gradient(to right, color-mix(in srgb, var(--surface) 55%, transparent), transparent) !important;
+  width: 1rem !important;
+  height: auto !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotFaderRight {
+  background: linear-gradient(to left, color-mix(in srgb, var(--surface) 55%, transparent), transparent) !important;
+  width: 1rem !important;
+  height: auto !important;
+}
+
+#CybotCookiebotDialog .CybotCookiebotScrollArea,
+#CybotCookiebotDialog .CybotCookiebotScrollContainer,
+#CybotCookiebotDialog [class*="ScrollArea"] {
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--border-strong) 60%, transparent) transparent !important;
+}
+
+#CybotCookiebotDialog ::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+#CybotCookiebotDialog ::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+#CybotCookiebotDialog ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--border-strong) 60%, transparent) !important;
+  border-radius: 999px !important;
+}
+
+/* Oddeľovacie čiary medzi kategóriami vo farbe rámikov stránky. */
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieContainerTypes,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieContainerHeader,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieContainer,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieGroup,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieProvider,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentCookieInfo,
+#CybotCookiebotDialog .CybotCookiebotDialogDetailBodyContentIABv2Tabs,
+#CybotCookiebotDialog hr {
+  border-color: var(--border) !important;
+}
