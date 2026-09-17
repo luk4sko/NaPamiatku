@@ -54,7 +54,7 @@ Hostia nemajú účet, ale **nemajú ani priamy prístup k tabuľkám**. RLS pol
 Heslo eventu je uložené ako bcrypt hash (`pgcrypto`), nikdy v čitateľnej podobe. Overuje ho databáza, nie prehliadač.
 
 Ďalšie opatrenia:
-- Storage bucket `photos` má limit veľkosti (10 MB) a povolené len obrázkové MIME typy
+- Storage bucket `photos` má limit veľkosti (100 MB, rovnaký ako `FILE_SIZE_LIMIT` storage služby) a povolené len obrázkové a video MIME typy; video väčšie ako 100 MB odmietne už prehliadač (`videoSizeError()`)
 - `guest_add_photo` overuje, že cesta k súboru patrí danému eventu (nedá sa „pripojiť" cudzí súbor)
 - Všetok text od hostí sa vypisuje cez `escapeHtml()` — ochrana proti XSS
 - `slug` je oddelený od `id`, takže sa dá zneplatniť starý QR kód bez zrušenia eventu
@@ -64,6 +64,17 @@ Heslo eventu je uložené ako bcrypt hash (`pgcrypto`), nikdy v čitateľnej pod
 - **Doména:** napamiatku.com
 - **Hosting:** [Vercel](https://vercel.com) — statický web bez build kroku, stačí pripojiť GitHub repozitár a nastaviť ako Root Directory koreň projektu (žiadny framework, žiadny build command).
 - **Pošta na vlastnej doméne:** [Seznam Email Profi](https://emailprofi.seznam.cz) (bezplatné pripojenie vlastnej domény) — MX záznamy nastavené u registrátora (Websupport.sk), schránka `info@napamiatku.com` slúži ako oficiálny kontakt aj ako odosielateľ pre Supabase auth emaily.
+
+## Automatické mazanie po 12 mesiacoch
+
+Podmienky sľubujú, že obsah eventu zmažeme 12 mesiacov od dátumu eventu a organizátora upozorníme e-mailom 14 dní vopred. Robí to [`server/retention.py`](server/retention.py), ktorý na serveri spúšťa cron raz denne (o 4:00):
+
+- databáza rozhoduje, ktoré eventy sú na rade — funkcie `retention_events_to_warn()` a `retention_events_to_delete()` (migrácia `20260918100000_event_retention.sql`), volateľné len so `service_role` kľúčom;
+- skript pošle upozornenie cez Seznam SMTP (nastavenie číta z `.env` Supabase stacku, nič nie je uložené dvakrát), zapíše `events.expiry_warning_sent_at`, a po lehote zmaže súbory cez Storage API a riadok eventu (kaskáda zmaže fotky, odkazy aj nahlásenia);
+- event dostane vždy aspoň 14 dní od upozornenia, aj keby bol po lehote skôr;
+- `--dry-run` len vypíše, čo by sa stalo; `--test-email adresa` pošle skúšobný e-mail.
+
+Na server sa kopíruje ručne (`scp server/retention.py lukasko@server:/home/lukasko/servers/napamiatku-web/`), cron riadok: `0 4 * * * /usr/bin/python3 /home/lukasko/servers/napamiatku-web/retention.py >> /home/lukasko/servers/napamiatku-web/retention.log 2>&1`.
 
 ## Čo bolo treba nastaviť v Supabase dashboarde
 
