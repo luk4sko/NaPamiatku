@@ -53,7 +53,7 @@
       <div class="card">
         <label for="nickname">Vystupuješ ako</label>
         <div class="copy-row">
-          <input type="text" id="nickname" maxlength="40" />
+          <input type="text" id="nickname" maxlength="40" placeholder="tvoje meno alebo prezývka" />
           <button type="button" id="saveNicknameButton" class="secondary">Uložiť</button>
         </div>
         <p id="nicknameMessage" class="message"></p>
@@ -155,15 +155,13 @@
     let eventPassword = null;
     let nickname = null;
 
-    // Hosť sa neregistruje ani neprihlasuje. Ak si prezývku nezadá,
-    // vymyslíme mu nejakú, nech sa fotky nezobrazujú ako "Hosť, Hosť, Hosť".
-    const PRIDAVNE_MENA = ["Veselý", "Tancujúci", "Usmiaty", "Šťastný", "Spievajúci", "Zvedavý", "Nadšený", "Tajomný"];
-    const PODSTATNE_MENA = ["hosť", "kamarát", "tanečník", "fotograf", "sused", "svedok", "gratulant"];
-
-    function nahodnaPrezyvka() {
-      const pridavne = PRIDAVNE_MENA[Math.floor(Math.random() * PRIDAVNE_MENA.length)];
-      const podstatne = PODSTATNE_MENA[Math.floor(Math.random() * PODSTATNE_MENA.length)];
-      return pridavne + " " + podstatne;
+    // Hosť sa neregistruje ani neprihlasuje. Meno si musí zadať sám,
+    // bez neho nepustíme nahrávanie fotiek ani písanie odkazov.
+    function requireNickname(messageEl) {
+      if (nickname) return true;
+      showMessage(messageEl, "Najprv zadaj svoje meno hore.", "error");
+      document.getElementById("nickname").focus();
+      return false;
     }
 
     async function init() {
@@ -208,12 +206,12 @@
       document.getElementById("eventDate").textContent =
         eventInfo.event_date ? formatDate(eventInfo.event_date) : "";
 
-      nickname = localStorage.getItem(NICKNAME_KEY);
+      nickname = localStorage.getItem(NICKNAME_KEY) || null;
+      document.getElementById("nickname").value = nickname || "";
       if (!nickname) {
-        nickname = nahodnaPrezyvka();
-        localStorage.setItem(NICKNAME_KEY, nickname);
+        showMessage(document.getElementById("nicknameMessage"),
+          "Zadaj meno, pod ktorým sa zobrazia tvoje fotky a odkazy.");
       }
-      document.getElementById("nickname").value = nickname;
 
       if (eventInfo.gift_enabled && eventInfo.gift_iban) {
         document.getElementById("giftsTab").classList.remove("hidden");
@@ -252,9 +250,11 @@
       const messageEl = document.getElementById("nicknameMessage");
       const zadane = document.getElementById("nickname").value.trim();
 
-      // Prázdne pole nenecháme - radšej vygenerujeme náhodnú prezývku.
-      nickname = zadane || nahodnaPrezyvka();
-      document.getElementById("nickname").value = nickname;
+      if (!zadane) {
+        showMessage(messageEl, "Meno nemôže byť prázdne.", "error");
+        return;
+      }
+      nickname = zadane;
       localStorage.setItem(NICKNAME_KEY, nickname);
 
       showMessage(messageEl, "Uložené.", "ok");
@@ -326,6 +326,10 @@
       if (files.length === 0) return;
 
       const messageEl = document.getElementById("uploadMessage");
+      if (!requireNickname(messageEl)) {
+        event.target.value = "";
+        return;
+      }
       const progressEl = document.getElementById("uploadProgress");
       progressEl.classList.remove("hidden");
       progressEl.value = 0;
@@ -412,6 +416,7 @@
     document.getElementById("messageForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const statusEl = document.getElementById("messageStatus");
+      if (!requireNickname(statusEl)) return;
       const button = document.getElementById("messageButton");
       button.disabled = true;
 
