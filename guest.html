@@ -108,6 +108,7 @@
           </div>
           <div class="toolbar-spacer"></div>
           <button type="button" class="secondary small icon-button" id="refreshButton" title="Obnoviť" aria-label="Obnoviť"><span data-icon="refresh"></span></button>
+          <button type="button" class="secondary small" id="downloadAllButton"><span data-icon="zip"></span>Stiahnuť všetko</button>
         </div>
 
         <div id="gallery" class="gallery"></div>
@@ -455,6 +456,50 @@
     document.getElementById("refreshButton").addEventListener("click", async () => {
       await Promise.all([loadPhotos(true), loadMessages()]);
       showToast("Obnovené.", "ok");
+    });
+
+    /* ---------- Stiahnuť všetko (ZIP) ---------- */
+
+    // Rovnaké ako u organizátora: súbory sa sťahujú po jednom a balia priamo
+    // v prehliadači. Rešpektuje filter - pri "Moje" sa stiahnu len vlastné.
+    // Sťahujú sa originály (nie zmenšené verzie z galérie).
+    function photoFilename(photo, index) {
+      const extension = photo.storage_path.split(".").pop().toLowerCase();
+      return String(index + 1).padStart(3, "0") + "-" + safeFilename(photo.nickname || "host") + "-" + photo.id.slice(0, 6) + "." + extension;
+    }
+
+    document.getElementById("downloadAllButton").addEventListener("click", async () => {
+      const button = document.getElementById("downloadAllButton");
+      const photos = photoFilter === "mine" ? allPhotos.filter((photo) => mine.has(photo.id)) : allPhotos;
+      if (photos.length === 0) return showToast("Nie je čo stiahnuť.", "error");
+
+      // Pri väčšej galérii sa hosť rozhodne sám - celý ZIP vzniká v pamäti telefónu.
+      if (photos.length > 30) {
+        const ok = await confirmDialog({
+          title: `Stiahnuť ${photos.length} ${plural(photos.length, "súbor", "súbory", "súborov")}?`,
+          text: "Sťahujú sa originály v plnej kvalite, môže to byť aj niekoľko sto MB. Na mobile odporúčame Wi-Fi.",
+          confirmLabel: "Stiahnuť",
+        });
+        if (!ok) return;
+      }
+
+      const original = button.innerHTML;
+      button.disabled = true;
+      try {
+        const items = photos.map((photo, index) => ({
+          url: publicUrl("photos", photo.storage_path),
+          filename: photoFilename(photo, index),
+        }));
+        await downloadAsZip(items, safeFilename(eventInfo.name) + "-fotky.zip", (done, total) => {
+          button.innerHTML = `<span class="spinner"></span> ${done} / ${total}`;
+        });
+        showToast(`ZIP so ${photos.length} ${plural(photos.length, "súborom", "súbormi", "súbormi")} je stiahnutý.`, "ok");
+      } catch (error) {
+        showToast("Sťahovanie zlyhalo: " + error.message, "error");
+      } finally {
+        button.disabled = false;
+        button.innerHTML = original;
+      }
     });
 
     setupDropzone(document.getElementById("dropzone"), document.getElementById("photoInput"), async (files) => {
