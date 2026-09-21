@@ -553,3 +553,18 @@ A tu platí pravidlo kaskády: **štýly napísané autorom stránky majú predn
 - **Prečo `renderIdentity()` berie session aj profil ako parametre** namiesto toho, aby si ich načítala sama: dashboard už profil načítaný má, takže by sa rovnaký dopyt do databázy poslal druhýkrát zbytočne.
 
 - **Prečo projekt nemôže bežať v podpriečinku** (napr. `http://localhost/NaPamiatku/`): stránky používajú 37 absolútnych ciest (`href="/"`, `/favicon.svg`, `/login`), ktoré sa vždy počítajú od koreňa adresy. V podpriečinku by ukazovali mimo projekt. Preto musí byť projekt v koreni — či už cez `python -m http.server`, alebo cez virtuálny host v Apache.
+
+## 2026-09-21 — Zrušenie schvaľovania eventov (majiteľ ostáva ako admin)
+
+**Rozhodnutie:** event je aktívny hneď po vytvorení. Záložka „Žiadosti" v dashboarde zmizla, `request_event` vkladá rovno `status = 'approved'`. Rola *majiteľ* ostáva, ale mení význam: zo schvaľovača na správcu (vidí všetky eventy, môže event *pozastaviť pre hostí* alebo zmazať, pozýva klientov).
+
+**Prečo:** schvaľovanie bolo navrhnuté ako obchodná brána — zaplatil → schválim. Po rozhodnutí poskytovať službu zadarmo (súkromná osoba, bez živnosti) každú žiadosť aj tak čakalo schválenie, len s oneskorením, kým bol prevádzkovateľ online. Organizátor, ktorý si v sobotu večer vytvorí event, nemôže čakať na klik niekoho iného. Brána už nič nestrážila, len pridávala latenciu.
+
+**Prečo nezrušiť aj majiteľský účet:** práve preto, že každý klient vidí len svoje eventy, musí existovať niekto, kto vidí všetky. Bez toho by nemal kto posúdiť nahlásený obsah v cudzom evente (DSA „notice and action", pozri 2026-09-17) ani zablokovať zneužitý účet. Bežný používateľ + admin je štandardná architektúra.
+
+**Čo nahradilo bránu (ochrana pred zneužitím):**
+- overený e-mail pri registrácii (`GOTRUE_MAILER_AUTOCONFIRM=false`),
+- strop **20 aktívnych eventov na účet** priamo v `request_event` (hromadné zakladanie eventov na cudzí obsah),
+- majiteľ môže event kedykoľvek pozastaviť: `set_event_status(…, 'rejected')` — hosťom neprejde heslo, lebo `find_event_by_password` hľadá len `status = 'approved'`; organizátor event vidí ďalej, fotky ostávajú. Stĺpec `status` sa teda nezrušil, len `rejected` teraz znamená „pozastavený".
+
+**Poučenie pre obhajobu:** bezpečnostné zdôvodnenie z 2026-09-05 („samotný účet bez schváleného eventu nemá k ničomu prístup") touto zmenou prestalo platiť a bolo treba ho nahradiť iným (strop + pozastavenie + overený e-mail). Rovnako ako pri registrácii: keď sa zmení kód, treba znova prejsť dôvody, prečo bolo niečo predtým vyhodnotené ako bezpečné.

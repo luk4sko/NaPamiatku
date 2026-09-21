@@ -246,6 +246,12 @@
           </form>
         </div>
 
+        <div class="card settings-card danger-zone hidden" id="suspendEventCard">
+          <h3><span data-icon="alert"></span>Pozastaviť pre hostí</h3>
+          <p class="muted">Moderovanie: pozastavený event je pre hostí nedostupný (heslo neprejde), organizátor ho stále vidí. Fotky ostávajú.</p>
+          <button type="button" class="danger" id="suspendEventButton"></button>
+        </div>
+
         <div class="card settings-card danger-zone hidden" id="deleteEventCard">
           <h3><span data-icon="trash"></span>Zmazať event</h3>
           <p class="muted">Nenávratne zmaže event aj so všetkými fotkami, videami, odkazmi a nahláseniami. Odkaz a QR kód prestanú fungovať. Pred zmazaním si obsah stiahni ako ZIP.</p>
@@ -331,9 +337,12 @@
       renderDetails();
       renderGiftSettings();
       document.getElementById("content").classList.remove("hidden");
-      // Zmazať celý event smie len majiteľ (RLS politika events_delete_majitel).
+      // Zmazať a pozastaviť event smie len majiteľ (RLS politika events_delete_majitel,
+      // RPC set_event_status).
       if (currentProfile && currentProfile.role === "majitel") {
         document.getElementById("deleteEventCard").classList.remove("hidden");
+        document.getElementById("suspendEventCard").classList.remove("hidden");
+        renderSuspendButton();
       }
       setupTabs();
       // Náhľad kartičky sa dá zmerať až keď je záložka viditeľná.
@@ -362,12 +371,44 @@
         parts.push(icon("calendar") + " " + escapeHtml(formatDateLong(currentEvent.event_date)) +
           " · " + escapeHtml(relativeDate(currentEvent.event_date)));
       }
-      const statusLabel = { approved: "schválený", pending: "čaká na schválenie", rejected: "zamietnutý" }[currentEvent.status] || currentEvent.status;
-      parts.push(`<span class="badge ${currentEvent.status}">${escapeHtml(statusLabel)}</span>`);
+      // Každý event je od vytvorenia aktívny - odznak má zmysel len keď ho
+      // prevádzkovateľ pozastavil (hostia sa k nemu nedostanú).
+      if (currentEvent.status === "rejected") parts.push('<span class="badge rejected">pozastavený</span>');
       document.getElementById("eventMeta").innerHTML = parts.map((part) => "<span>" + part + "</span>").join("");
       document.getElementById("heroActions").hidden = false;
       document.getElementById("stats").hidden = false;
     }
+
+    /* ---------- Pozastavenie eventu (len majiteľ) ---------- */
+
+    function renderSuspendButton() {
+      const button = document.getElementById("suspendEventButton");
+      const suspended = currentEvent.status === "rejected";
+      button.innerHTML = suspended ? icon("check") + "Obnoviť pre hostí" : icon("alert") + "Pozastaviť event";
+      button.classList.toggle("danger", !suspended);
+      button.classList.toggle("secondary", suspended);
+    }
+
+    document.getElementById("suspendEventButton").addEventListener("click", async () => {
+      const suspended = currentEvent.status === "rejected";
+      if (!suspended) {
+        const ok = await confirmDialog({
+          title: "Pozastaviť event?",
+          text: "Hostia sa k nemu nedostanú, kým ho neobnovíš. Organizátor event naďalej vidí.",
+          confirmLabel: "Pozastaviť",
+          danger: true,
+        });
+        if (!ok) return;
+      }
+      const { error } = await supabaseClient.rpc("set_event_status", {
+        p_event_id: currentEvent.id, p_status: suspended ? "approved" : "rejected",
+      });
+      if (error) return showToast("Chyba: " + error.message, "error");
+      currentEvent.status = suspended ? "approved" : "rejected";
+      renderSuspendButton();
+      renderHeader();
+      showToast(suspended ? "Event je znova dostupný pre hostí." : "Event je pozastavený.", "ok");
+    });
 
     // Štatistiky v hlavičke: fotky, videá, odkazy a koľko rôznych ľudí prispelo.
     function renderStats() {

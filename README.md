@@ -15,11 +15,11 @@ Farby sú CSS premenné na `:root`; svetlý režim ich prepisuje cez `[data-them
 
 ## Roly
 
-- **Majiteľ** — prevádzkovateľ. Vytvára účty klientom, schvaľuje žiadosti o eventy, vidí a spravuje všetko.
+- **Majiteľ** — prevádzkovateľ (admin). Vidí a spravuje všetky eventy, môže event pozastaviť pre hostí alebo zmazať (moderovanie, nahlásený obsah), pozýva klientov.
 - **Klient** — má pridelený vlastný event. Požiada oň, nastaví mu heslo pre hostí, mazať fotky a odkazy.
 - **Hosť** — bez účtu a bez prihlasovania. Naskenuje QR kód, zadá heslo eventu a rovno je vnútri. Prezývka je nepovinná — ak si žiadnu nezvolí, appka mu vygeneruje náhodnú (napr. „Veselý hosť"). Nahráva a sťahuje fotky, píše do knihy hostí, môže poslať dar.
 
-Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť aj ručne (pozvánkou z dashboardu) — obe cesty vedú k rovnakému výsledku, len jedna ich vytvorí sama a druhá počká na pozvánku. Nový účet dostane rolu `klient` automaticky (DB trigger), ale bez schváleného eventu nemá k ničomu prístup — samotná registrácia nič neodomkne.
+Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť aj ručne (pozvánkou z dashboardu) — obe cesty vedú k rovnakému výsledku, len jedna ich vytvorí sama a druhá počká na pozvánku. Nový účet dostane rolu `klient` automaticky (DB trigger). Event je aktívny hneď po vytvorení (schvaľovanie bolo zrušené 2026-09-21 — služba je zadarmo, takže brána nemala čo strážiť); ochranou pred zneužitím je overený e-mail, strop 20 aktívnych eventov na účet a možnosť majiteľa event pozastaviť.
 
 ## Stránky
 
@@ -29,7 +29,7 @@ Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť 
 | `register.html` | Registrácia Klienta (email → odkaz na nastavenie hesla) |
 | `login.html` | Prihlásenie + obnova hesla |
 | `set-password.html` | Nastavenie hesla po pozvánke / po obnove |
-| `dashboard.html` | Prehľad eventov s náhľadmi a počtami fotiek; podľa role aj schvaľovanie žiadostí a správa účtov (Majiteľ) |
+| `dashboard.html` | Prehľad eventov s náhľadmi a počtami fotiek; Majiteľ vidí všetky eventy a spravuje účty |
 | `event.html` | Správa jedného eventu — fotky (filter, výber, ZIP, živé obnovovanie), kniha hostí (tlač, export), QR kód + tlačiteľná kartička, nastavenia, dary |
 | `guest.html` | Verejná stránka pre hostí (cez `?slug=`): heslo → meno → fotky, kniha hostí, dary |
 | `podmienky.html` | Obchodné podmienky, pravidlá obsahu a nahlasovanie (DSA), sprostredkovateľská doložka |

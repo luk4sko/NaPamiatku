@@ -47,16 +47,15 @@
   </header>
 
   <main class="page">
-    <!-- Záložky vidí len majiteľ - klient má iba svoje eventy. -->
+    <!-- Záložky vidí len majiteľ - klient má iba svoje eventy. Majiteľ v
+         "Eventy" vidí všetky eventy všetkých klientov (moderovanie). -->
     <div class="tabs hidden" id="ownerTabs">
       <button class="tab active" data-tab="events"><span data-icon="grid"></span>Eventy</button>
-      <button class="tab" data-tab="requests"><span data-icon="inbox"></span>Žiadosti <span class="tab-count alert" id="pendingCount"></span></button>
       <button class="tab" data-tab="accounts"><span data-icon="users"></span>Účty</button>
     </div>
 
     <!-- ---------- Eventy ---------- -->
     <section data-panel="events">
-      <div id="clientPending"></div>
 
       <div class="toolbar">
         <label class="search-field">
@@ -84,20 +83,12 @@
           <button type="button" class="chip active" data-filter="all">Všetky</button>
           <button type="button" class="chip" data-filter="upcoming">Nadchádzajúce</button>
           <button type="button" class="chip" data-filter="past">Prebehnuté</button>
-          <button type="button" class="chip hidden" data-filter="rejected" id="rejectedChip">Zamietnuté</button>
+          <button type="button" class="chip hidden" data-filter="rejected" id="rejectedChip">Pozastavené</button>
         </div>
         <div class="toolbar-spacer"></div>
         <p class="muted result-count" id="resultCount"></p>
       </div>
       <ul id="eventList" class="event-grid"></ul>
-    </section>
-
-    <!-- ---------- Žiadosti (len majiteľ) ---------- -->
-    <section data-panel="requests" class="hidden">
-      <div class="app-section-head">
-        <h2><span data-icon="inbox"></span>Žiadosti o schválenie</h2>
-      </div>
-      <div id="pendingList"></div>
     </section>
 
     <!-- ---------- Účty (len majiteľ) ---------- -->
@@ -130,7 +121,7 @@
       <div class="dialog-head">
         <div>
           <h3>Nový event</h3>
-          <p class="muted" id="requestHint">Žiadosť schváli prevádzkovateľ. Heslo budú zadávať hostia po naskenovaní QR kódu — vyber jednoduché, ktoré im vieš povedať.</p>
+          <p class="muted">Event je aktívny hneď po vytvorení. Heslo budú zadávať hostia po naskenovaní QR kódu — vyber jednoduché, ktoré im vieš povedať.</p>
         </div>
         <button type="button" class="secondary small icon-button" data-dialog-close aria-label="Zavrieť"><span data-icon="x"></span></button>
       </div>
@@ -153,7 +144,7 @@
         </div>
         <div class="dialog-actions">
           <button type="button" class="secondary" data-dialog-close>Zrušiť</button>
-          <button type="submit" id="requestButton"><span data-icon="check"></span><span id="requestButtonLabel">Odoslať žiadosť</span></button>
+          <button type="submit" id="requestButton"><span data-icon="check"></span>Vytvoriť event</button>
         </div>
         <p id="requestMessage" class="message"></p>
       </form>
@@ -220,13 +211,10 @@
       if (isOwner) {
         document.getElementById("ownerTabs").classList.remove("hidden");
         document.getElementById("rejectedChip").classList.remove("hidden");
-        document.getElementById("requestHint").textContent =
-          "Ako majiteľ svoj event schváliš sám hneď po vytvorení.";
-        document.getElementById("requestButtonLabel").textContent = "Vytvoriť event";
         setupTabs();
         // Profily najprv - karty eventov ukazujú aj meno klienta.
         await loadProfiles();
-        await Promise.all([loadEvents(), loadPending()]);
+        await loadEvents();
       } else {
         await loadEvents();
       }
@@ -278,7 +266,6 @@
         });
       });
       renderSummary();
-      renderClientPending();
       renderEvents();
     }
 
@@ -354,17 +341,14 @@
     function renderEvents() {
       const listEl = document.getElementById("eventList");
       const countEl = document.getElementById("resultCount");
-      // Čakajúce žiadosti klienta sú zvlášť nad zoznamom, sem nepatria.
-      const visible = sortEvents(allEvents.filter((event) => event.status !== "pending" && eventMatchesFilter(event)));
+      const visible = sortEvents(allEvents.filter(eventMatchesFilter));
       countEl.textContent = "";
 
-      if (allEvents.filter((event) => event.status !== "pending").length === 0) {
+      if (allEvents.length === 0) {
         listEl.innerHTML = emptyState({
           iconName: "sparkles",
           title: "Zatiaľ tu nie je žiadny event",
-          text: isOwner
-            ? "Vytvor prvý event a máš QR kód pre hostí za minútu."
-            : "Požiadaj o svoj prvý event. Po schválení dostaneš QR kód pre hostí.",
+          text: "Vytvor prvý event a máš QR kód pre hostí za minútu.",
           action: `<button type="button" onclick="openNewEvent()">${icon("plus")}Nový event</button>`,
         });
         return;
@@ -374,7 +358,7 @@
         return;
       }
 
-      const total = allEvents.filter((event) => event.status !== "pending").length;
+      const total = allEvents.length;
       countEl.textContent = visible.length === total
         ? `${total} ${plural(total, "event", "eventy", "eventov")}`
         : `${visible.length} z ${total} ${plural(total, "eventu", "eventov", "eventov")}`;
@@ -385,7 +369,7 @@
         const cover = event.cover ? ` style="background-image:url('${escapeHtml(event.cover)}')"` : "";
         const dateText = event.event_date ? formatDateLong(event.event_date) : "Dátum nezadaný";
         const relative = event.event_date ? relativeDate(event.event_date) : "";
-        const badge = event.status === "rejected" ? '<span class="badge rejected">zamietnutý</span>' : "";
+        const badge = event.status === "rejected" ? '<span class="badge rejected">pozastavený</span>' : "";
         const client = isOwner && event.clientLabel
           ? `<div class="event-card-meta event-card-client">${icon("user")}<span>${escapeHtml(event.clientLabel)}</span></div>` : "";
         li.innerHTML = `
@@ -414,20 +398,6 @@
       });
     }
 
-    // Klient po odoslaní žiadosti potrebuje vidieť, že sa niečo deje.
-    function renderClientPending() {
-      const container = document.getElementById("clientPending");
-      if (isOwner) { container.innerHTML = ""; return; }
-      const pending = allEvents.filter((event) => event.status === "pending");
-      container.innerHTML = pending.map((event) => `
-        <div class="notice">
-          ${icon("hourglass")}
-          <p>
-            <strong>${escapeHtml(event.name)} čaká na schválenie</strong>
-            Žiadosť sme odoslali ${escapeHtml(formatDateTime(event.created_at))}. Hneď po schválení sa event objaví nižšie aj s QR kódom pre hostí.
-          </p>
-        </div>`).join("");
-    }
 
     document.getElementById("searchInput").addEventListener("input", (event) => {
       searchQuery = event.target.value.trim().toLowerCase();
@@ -490,89 +460,14 @@
         return;
       }
 
-      // Majiteľ nemusí čakať na schválenie od nikoho - schváli si to sám.
-      if (isOwner) {
-        await supabaseClient.rpc("set_event_status", { p_event_id: newEventId, p_status: "approved" });
-      }
-
       button.disabled = false;
       document.getElementById("requestForm").reset();
       newEventDialog.close();
-      showToast(isOwner ? "Event je vytvorený." : "Žiadosť odoslaná, čaká na schválenie.", "ok");
+      showToast("Event je vytvorený.", "ok");
 
       await loadEvents();
-      if (isOwner) await loadPending();
     });
 
-    /* ---------- Schvaľovanie (len Majiteľ) ---------- */
-
-    async function loadPending() {
-      const container = document.getElementById("pendingList");
-      const countEl = document.getElementById("pendingCount");
-      const { data, error } = await supabaseClient
-        .from("events")
-        .select("id, name, event_date, client_id, created_at")
-        .eq("status", "pending")
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        container.innerHTML = emptyState({ iconName: "alert", title: "Žiadosti sa nepodarilo načítať", text: error.message });
-        return;
-      }
-      countEl.textContent = data.length ? String(data.length) : "";
-      if (data.length === 0) {
-        container.innerHTML = emptyState({ iconName: "check", title: "Všetko vybavené", text: "Momentálne nečaká žiadna žiadosť." });
-        return;
-      }
-
-      container.innerHTML = "";
-      for (const event of data) {
-        // Profily sú načítané v loadProfiles(); majiteľ vidí, kto žiada.
-        const client = profilesById[event.client_id];
-        const card = document.createElement("div");
-        card.className = "request-card";
-        card.innerHTML = `
-          <div class="request-card-icon">${icon("hourglass")}</div>
-          <div class="request-card-body">
-            <h3>${escapeHtml(event.name)}</h3>
-            <p class="muted">
-              Žiada ${escapeHtml(client ? (client.full_name || client.email) : "neznámy")}
-              ${event.event_date ? " · " + escapeHtml(formatDateLong(event.event_date)) : ""}
-              · odoslané ${escapeHtml(formatDateTime(event.created_at))}
-            </p>
-            <div class="button-row">
-              <button class="small" data-approve="${event.id}">${icon("check")}Schváliť</button>
-              <button class="small secondary" data-reject="${event.id}">${icon("x")}Zamietnuť</button>
-            </div>
-          </div>`;
-        container.appendChild(card);
-      }
-
-      container.querySelectorAll("[data-approve]").forEach((button) => {
-        button.addEventListener("click", () => changeStatus(button.dataset.approve, "approved"));
-      });
-      container.querySelectorAll("[data-reject]").forEach((button) => {
-        button.addEventListener("click", async () => {
-          const ok = await confirmDialog({
-            title: "Zamietnuť žiadosť?",
-            text: "Klient uvidí event ako zamietnutý. Hostia sa k nemu nedostanú.",
-            confirmLabel: "Zamietnuť",
-            danger: true,
-          });
-          if (ok) changeStatus(button.dataset.reject, "rejected");
-        });
-      });
-    }
-
-    async function changeStatus(eventId, status) {
-      const { error } = await supabaseClient.rpc("set_event_status", {
-        p_event_id: eventId,
-        p_status: status,
-      });
-      if (error) return showToast("Chyba: " + error.message, "error");
-      showToast(status === "approved" ? "Event schválený." : "Žiadosť zamietnutá.", "ok");
-      await Promise.all([loadPending(), loadEvents()]);
-    }
 
     /* ---------- Účty klientov (len Majiteľ) ---------- */
 
