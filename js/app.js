@@ -571,6 +571,7 @@ function showLightboxPhoto() {
 
   if (isVideo) {
     img.removeAttribute("src");
+    video.poster = item.poster || "";
     video.src = item.url;
     // Otvorenie je reakcia na klik, takže prehliadač prehrávanie povolí;
     // ak nie (šetrič batérie), ostane pripravené s tlačidlom play.
@@ -614,7 +615,7 @@ function openLightbox(items, index) {
 function setupGalleryLightbox(gallery) {
   const media = Array.from(gallery.querySelectorAll(".photo > img, .photo > video"));
   const items = media.map((el) => el.tagName === "VIDEO"
-    ? { type: "video", url: el.getAttribute("src").split("#")[0] }
+    ? { type: "video", url: el.getAttribute("src").split("#")[0], poster: el.poster || "" }
     : { type: "photo", url: el.src, alt: el.alt });
 
   media.forEach((el, index) => {
@@ -622,11 +623,33 @@ function setupGalleryLightbox(gallery) {
   });
 }
 
-// Náhľad videa do galérie. Fragment #t=0.001 prinúti iOS Safari vykresliť
-// prvú snímku - inak by dlaždica ostala čierna, kým sa video nespustí.
-function videoTile(url) {
+// Dlaždica videa v galérii. Tri stavy (photo.video_status, pozri
+// server/transcode.py):
+//   pending - server ho ešte prekódúva: len zástupný obrázok, nedá sa otvoriť
+//   ready   - prekódované 1080p + poster: video sa vôbec nesťahuje (preload none),
+//             kým ho hosť neotvorí - galéria s 20 videami inak ťahala 20x metadáta
+//   inak    - originál bez postera (staršie/zlyhané): fragment #t=0.001 prinúti
+//             iOS Safari vykresliť prvú snímku, inak by dlaždica ostala čierna
+function videoTile(url, photo) {
+  if (photo.video_status === "pending") {
+    return `<div class="photo-pending"><span class="spinner"></span>Spracúva sa…</div>`;
+  }
+  if (photo.video_status === "ready" && photo.poster_path) {
+    const poster = escapeHtml(publicUrl("photos", photo.poster_path));
+    return `<video src="${url}" poster="${poster}" muted playsinline preload="none"></video>
+      <span class="photo-play">${icon("play")}</span>`;
+  }
   return `<video src="${url}#t=0.001" muted playsinline preload="metadata"></video>
     <span class="photo-play">${icon("play")}</span>`;
+}
+
+// Kým sa nejaké video ešte spracúva, galéria sa sama obnoví každých 15 s,
+// aby sa "Spracúva sa…" premenilo na hotové video bez klikania.
+let pendingRefreshTimer = null;
+function watchPendingVideos(photos, reload) {
+  clearTimeout(pendingRefreshTimer);
+  if (!photos.some((photo) => photo.video_status === "pending")) return;
+  pendingRefreshTimer = setTimeout(reload, 15000);
 }
 
 /* ---------- Ikony ---------- */

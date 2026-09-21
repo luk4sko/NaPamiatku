@@ -552,7 +552,7 @@
 
       const { data, error } = await supabaseClient
         .from("photos")
-        .select("id, storage_path, uploaded_by_nickname, created_at, media_type")
+        .select("id, storage_path, uploaded_by_nickname, created_at, media_type, video_status, poster_path")
         .eq("event_id", currentEvent.id)
         .order("created_at", { ascending: false });
 
@@ -562,14 +562,17 @@
       }
 
       // Pri tichom obnovení (živé obnovovanie) neprekresľujeme, ak sa nič
-      // nezmenilo - inak by galéria každých 30 sekúnd blikla.
-      const signature = data.map((photo) => photo.id).join(",");
-      if (silent && signature === allPhotos.map((photo) => photo.id).join(",")) return;
+      // nezmenilo - inak by galéria každých 30 sekúnd blikla. Stav videa je
+      // súčasť podpisu, aby sa "Spracúva sa…" prekreslilo na hotové video.
+      const fingerprint = (photos) => photos.map((photo) => photo.id + photo.video_status).join(",");
+      const signature = fingerprint(data);
+      if (silent && signature === fingerprint(allPhotos)) return;
       const added = silent ? data.length - allPhotos.length : 0;
 
       allPhotos = data;
       renderStats();
       renderGallery();
+      watchPendingVideos(allPhotos, () => loadPhotos(true));
       if (added > 0) showToast(`Pribudli nové súbory: ${added}`, "ok");
       await loadReports();
     }
@@ -673,7 +676,7 @@
         const url = escapeHtml(publicUrl("photos", photo.storage_path));
         const isVideo = photo.media_type === "video";
         const mediaTag = isVideo
-          ? videoTile(url)
+          ? videoTile(url, photo)
           : `<img src="${url}" alt="Fotka od ${escapeHtml(nickname)}" loading="lazy" />`;
 
         const figure = document.createElement("figure");
@@ -731,7 +734,10 @@
       // Najprv súbory, potom databázové riadky. Keby zlyhal druhý krok,
       // uvidíme rozbité fotky a vieme to opraviť; opačné poradie by po sebe
       // nechalo neviditeľné súbory, o ktorých by appka už nevedela.
-      const paths = ids.map((id) => allPhotos.find((photo) => photo.id === id).storage_path);
+      const paths = ids.flatMap((id) => {
+        const photo = allPhotos.find((item) => item.id === id);
+        return photo.poster_path ? [photo.storage_path, photo.poster_path] : [photo.storage_path];
+      });
       const { error: storageError } = await supabaseClient.storage.from("photos").remove(paths);
       if (storageError) return showToast("Chyba pri mazaní súboru: " + storageError.message, "error");
       const { error } = await supabaseClient.from("photos").delete().in("id", ids);
@@ -1046,10 +1052,10 @@
       // databáza potom sama zmaže fotky, odkazy a nahlásenia (ON DELETE CASCADE).
       // Opačné poradie by nechalo v úložisku súbory, o ktorých už nikto nevie.
       const { data: rows, error: listError } = await supabaseClient
-        .from("photos").select("storage_path").eq("event_id", currentEvent.id);
+        .from("photos").select("storage_path, poster_path").eq("event_id", currentEvent.id);
       if (listError) { button.disabled = false; return showMessage(messageEl, listError.message, "error"); }
 
-      const paths = (rows || []).map((row) => row.storage_path);
+      const paths = (rows || []).flatMap((row) => row.poster_path ? [row.storage_path, row.poster_path] : [row.storage_path]);
       for (let i = 0; i < paths.length; i += 100) {
         showMessage(messageEl, `Mažem súbory ${Math.min(i + 100, paths.length)} / ${paths.length}...`);
         const { error: storageError } = await supabaseClient.storage.from("photos").remove(paths.slice(i, i + 100));
