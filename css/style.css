@@ -3337,6 +3337,12 @@ a.button:hover {
   gap: 1rem;
 }
 
+/* Keby sa popis jedného políčka zalomil na dva riadky, políčka v riadku
+   ostanú zarovnané spodkom, nie vrchom. */
+.field-row > .field {
+  justify-content: flex-end;
+}
+
 @media (min-width: 560px) {
   .field-row { grid-template-columns: 1fr 1fr; }
 }
