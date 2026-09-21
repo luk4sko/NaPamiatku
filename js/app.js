@@ -299,10 +299,54 @@ async function compressImage(file) {
 // čokoľvek iné dostane mp4. Tento prístup sa volá whitelist a je bezpečnejší
 // ako blacklist - nemusíme dopredu uhádnuť všetko, čo by mohlo uškodiť.
 const ALLOWED_VIDEO_EXTENSIONS = ["mp4", "mov", "webm"];
+const ALLOWED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "heic", "heif", "gif", "avif"];
+
+// MIME typ podľa prípony pre prípad, že ho prehliadač nedodal - musí sedieť
+// s allowed_mime_types v storage buckete, inak server súbor odmietne.
+const MIME_BY_EXTENSION = {
+  mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm",
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+  heic: "image/heic", heif: "image/heic", gif: "image/gif", avif: "image/avif",
+};
+
+function fileExtension(file) {
+  return (file.name || "").split(".").pop().toLowerCase();
+}
 
 function videoExtension(file) {
-  const extension = file.name.split(".").pop().toLowerCase();
+  const extension = fileExtension(file);
   return ALLOWED_VIDEO_EXTENSIONS.includes(extension) ? extension : "mp4";
+}
+
+// Fotka, video alebo nič? Prehliadač určuje file.type z registrov systému a
+// pri niektorých príponách vráti prázdny reťazec (typicky Windows) - vtedy
+// rozhodne prípona, aby sa správne video nezahodilo len kvôli chýbajúcemu MIME.
+// Pri videu rozhoduje vždy prípona: MKV či AVI prehliadač síce označí ako
+// video, ale prehrať ich nevie a bucket ich odmietne - lepšie povedať to hneď.
+function mediaKind(file) {
+  const extension = fileExtension(file);
+  if (ALLOWED_VIDEO_EXTENSIONS.includes(extension)) return "video";
+  if (file.type.startsWith("video/")) return null;
+  if (file.type.startsWith("image/") || ALLOWED_IMAGE_EXTENSIONS.includes(extension)) return "photo";
+  return null;
+}
+
+function isVideoFile(file) {
+  return mediaKind(file) === "video";
+}
+
+function mediaMimeType(file) {
+  return file.type || MIME_BY_EXTENSION[fileExtension(file)] || "";
+}
+
+// supabase-js posiela File/Blob ako multipart formulár a vlastný parameter
+// contentType v tom režime ignoruje - typ berie z file.type. Keď ten chýba,
+// súbor "prebalíme" do nového File so správnym typom. Dáta sa nekopírujú,
+// nový File len ukazuje na tie isté bajty s iným metaúdajom.
+function withMimeType(file) {
+  const type = mediaMimeType(file);
+  if (!type || file.type === type) return file;
+  return new File([file], file.name || "upload", { type, lastModified: file.lastModified });
 }
 
 // Maximálna veľkosť videa. Zhora ju obmedzuje Cloudflare Tunnel (100 MB na
@@ -313,7 +357,7 @@ function videoExtension(file) {
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
 function videoSizeError(file) {
-  if (!file.type.startsWith("video/") || file.size <= MAX_VIDEO_BYTES) return "";
+  if (!isVideoFile(file) || file.size <= MAX_VIDEO_BYTES) return "";
   const megabytes = Math.round(file.size / 1024 / 1024);
   return `Video má ${megabytes} MB, limit je 100 MB (približne minúta vo Full HD).`;
 }
@@ -761,7 +805,17 @@ function renderLoadMore(container, total, onMore) {
 // Súbory sa dajú do zóny pretiahnuť myšou alebo vybrať cez skrytý <input>.
 // Obe cesty končia v tej istej funkcii onFiles(files).
 function setupDropzone(zone, input, onFiles) {
-  const accept = (file) => file.type.startsWith("image/") || file.type.startsWith("video/");
+  // Nepodporované súbory sa nesmú stratiť potichu - hosť by nevedel, prečo
+  // mu video "nenahralo". Povie mu to toast, ostatné súbory idú ďalej.
+  const pick = (fileList) => {
+    const all = Array.from(fileList);
+    const files = all.filter((file) => mediaKind(file));
+    const skipped = all.length - files.length;
+    if (skipped) {
+      showToast(`${skipped} ${plural(skipped, "súbor preskočený", "súbory preskočené", "súborov preskočených")} - podporované sú fotky (JPG, PNG, HEIC) a videá (MP4, MOV, WEBM).`, "error");
+    }
+    return files;
+  };
 
   ["dragenter", "dragover"].forEach((name) => zone.addEventListener(name, (event) => {
     event.preventDefault();
@@ -772,11 +826,11 @@ function setupDropzone(zone, input, onFiles) {
     zone.classList.remove("dragover");
   }));
   zone.addEventListener("drop", (event) => {
-    const files = Array.from(event.dataTransfer.files).filter(accept);
+    const files = pick(event.dataTransfer.files);
     if (files.length) onFiles(files);
   });
   input.addEventListener("change", () => {
-    const files = Array.from(input.files).filter(accept);
+    const files = pick(input.files);
     // Vyprázdnenie umožní vybrať tie isté súbory znova - prehliadač inak
     // pre rovnaký výber "change" nespustí.
     input.value = "";
@@ -786,42 +840,95 @@ function setupDropzone(zone, input, onFiles) {
 
 // Zoznam nahrávaných súborov s vlastným stavom pre každý z nich.
 // Vracia objekt, cez ktorý upload hlási pokrok: start(i), done(i), fail(i, msg).
+// Panel nahrávania: namiesto zvislého zoznamu (30 fotiek = 30 riadkov, ktoré
+// odsunú galériu o celú obrazovku) je to jeden kompaktný blok s pevnou výškou:
+// nadpis so stavom, celkový ukazovateľ a vodorovný pás náhľadov, ktorý sa
+// sám posúva na práve nahrávaný súbor. Vidno, čo sa deje, a nič neskáče.
 function createUploadList(container, files) {
-  container.innerHTML = files.map((file, index) => `
-    <li class="upload-item" data-index="${index}">
-      <span class="upload-thumb">${file.type.startsWith("video/") ? icon("video") : ""}</span>
-      <span class="upload-name">${escapeHtml(file.name)}</span>
-      <span class="upload-state">${icon("clock")}</span>
-    </li>`).join("");
-  container.classList.remove("hidden");
+  const total = files.length;
+  container.innerHTML = `
+    <div class="upload-head">
+      <span class="upload-title"><span class="spinner"></span><span class="upload-title-text">Pripravujem…</span></span>
+      <span class="upload-count">0 / ${total}</span>
+    </div>
+    <div class="upload-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="0"><span class="upload-bar-fill"></span></div>
+    <div class="upload-strip">${files.map((file, index) => `
+      <span class="upload-item" data-index="${index}" title="${escapeHtml(file.name)}">
+        ${isVideoFile(file) ? icon("video") : ""}
+        <span class="upload-state"></span>
+      </span>`).join("")}
+    </div>`;
+  container.classList.remove("hidden", "done");
 
   // Náhľady fotiek cez objectURL - nečítame celý súbor do pamäte ako base64.
   files.forEach((file, index) => {
-    if (!file.type.startsWith("image/")) return;
+    if (isVideoFile(file)) return;
     const img = document.createElement("img");
     img.src = URL.createObjectURL(file);
     img.onload = () => URL.revokeObjectURL(img.src);
-    container.querySelector(`[data-index="${index}"] .upload-thumb`).appendChild(img);
+    img.alt = "";
+    container.querySelector(`[data-index="${index}"]`).prepend(img);
   });
 
+  const strip = container.querySelector(".upload-strip");
+  const titleText = container.querySelector(".upload-title-text");
+  const titleIcon = container.querySelector(".upload-title");
+  const count = container.querySelector(".upload-count");
+  const bar = container.querySelector(".upload-bar");
+  const fill = container.querySelector(".upload-bar-fill");
   const item = (index) => container.querySelector(`[data-index="${index}"]`);
+  let finished = 0;
+  let failed = 0;
+
+  // Posun pásu tak, aby bol aktívny náhľad v strede - ručne cez scrollLeft,
+  // lebo scrollIntoView by mohol posunúť aj celú stránku zvislo.
+  function reveal(index) {
+    const el = item(index).getBoundingClientRect();
+    const box = strip.getBoundingClientRect();
+    const target = strip.scrollLeft + (el.left - box.left) + el.width / 2 - box.width / 2;
+    strip.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }
+
+  function progress() {
+    fill.style.width = `${(finished / total) * 100}%`;
+    bar.setAttribute("aria-valuenow", finished);
+    count.textContent = `${finished} / ${total}`;
+  }
+
   return {
     start(index) {
       item(index).classList.add("uploading");
       item(index).querySelector(".upload-state").innerHTML = '<span class="spinner"></span>';
+      // Pri videu aj veľkosť - 60 MB trvá aj minútu a hosť má vedieť, že sa nič nezaseklo.
+      const file = files[index];
+      const size = isVideoFile(file) ? ` (video, ${Math.max(1, Math.round(file.size / 1024 / 1024))} MB)` : "";
+      titleText.textContent = `Nahrávam ${index + 1}. z ${total}${size}…`;
+      reveal(index);
     },
     done(index) {
       item(index).classList.remove("uploading");
       item(index).classList.add("done");
       item(index).querySelector(".upload-state").innerHTML = icon("check");
+      finished += 1;
+      progress();
     },
     fail(index, message) {
       item(index).classList.remove("uploading");
       item(index).classList.add("failed");
       item(index).querySelector(".upload-state").innerHTML = icon("x");
-      item(index).title = message || "";
+      if (message) item(index).title += " - " + message;
+      finished += 1;
+      failed += 1;
+      progress();
     },
     finish(delay) {
+      container.classList.add("done");
+      titleIcon.querySelector(".spinner").outerHTML = failed ? icon("alert", "icon-alert") : icon("check");
+      titleText.textContent = failed
+        ? `Hotovo - ${failed} ${plural(failed, "súbor zlyhal", "súbory zlyhali", "súborov zlyhalo")}`
+        : "Hotovo";
+      // Pri chybe panel ostane, aby bolo vidieť, ktoré súbory treba skúsiť znova.
+      if (failed) return;
       setTimeout(() => { container.classList.add("hidden"); container.innerHTML = ""; }, delay || 2500);
     },
   };

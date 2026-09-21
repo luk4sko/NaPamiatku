@@ -96,7 +96,7 @@
               <span data-icon="image"></span>Vybrať fotky alebo videá
               <input type="file" id="photoInput" accept="image/*,video/*" multiple />
             </label>
-            <ul class="upload-list hidden" id="uploadList"></ul>
+            <div class="upload-panel hidden" id="uploadList" aria-live="polite"></div>
             <p class="muted upload-terms">Nahrávaj len vlastné fotky z tohto podujatia. Nevhodný obsah môže ktokoľvek nahlásiť a organizátor ho zmaže. <a href="/podmienky#obsah" target="_blank">Pravidlá</a></p>
           </div>
         </div>
@@ -465,17 +465,17 @@
 
         // Video sa (na rozdiel od fotiek) neprekomprimúva - zmenšenie videa
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
-        const isVideo = file.type.startsWith("video/");
+        const isVideo = isVideoFile(file);
         const sizeError = videoSizeError(file);
         if (sizeError) { list.fail(index, sizeError); showToast(sizeError, "error"); continue; }
 
-        const toUpload = isVideo ? file : await compressImage(file);
+        const toUpload = withMimeType(isVideo ? file : await compressImage(file));
         const extension = isVideo ? videoExtension(file) : "jpg";
         const path = `${eventInfo.id}/${crypto.randomUUID()}.${extension}`;
 
         const { error: uploadError } = await supabaseClient.storage
           .from("photos")
-          .upload(path, toUpload, { contentType: toUpload.type || file.type });
+          .upload(path, toUpload, { contentType: toUpload.type });
         if (uploadError) { list.fail(index, uploadError.message); continue; }
 
         // Riadok v databáze vytvorí až funkcia, ktorá znova overí heslo eventu.

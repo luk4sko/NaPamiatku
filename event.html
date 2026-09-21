@@ -41,7 +41,7 @@
           <h1 id="eventName">Načítavam...</h1>
           <p class="app-hero-sub" id="eventMeta"></p>
         </div>
-        <div class="app-hero-actions" id="heroActions" hidden>
+        <div class="app-hero-actions hero-cta" id="heroActions" hidden>
           <button type="button" class="secondary" id="copyLinkHeroButton"><span data-icon="link"></span>Kopírovať odkaz</button>
           <a class="button" id="openGuestLink" href="#" target="_blank" rel="noopener"><span data-icon="users"></span>Otvoriť ako hosť</a>
         </div>
@@ -72,12 +72,12 @@
           <div class="dropzone" id="dropzone">
             <div class="dropzone-icon"><span data-icon="upload"></span></div>
             <h3>Pridaj fotky aj ty</h3>
-            <p class="muted">Pretiahni ich sem alebo vyber zo zariadenia. Veľké fotky automaticky zmenšíme. Video môže mať najviac 100 MB (asi minúta).</p>
+            <p class="muted"><span class="pointer-only">Pretiahni ich sem alebo vyber</span><span class="touch-only">Vyber ich</span> zo zariadenia. Veľké fotky automaticky zmenšíme. Video môže mať najviac 100 MB (asi minúta).</p>
             <label class="file-button">
               <span data-icon="image"></span>Vybrať fotky alebo videá
               <input type="file" id="photoInput" accept="image/*,video/*" multiple />
             </label>
-            <ul class="upload-list hidden" id="uploadList"></ul>
+            <div class="upload-panel hidden" id="uploadList" aria-live="polite"></div>
           </div>
         </div>
 
@@ -864,17 +864,17 @@
 
         // Video sa (na rozdiel od fotiek) neprekomprimúva - zmenšenie videa
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
-        const isVideo = file.type.startsWith("video/");
+        const isVideo = isVideoFile(file);
         const sizeError = videoSizeError(file);
         if (sizeError) { list.fail(index, sizeError); showToast(sizeError, "error"); continue; }
 
-        const toUpload = isVideo ? file : await compressImage(file);
+        const toUpload = withMimeType(isVideo ? file : await compressImage(file));
         const extension = isVideo ? videoExtension(file) : "jpg";
         const path = `${currentEvent.id}/${crypto.randomUUID()}.${extension}`;
 
         const { error: uploadError } = await supabaseClient.storage
           .from("photos")
-          .upload(path, toUpload, { contentType: toUpload.type || file.type });
+          .upload(path, toUpload, { contentType: toUpload.type });
         if (uploadError) { list.fail(index, uploadError.message); continue; }
 
         const { error: insertError } = await supabaseClient.from("photos").insert({
