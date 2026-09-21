@@ -391,7 +391,8 @@
       watchPendingVideos(allPhotos, () => loadPhotos(true));
       // Rozmazané pozadie hlavičky z najnovšej fotky.
       const cover = allPhotos.find((photo) => photo.media_type !== "video");
-      document.getElementById("heroBg").style.backgroundImage = cover ? `url("${publicUrl("photos", cover.storage_path)}")` : "";
+      // Pozadie je rozmazané, 800 px bohato stačí.
+      document.getElementById("heroBg").style.backgroundImage = cover ? `url("${photoUrl(cover.storage_path, 800)}")` : "";
     }
 
     function renderGallery() {
@@ -415,7 +416,7 @@
         const isVideo = photo.media_type === "video";
         const mediaTag = isVideo
           ? videoTile(url, photo)
-          : `<img src="${url}" alt="Fotka od ${escapeHtml(photo.nickname)}" loading="lazy" />`;
+          : `<img ${photoImgAttrs(photo.storage_path)} alt="Fotka od ${escapeHtml(photo.nickname)}" loading="lazy" />`;
 
         const figure = document.createElement("figure");
         figure.className = "photo";

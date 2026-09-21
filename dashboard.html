@@ -295,7 +295,7 @@
             photoCount: Number(row.photo_count) || 0,
             videoCount: Number(row.video_count) || 0,
             messageCount: Number(row.message_count) || 0,
-            cover: row.cover_path ? publicUrl("photos", row.cover_path) : null,
+            cover: row.cover_path ? photoUrl(row.cover_path, 800) : null,
           };
         });
         return stats;
@@ -312,7 +312,7 @@
         if (photo.media_type === "video") stat.videoCount += 1;
         else {
           stat.photoCount += 1;
-          if (!stat.cover) stat.cover = publicUrl("photos", photo.storage_path);
+          if (!stat.cover) stat.cover = photoUrl(photo.storage_path, 800);
         }
       });
       (messagesResult.data || []).forEach((message) => { statFor(message.event_id).messageCount += 1; });

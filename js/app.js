@@ -259,6 +259,33 @@ function publicUrl(bucket, path) {
   return supabaseClient.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
 
+// Zmenšená verzia fotky cez storage "render" endpoint (imgproxy na serveri).
+// Originál má ~2400 px a ~0,9 MB, dlaždica v galérii ho zobrazuje na ~200 px -
+// verzia na 400 px má ~50 KB, teda ~90 % dát ušetrených. Zmenšuje sa až pri
+// prvej požiadavke a Cloudflare výsledok cachuje, takže server to robí raz.
+function photoUrl(path, width, quality) {
+  if (!path) return "";
+  return supabaseClient.storage.from("photos")
+    .getPublicUrl(path, { transform: { width, quality: quality || 75 } }).data.publicUrl;
+}
+
+// Šírky dlaždíc podľa počtu stĺpcov galérie (.gallery: 2 / 3 / 4 stĺpce) -
+// z toho a z hustoty displeja si prehliadač vyberie 400 alebo 800 px verziu.
+const GALLERY_SIZES = "(min-width: 900px) 220px, (min-width: 620px) 33vw, 50vw";
+
+// Atribúty <img> pre fotku v galérii: srcset 400/800 px, data-large pre
+// lightbox (1600 px), data-full originál. Keby zmenšovanie na serveri
+// zlyhalo (imgproxy nebeží, nepodporovaný formát), onerror prepne na originál
+// - galéria nikdy neostane prázdna.
+function photoImgAttrs(path) {
+  return `src="${escapeHtml(photoUrl(path, 800))}"
+    srcset="${escapeHtml(photoUrl(path, 400))} 400w, ${escapeHtml(photoUrl(path, 800))} 800w"
+    sizes="${GALLERY_SIZES}"
+    data-large="${escapeHtml(photoUrl(path, 1600, 80))}"
+    data-full="${escapeHtml(publicUrl("photos", path))}"
+    onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.full"`;
+}
+
 /* ---------- Práca s obrázkami ---------- */
 
 // Zmenší veľké fotky pred nahraním. Fotka z mobilu má bežne 4-8 MB;
@@ -578,6 +605,8 @@ function showLightboxPhoto() {
     video.play().catch(() => {});
   } else {
     unloadLightboxVideo();
+    // Zmenšená 1600 px verzia; keby ju server nevedel vyrobiť, originál.
+    img.onerror = () => { img.onerror = null; if (item.full) img.src = item.full; };
     img.src = item.url;
     img.alt = item.alt || "";
   }
@@ -616,7 +645,7 @@ function setupGalleryLightbox(gallery) {
   const media = Array.from(gallery.querySelectorAll(".photo > img, .photo > video"));
   const items = media.map((el) => el.tagName === "VIDEO"
     ? { type: "video", url: el.getAttribute("src").split("#")[0], poster: el.poster || "" }
-    : { type: "photo", url: el.src, alt: el.alt });
+    : { type: "photo", url: el.dataset.large || el.src, full: el.dataset.full || el.src, alt: el.alt });
 
   media.forEach((el, index) => {
     el.addEventListener("click", () => openLightbox(items, index));
@@ -635,7 +664,7 @@ function videoTile(url, photo) {
     return `<div class="photo-pending"><span class="spinner"></span>Spracúva sa…</div>`;
   }
   if (photo.video_status === "ready" && photo.poster_path) {
-    const poster = escapeHtml(publicUrl("photos", photo.poster_path));
+    const poster = escapeHtml(photoUrl(photo.poster_path, 800));
     return `<video src="${url}" poster="${poster}" muted playsinline preload="none"></video>
       <span class="photo-play">${icon("play")}</span>`;
   }
