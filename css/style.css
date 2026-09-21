@@ -2049,6 +2049,13 @@ a.button:hover {
   background: var(--surface-hover);
 }
 
+/* Položky menu sú zarovnané vľavo ako odkazy. Zápis .nav-menu button:has(...)
+   je zámerný - musí prebiť všeobecné button:has(> .ui-icon), ktoré tlačidlá
+   s ikonou centruje. */
+.nav-menu button:has(> .ui-icon) {
+  justify-content: flex-start;
+}
+
 .nav-menu .ui-icon {
   color: var(--text-muted);
 }
