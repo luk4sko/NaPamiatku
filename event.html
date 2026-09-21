@@ -683,6 +683,8 @@
           : `<img ${photoImgAttrs(photo.storage_path)} alt="Fotka od ${escapeHtml(nickname)}" loading="lazy" />`;
 
         const figure = document.createElement("figure");
+        figure.dataset.name = nickname;
+        figure.dataset.date = formatDateTime(photo.created_at);
         figure.className = "photo" + (selectedIds.has(photo.id) ? " selected" : "");
         figure.dataset.id = photo.id;
         figure.innerHTML = `

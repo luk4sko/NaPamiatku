@@ -438,6 +438,10 @@ function ensureLightbox() {
   lightboxEl.className = "lightbox hidden";
   lightboxEl.innerHTML = `
     <button type="button" class="lightbox-close" aria-label="Zavrieť">✕</button>
+    <div class="lightbox-caption hidden">
+      <span class="avatar"></span>
+      <span class="lightbox-caption-text"><strong></strong><small></small></span>
+    </div>
     <button type="button" class="lightbox-arrow lightbox-prev hidden" aria-label="Predchádzajúca fotka">‹</button>
     <img />
     <video class="hidden" controls playsinline preload="metadata"></video>
@@ -596,6 +600,13 @@ function showLightboxPhoto() {
   video.classList.toggle("hidden", !isVideo);
   resetLightboxZoom();
 
+  // Kto to nahral a kedy - v galérii to vidno len pri prejdení myšou.
+  const caption = lightboxEl.querySelector(".lightbox-caption");
+  caption.classList.toggle("hidden", !item.name);
+  caption.querySelector(".avatar").textContent = initials(item.name);
+  caption.querySelector("strong").textContent = item.name;
+  caption.querySelector("small").textContent = item.date;
+
   if (isVideo) {
     img.removeAttribute("src");
     video.poster = item.poster || "";
@@ -643,9 +654,13 @@ function openLightbox(items, index) {
 // v lightboxe, kde sa dá rovnako ako pri fotke swipnúť na ďalšiu položku.
 function setupGalleryLightbox(gallery) {
   const media = Array.from(gallery.querySelectorAll(".photo > img, .photo > video"));
-  const items = media.map((el) => el.tagName === "VIDEO"
-    ? { type: "video", url: el.getAttribute("src").split("#")[0], poster: el.poster || "" }
-    : { type: "photo", url: el.dataset.large || el.src, full: el.dataset.full || el.src, alt: el.alt });
+  const items = media.map((el) => {
+    const figure = el.closest(".photo");
+    const meta = { name: figure?.dataset.name || "", date: figure?.dataset.date || "" };
+    return el.tagName === "VIDEO"
+      ? { type: "video", url: el.getAttribute("src").split("#")[0], poster: el.poster || "", ...meta }
+      : { type: "photo", url: el.dataset.large || el.src, full: el.dataset.full || el.src, alt: el.alt, ...meta };
+  });
 
   media.forEach((el, index) => {
     el.addEventListener("click", () => openLightbox(items, index));

@@ -574,6 +574,51 @@ form > button {
   font-size: 1.4rem;
 }
 
+/* Kto fotku/video nahral - pilulka vľavo hore (dole by prekážala ovládaniu videa). */
+.lightbox-caption {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: calc(100% - 5rem);
+  padding: 0.3rem 0.9rem 0.3rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.lightbox-caption .avatar {
+  width: 1.9rem;
+  height: 1.9rem;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.lightbox-caption-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.lightbox-caption strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lightbox-caption small {
+  font-size: 0.7rem;
+  opacity: 0.75;
+}
+
 .lightbox-arrow {
   top: 50%;
   transform: translateY(-50%);

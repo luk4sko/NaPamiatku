@@ -420,6 +420,8 @@
           : `<img ${photoImgAttrs(photo.storage_path)} alt="Fotka od ${escapeHtml(photo.nickname)}" loading="lazy" />`;
 
         const figure = document.createElement("figure");
+        figure.dataset.name = photo.nickname;
+        figure.dataset.date = formatDateTime(photo.created_at);
         figure.className = "photo";
         figure.innerHTML = `
           ${mediaTag}
