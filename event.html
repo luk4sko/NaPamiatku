@@ -141,6 +141,12 @@
         </div>
 
         <div class="card settings-card">
+          <h3><span data-icon="image"></span>Živá stena na TV</h3>
+          <p class="muted">Otvor na notebooku pripojenom k televízoru alebo projektoru. Fotky od hostí sa striedajú na celej obrazovke a nové sa objavia samy — v rohu je QR kód s heslom, aby hostia vedeli, kam pridávať. Po otvorení stlač <kbd>F</kbd> pre celú obrazovku.</p>
+          <a class="button secondary" id="openWallLink" href="#" target="_blank" rel="noopener"><span data-icon="image"></span>Otvoriť živú stenu</a>
+        </div>
+
+        <div class="card settings-card">
           <h3><span data-icon="print"></span>Kartička na stôl</h3>
           <p class="muted">Vytlač, prelož napoly po čiarkovanej čiare a postav na stôl ako menovku. Obe strany sú rovnaké, takže je čitateľná z oboch strán stola.</p>
           <div class="tent-layout">
@@ -438,6 +444,7 @@
     async function renderShare() {
       document.getElementById("guestLink").value = guestUrl();
       document.getElementById("openGuestLink").href = guestUrl();
+      document.getElementById("openWallLink").href = window.location.origin + "/wall?slug=" + encodeURIComponent(currentEvent.slug);
       document.getElementById("qrImage").src = await makeQrDataUrl(guestUrl(), 600);
     }
 
@@ -599,7 +606,8 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        gallery.innerHTML = emptyState({ iconName: "alert", title: "Fotky sa nepodarilo načítať", text: error.message });
+        if (silent) return;
+        gallery.innerHTML = emptyState({ iconName: "alert", title: "Fotky sa nepodarilo načítať", text: friendlyError(error) });
         return;
       }
 
@@ -910,15 +918,14 @@
       const list = createUploadList(document.getElementById("uploadList"), files);
       let done = 0;
 
-      for (let index = 0; index < files.length; index++) {
-        const file = files[index];
+      await runInParallel(files, 3, async (file, index) => {
         list.start(index);
 
         // Video sa (na rozdiel od fotiek) neprekomprimúva - zmenšenie videa
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
         const isVideo = isVideoFile(file);
         const sizeError = videoSizeError(file);
-        if (sizeError) { list.fail(index, sizeError); showToast(sizeError, "error"); continue; }
+        if (sizeError) { list.fail(index, sizeError); showToast(sizeError, "error"); return; }
 
         const toUpload = withMimeType(isVideo ? file : await compressImage(file));
         const extension = isVideo ? videoExtension(file) : "jpg";
@@ -927,7 +934,7 @@
         const { error: uploadError } = await supabaseClient.storage
           .from("photos")
           .upload(path, toUpload, { contentType: toUpload.type });
-        if (uploadError) { list.fail(index, uploadError.message); continue; }
+        if (uploadError) { list.fail(index, friendlyError(uploadError)); return; }
 
         const { error: insertError } = await supabaseClient.from("photos").insert({
           event_id: currentEvent.id,
@@ -935,11 +942,11 @@
           uploaded_by_nickname: "Organizátor",
           media_type: isVideo ? "video" : "photo",
         });
-        if (insertError) { list.fail(index, insertError.message); continue; }
+        if (insertError) { list.fail(index, friendlyError(insertError)); return; }
 
         list.done(index);
         done += 1;
-      }
+      });
 
       list.finish();
       if (done === files.length) showToast(`Nahraté: ${done} ${plural(done, "súbor", "súbory", "súborov")}.`, "ok");

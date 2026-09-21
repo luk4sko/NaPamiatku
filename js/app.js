@@ -286,6 +286,31 @@ function photoImgAttrs(path) {
     onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.full"`;
 }
 
+// Spustí worker(file, index) pre všetky súbory, najviac `limit` naraz.
+// Sekvenčné nahrávanie čakalo na každý súbor zvlášť (~2,5 s), tri "pruhy"
+// naraz využijú linku aj CPU (zmenšovanie fotiek) lepšie: 30 fotiek ~25 s
+// namiesto ~75 s. Viac ako 3 už na mobile nepomáha a zaťaží pamäť.
+async function runInParallel(files, limit, worker) {
+  let next = 0;
+  async function lane() {
+    while (next < files.length) {
+      const index = next++;
+      await worker(files[index], index);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, files.length) }, lane));
+}
+
+// Chybové hlásenia z knižníc sú po anglicky a technické ("Failed to fetch").
+// Pri výpadku siete/servera hosťovi povieme, čo sa deje, po slovensky.
+function friendlyError(error) {
+  const message = (error && error.message) || String(error || "");
+  if (/failed to fetch|networkerror|load failed|fetch failed|network request failed/i.test(message) || !navigator.onLine) {
+    return "Server je práve nedostupný. Skús to o chvíľu znova.";
+  }
+  return message;
+}
+
 /* ---------- Práca s obrázkami ---------- */
 
 // Zmenší veľké fotky pred nahraním. Fotka z mobilu má bežne 4-8 MB;
@@ -394,6 +419,24 @@ function videoSizeError(file) {
 async function downloadFile(url, filename) {
   const response = await fetch(url);
   const blob = await response.blob();
+
+  // Na mobile (dotykové zariadenie) ide súbor do systémového zdieľania:
+  // iPhone tak ponúkne "Uložiť obrázok" rovno do Fotiek, Android do galérie.
+  // Atribút download by na iOS Safari fotku len otvoril v novej karte.
+  // Na počítači ostáva klasické stiahnutie - tam je share dialóg otravný.
+  if (matchMedia("(pointer: coarse)").matches && navigator.canShare) {
+    const file = new File([blob], filename, { type: blob.type });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (error) {
+        // Zrušenie dialógu používateľom nie je chyba; iné zlyhania spadnú na download nižšie.
+        if (error.name === "AbortError") return;
+      }
+    }
+  }
+
   const objectUrl = URL.createObjectURL(blob);
 
   const link = document.createElement("a");
@@ -967,7 +1010,7 @@ function createUploadList(container, files) {
   const total = files.length;
   container.innerHTML = `
     <div class="upload-head">
-      <span class="upload-title"><span class="spinner"></span><span class="upload-title-text">Pripravujem…</span></span>
+      <span class="upload-title"><span class="spinner"></span><span class="upload-title-text">${files.some(isVideoFile) ? "Nahrávam… (video môže trvať aj minútu)" : "Nahrávam…"}</span></span>
       <span class="upload-count">0 / ${total}</span>
     </div>
     <div class="upload-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="0"><span class="upload-bar-fill"></span></div>
@@ -1018,10 +1061,6 @@ function createUploadList(container, files) {
     start(index) {
       item(index).classList.add("uploading");
       item(index).querySelector(".upload-state").innerHTML = '<span class="spinner"></span>';
-      // Pri videu aj veľkosť - 60 MB trvá aj minútu a hosť má vedieť, že sa nič nezaseklo.
-      const file = files[index];
-      const size = isVideoFile(file) ? ` (video, ${Math.max(1, Math.round(file.size / 1024 / 1024))} MB)` : "";
-      titleText.textContent = `Nahrávam ${index + 1}. z ${total}${size}…`;
       reveal(index);
     },
     done(index) {

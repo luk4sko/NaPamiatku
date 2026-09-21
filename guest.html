@@ -243,22 +243,31 @@
       const saved = localStorage.getItem(PASSWORD_KEY);
       if (saved) {
         const opened = await tryOpen(saved);
-        if (opened) return afterOpen();
-        localStorage.removeItem(PASSWORD_KEY);
+        if (opened === true) return afterOpen();
+        // Zapamätané heslo zabudneme len keď je naozaj zlé - pri výpadku
+        // servera ho necháme, aby hosť po obnovení nemusel heslo hľadať.
+        if (opened === false) localStorage.removeItem(PASSWORD_KEY);
+        else showMessage(document.getElementById("passwordMessage"), opened, "error");
       }
       document.getElementById("passwordStep").classList.remove("hidden");
     }
 
     // Overenie hesla robí databáza (funkcia guest_open_event).
     // V prehliadači nikdy nemáme zoznam hesiel ani ich hashe.
+    // Vracia true (otvorené), false (zlé heslo) alebo reťazec s chybou, keď
+    // server neodpovedal - to nie je chyba hosťa a nesmie to vyzerať ako
+    // nesprávne heslo.
     async function tryOpen(password) {
-      const { data, error } = await supabaseClient.rpc("guest_open_event", {
-        p_slug: slug,
-        p_password: password,
-      });
-      if (error || !data) return false;
+      let result;
+      try {
+        result = await supabaseClient.rpc("guest_open_event", { p_slug: slug, p_password: password });
+      } catch (error) {
+        return friendlyError(error);
+      }
+      if (result.error && /fetch|network/i.test(result.error.message)) return friendlyError(result.error);
+      if (result.error || !result.data) return false;
 
-      eventInfo = data;
+      eventInfo = result.data;
       eventPassword = password;
       return true;
     }
@@ -318,6 +327,15 @@
 
       setupTabs();
       await Promise.all([loadPhotos(), loadMessages()]);
+
+      // Nové fotky od ostatných sa objavia samy - každú minútu, len kým je
+      // karta na obrazovke (na pozadí by to zbytočne míňalo dáta a batériu).
+      setInterval(() => {
+        if (document.visibilityState === "visible") loadPhotos(true);
+      }, 60000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") loadPhotos(true);
+      });
     }
 
     /* ---------- Heslo ---------- */
@@ -332,8 +350,8 @@
       const opened = await tryOpen(document.getElementById("eventPassword").value);
       button.disabled = false;
 
-      if (!opened) {
-        showMessage(messageEl, "Nesprávne heslo. Skús to znova.", "error");
+      if (opened !== true) {
+        showMessage(messageEl, opened === false ? "Nesprávne heslo. Skús to znova." : opened, "error");
         return;
       }
       localStorage.setItem(PASSWORD_KEY, eventPassword);
@@ -384,9 +402,14 @@
       });
 
       if (error) {
-        gallery.innerHTML = emptyState({ iconName: "alert", title: "Fotky sa nepodarilo načítať", text: error.message });
+        if (silent) return; // pri tichom obnovení nechaj starú galériu, nie chybu
+        gallery.innerHTML = emptyState({ iconName: "alert", title: "Fotky sa nepodarilo načítať", text: friendlyError(error) });
         return;
       }
+      // Tiché obnovenie neprekresľuje, ak sa nič nezmenilo - galéria by
+      // inak každú minútu blikla a stratila pozíciu scrollu.
+      const fingerprint = (photos) => photos.map((photo) => photo.id + photo.video_status).join(",");
+      if (silent && fingerprint(data || []) === fingerprint(allPhotos)) return;
       allPhotos = data || [];
       renderGallery();
       watchPendingVideos(allPhotos, () => loadPhotos(true));
@@ -497,7 +520,7 @@
         });
         showToast(`ZIP so ${photos.length} ${plural(photos.length, "súborom", "súbormi", "súbormi")} je stiahnutý.`, "ok");
       } catch (error) {
-        showToast("Sťahovanie zlyhalo: " + error.message, "error");
+        showToast("Sťahovanie zlyhalo: " + friendlyError(error), "error");
       } finally {
         button.disabled = false;
         button.innerHTML = original;
@@ -508,15 +531,14 @@
       const list = createUploadList(document.getElementById("uploadList"), files);
       let done = 0;
 
-      for (let index = 0; index < files.length; index++) {
-        const file = files[index];
+      await runInParallel(files, 3, async (file, index) => {
         list.start(index);
 
         // Video sa (na rozdiel od fotiek) neprekomprimúva - zmenšenie videa
         // priamo v prehliadači by bolo príliš pomalé a náročné na batériu.
         const isVideo = isVideoFile(file);
         const sizeError = videoSizeError(file);
-        if (sizeError) { list.fail(index, sizeError); showToast(sizeError, "error"); continue; }
+        if (sizeError) { list.fail(index, sizeError); showToast(sizeError, "error"); return; }
 
         const toUpload = withMimeType(isVideo ? file : await compressImage(file));
         const extension = isVideo ? videoExtension(file) : "jpg";
@@ -525,7 +547,7 @@
         const { error: uploadError } = await supabaseClient.storage
           .from("photos")
           .upload(path, toUpload, { contentType: toUpload.type });
-        if (uploadError) { list.fail(index, uploadError.message); continue; }
+        if (uploadError) { list.fail(index, friendlyError(uploadError)); return; }
 
         // Riadok v databáze vytvorí až funkcia, ktorá znova overí heslo eventu.
         const { data: photoId, error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
@@ -535,12 +557,12 @@
           p_storage_path: path,
           p_media_type: isVideo ? "video" : "photo",
         });
-        if (rpcError) { list.fail(index, rpcError.message); continue; }
+        if (rpcError) { list.fail(index, friendlyError(rpcError)); return; }
 
         if (photoId) rememberMine(photoId);
         list.done(index);
         done += 1;
-      }
+      });
 
       list.finish();
       if (done === files.length) showToast(`Ďakujeme! Nahraté: ${done} ${plural(done, "súbor", "súbory", "súborov")}.`, "ok");
@@ -579,7 +601,7 @@
       });
 
       button.disabled = false;
-      if (error) return showMessage(messageEl, error.message, "error");
+      if (error) return showMessage(messageEl, friendlyError(error), "error");
       reportDialog.close();
       showToast("Ďakujeme, nahlásenie sme odovzdali organizátorovi.", "ok");
     });
@@ -594,7 +616,7 @@
       });
 
       if (error) {
-        list.innerHTML = emptyState({ iconName: "alert", title: "Odkazy sa nepodarilo načítať", text: error.message });
+        list.innerHTML = emptyState({ iconName: "alert", title: "Odkazy sa nepodarilo načítať", text: friendlyError(error) });
         return;
       }
       if (!data || data.length === 0) {
@@ -642,7 +664,7 @@
       });
 
       button.disabled = false;
-      if (error) return showMessage(statusEl, error.message, "error");
+      if (error) return showMessage(statusEl, friendlyError(error), "error");
 
       if (messageId) rememberMine(messageId);
       messageText.value = "";

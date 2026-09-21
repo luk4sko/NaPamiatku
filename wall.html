@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Živá stena — NaPamiatku</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="wall-body">
+  <!-- Živá stena: stránka pre TV alebo projektor na akcii. Fotky od hostí sa
+       striedajú na celej obrazovke, nové sa objavia samy. V rohu je QR kód
+       s heslom, aby hostia vedeli, kam fotky pridať. Otvára ju organizátor
+       (odkaz v záložke QR kód), heslo zadá raz. -->
+
+  <!-- 1. Brána s heslom - rovnaká ako u hosťa. -->
+  <section id="passwordStep" class="gate hidden">
+    <img class="gate-bg" src="img/hostia-konfety-xl.webp" alt="" aria-hidden="true" />
+    <div class="gate-card">
+      <a class="logo" href="/">Na<span>Pamiatku</span></a>
+      <h1>Živá stena</h1>
+      <p>Zadaj heslo eventu. Fotky od hostí sa potom budú striedať na celej obrazovke — ideálne na TV alebo projektor.</p>
+      <form id="passwordForm">
+        <div class="field">
+          <label for="eventPassword">Heslo eventu</label>
+          <div class="password-field">
+            <input type="password" id="eventPassword" required autocomplete="off" />
+          </div>
+        </div>
+        <button type="submit" id="passwordButton"><span data-icon="lock"></span>Spustiť</button>
+        <p id="passwordMessage" class="message"></p>
+      </form>
+    </div>
+  </section>
+
+  <div id="notFound" class="page hidden"></div>
+
+  <!-- 2. Samotná stena. -->
+  <main id="wall" class="wall hidden">
+    <!-- Dve vrstvy fotiek: kým je jedna na obrazovke, druhá sa načíta a potom
+         sa prelínajú - bez čierneho preblikávania medzi fotkami. -->
+    <div class="wall-stage">
+      <img class="wall-photo" id="photoA" alt="" />
+      <img class="wall-photo" id="photoB" alt="" />
+    </div>
+
+    <div class="wall-empty hidden" id="wallEmpty">
+      <div class="wall-empty-icon"><span data-icon="camera"></span></div>
+      <h2>Zatiaľ tu nie sú žiadne fotky</h2>
+      <p>Buď prvý — naskenuj kód a pridaj fotku.</p>
+    </div>
+
+    <div class="wall-caption" id="wallCaption">
+      <span class="avatar" id="captionAvatar"></span>
+      <span class="wall-caption-text">
+        <strong id="captionName"></strong>
+        <small id="captionTime"></small>
+      </span>
+      <span class="wall-new hidden" id="captionNew">nová</span>
+    </div>
+
+    <aside class="wall-panel">
+      <img id="wallQr" alt="QR kód pre hostí" />
+      <div class="wall-panel-text">
+        <strong id="wallEventName"></strong>
+        <span>Naskenuj a pridaj svoje fotky</span>
+        <span class="wall-password" id="wallPassword"></span>
+      </div>
+    </aside>
+
+    <a class="logo wall-logo" href="/" tabindex="-1">Na<span>Pamiatku</span></a>
+    <p class="wall-hint" id="wallHint">F — celá obrazovka · medzerník — pauza · ← → — listovanie · H — skryť heslo</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    hydrateIcons();
+    // Stena je vždy tmavá (TV v sále) - bez ohľadu na uložený režim
+    // používateľa a bez toho, aby sme mu ten režim prepísali.
+    document.documentElement.setAttribute("data-theme", "dark");
+
+    const slug = new URLSearchParams(window.location.search).get("slug");
+    // Rovnaký kľúč ako hosťovská stránka - kto už event otvoril ako hosť
+    // v tomto prehliadači, heslo znova nezadáva.
+    const PASSWORD_KEY = "napamiatku-pw-" + slug;
+    const INTERVAL = 7000;   // ako dlho je jedna fotka na obrazovke
+    const POLL = 20000;      // ako často sa pýtame na nové fotky
+    const MAX_PHOTOS = 300;  // na TV nemá zmysel točiť tisíc fotiek
+
+    let eventInfo = null;
+    let eventPassword = null;
+    let photos = [];         // najnovšie prvé
+    let index = -1;
+    let timer = null;
+    let paused = false;
+    let showingA = false;
+    let knownIds = new Set();
+    const queueNew = [];     // fotky, ktoré prišli počas behu - idú na obrazovku ako ďalšie
+
+    /* ---------- Štart ---------- */
+
+    async function init() {
+      if (!slug) return showNotFound();
+      const saved = localStorage.getItem(PASSWORD_KEY);
+      if (saved && (await tryOpen(saved)) === true) return start();
+      document.getElementById("passwordStep").classList.remove("hidden");
+    }
+
+    function showNotFound() {
+      const box = document.getElementById("notFound");
+      box.classList.remove("hidden");
+      box.innerHTML = emptyState({ iconName: "alert", title: "Event sa nenašiel", text: "Skontroluj odkaz." });
+    }
+
+    async function tryOpen(password) {
+      let result;
+      try {
+        result = await supabaseClient.rpc("guest_open_event", { p_slug: slug, p_password: password });
+      } catch (error) {
+        return friendlyError(error);
+      }
+      if (result.error && /fetch|network/i.test(result.error.message)) return friendlyError(result.error);
+      if (result.error || !result.data) return false;
+      eventInfo = result.data;
+      eventPassword = password;
+      return true;
+    }
+
+    document.getElementById("passwordForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const messageEl = document.getElementById("passwordMessage");
+      const button = document.getElementById("passwordButton");
+      button.disabled = true;
+      showMessage(messageEl, "Overujem...");
+      const opened = await tryOpen(document.getElementById("eventPassword").value);
+      button.disabled = false;
+      if (opened !== true) {
+        showMessage(messageEl, opened === false ? "Nesprávne heslo. Skús to znova." : opened, "error");
+        return;
+      }
+      localStorage.setItem(PASSWORD_KEY, eventPassword);
+      start();
+    });
+
+    async function start() {
+      document.getElementById("passwordStep").classList.add("hidden");
+      document.getElementById("wall").classList.remove("hidden");
+      document.title = eventInfo.name + " — živá stena";
+      document.getElementById("wallEventName").textContent = eventInfo.name;
+      document.getElementById("wallPassword").textContent = "Heslo: " + eventPassword;
+
+      const guestUrl = window.location.origin + "/guest?slug=" + encodeURIComponent(slug);
+      document.getElementById("wallQr").src = await makeQrDataUrl(guestUrl, 400);
+
+      await loadPhotos();
+      next();
+      setInterval(loadPhotos, POLL);
+      // Nápoveda ku klávesám zmizne po chvíli, nech nezavadzia.
+      setTimeout(() => document.getElementById("wallHint").classList.add("hidden"), 12000);
+    }
+
+    /* ---------- Fotky ---------- */
+
+    async function loadPhotos() {
+      const { data, error } = await supabaseClient.rpc("guest_list_photos", { p_slug: slug, p_password: eventPassword });
+      if (error) return; // dočasný výpadok - stena točí, čo má
+      const fresh = (data || []).filter((photo) => photo.media_type !== "video").slice(0, MAX_PHOTOS);
+      const wasEmpty = photos.length === 0;
+
+      // Novo pribudnuté idú do fronty a na obrazovku ako ďalšie, s odznakom "nová".
+      if (!wasEmpty) {
+        fresh.filter((photo) => !knownIds.has(photo.id)).reverse().forEach((photo) => queueNew.push(photo));
+      }
+      photos = fresh;
+      knownIds = new Set(fresh.map((photo) => photo.id));
+      document.getElementById("wallEmpty").classList.toggle("hidden", photos.length > 0);
+      document.getElementById("wallCaption").classList.toggle("hidden", photos.length === 0);
+      if (wasEmpty && photos.length && index === -1) next();
+    }
+
+    function show(photo, isNew) {
+      const incoming = document.getElementById(showingA ? "photoB" : "photoA");
+      const outgoing = document.getElementById(showingA ? "photoA" : "photoB");
+      showingA = !showingA;
+
+      // Najprv načítať, až potom prelínať - inak by sa na chvíľu ukázala prázdna vrstva.
+      const url = photoUrl(photo.storage_path, 1600, 80);
+      const loader = new Image();
+      loader.onload = () => {
+        incoming.src = url;
+        incoming.classList.add("visible");
+        outgoing.classList.remove("visible");
+        document.getElementById("captionAvatar").textContent = initials(photo.nickname);
+        document.getElementById("captionName").textContent = photo.nickname;
+        document.getElementById("captionTime").textContent = formatDateTime(photo.created_at);
+        document.getElementById("captionNew").classList.toggle("hidden", !isNew);
+      };
+      loader.onerror = () => next(); // rozbitá fotka - preskočiť
+      loader.src = url;
+    }
+
+    function schedule() {
+      clearTimeout(timer);
+      if (!paused) timer = setTimeout(next, INTERVAL);
+    }
+
+    function next() {
+      if (photos.length === 0) return;
+      if (queueNew.length) {
+        const photo = queueNew.shift();
+        index = photos.findIndex((item) => item.id === photo.id);
+        show(photo, true);
+      } else {
+        index = (index + 1) % photos.length;
+        show(photos[index], false);
+      }
+      schedule();
+    }
+
+    function prev() {
+      if (photos.length === 0) return;
+      index = (index - 1 + photos.length) % photos.length;
+      show(photos[index], false);
+      schedule();
+    }
+
+    /* ---------- Ovládanie ---------- */
+
+    document.addEventListener("keydown", (event) => {
+      if (document.getElementById("wall").classList.contains("hidden")) return;
+      if (event.key === "ArrowRight") next();
+      if (event.key === "ArrowLeft") prev();
+      if (event.key === " ") { event.preventDefault(); paused = !paused; document.body.classList.toggle("wall-paused", paused); schedule(); }
+      if (event.key === "f" || event.key === "F") toggleFullscreen();
+      if (event.key === "h" || event.key === "H") document.getElementById("wallPassword").classList.toggle("hidden");
+    });
+
+    function toggleFullscreen() {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    }
+    // Klik/ťuknutie na fotku = celá obrazovka (na TV bez klávesnice).
+    document.querySelector(".wall-stage").addEventListener("click", toggleFullscreen);
+
+    // Kurzor sa po troch sekundách nečinnosti schová.
+    let cursorTimer = null;
+    document.addEventListener("mousemove", () => {
+      document.body.classList.remove("wall-idle");
+      clearTimeout(cursorTimer);
+      cursorTimer = setTimeout(() => document.body.classList.add("wall-idle"), 3000);
+    });
+
+    init();
+  </script>
+</body>
+</html>
