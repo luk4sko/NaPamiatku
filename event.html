@@ -673,7 +673,7 @@
         const url = escapeHtml(publicUrl("photos", photo.storage_path));
         const isVideo = photo.media_type === "video";
         const mediaTag = isVideo
-          ? `<video src="${url}" controls playsinline preload="metadata"></video>`
+          ? videoTile(url)
           : `<img src="${url}" alt="Fotka od ${escapeHtml(nickname)}" loading="lazy" />`;
 
         const figure = document.createElement("figure");

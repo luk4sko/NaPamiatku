@@ -462,8 +462,36 @@ form > button {
   display: block;
 }
 
-.photo > img {
+.photo > img,
+.photo > video {
   cursor: zoom-in;
+}
+
+/* Ikona play cez náhľad videa - dlaždica je len obrázok, hrá lightbox. */
+.photo-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.photo-play .ui-icon {
+  width: 3rem;
+  height: 3rem;
+  padding: 0.75rem;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  fill: currentColor;
+  backdrop-filter: blur(4px);
+  transition: transform 0.15s;
+}
+
+.photo:hover .photo-play .ui-icon {
+  transform: scale(1.08);
 }
 
 /* ---------- Lightbox (fotka na celú obrazovku) ---------- */
@@ -492,6 +520,12 @@ form > button {
 
 .lightbox img.zoomed {
   cursor: grab;
+}
+
+.lightbox video {
+  max-width: 100%;
+  max-height: 100%;
+  outline: none;
 }
 
 .lightbox img.zoomed:active {

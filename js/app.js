@@ -413,12 +413,16 @@ function ensureLightbox() {
     <button type="button" class="lightbox-close" aria-label="Zavrieť">✕</button>
     <button type="button" class="lightbox-arrow lightbox-prev hidden" aria-label="Predchádzajúca fotka">‹</button>
     <img />
+    <video class="hidden" controls playsinline preload="metadata"></video>
     <button type="button" class="lightbox-arrow lightbox-next hidden" aria-label="Ďalšia fotka">›</button>
   `;
   document.body.appendChild(lightboxEl);
   const img = lightboxEl.querySelector("img");
 
-  const close = () => lightboxEl.classList.add("hidden");
+  const close = () => {
+    lightboxEl.classList.add("hidden");
+    unloadLightboxVideo();
+  };
   lightboxEl.querySelector(".lightbox-close").addEventListener("click", close);
   lightboxEl.querySelector(".lightbox-prev").addEventListener("click", showPrevPhoto);
   lightboxEl.querySelector(".lightbox-next").addEventListener("click", showNextPhoto);
@@ -462,8 +466,12 @@ function setupLightboxZoom(lightbox, img) {
   }
   resetLightboxZoom = () => setZoom(MIN_SCALE);
 
+  // Video má vlastné ovládanie, zoom/pinch sa týka len fotky.
+  const showingVideo = () => lightboxItems[lightboxIndex]?.type === "video";
+
   lightbox.addEventListener("wheel", (event) => {
     event.preventDefault();
+    if (showingVideo()) return;
     setZoom(zoomScale * (event.deltaY < 0 ? 1.15 : 1 / 1.15));
   }, { passive: false });
 
@@ -494,6 +502,9 @@ function setupLightboxZoom(lightbox, img) {
   // jeden prst v priblížení = posúvanie, dva prsty = pinch-zoom.
   let touchStartX = 0, touchStartY = 0;
   let pinchStartDistance = 0, pinchStartScale = 1;
+  // Ťah po spodnej časti videa je posúvanie v čase (natívne ovládanie),
+  // nie swipe na ďalšiu položku. Pamätáme si, kde sa dotyk začal.
+  let touchOnVideoControls = false;
 
   function touchDistance(touches) {
     return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
@@ -508,12 +519,16 @@ function setupLightboxZoom(lightbox, img) {
       touchStartY = event.touches[0].clientY;
       panStartX = panX;
       panStartY = panY;
+      const video = event.target.closest("video");
+      touchOnVideoControls = !!video
+        && touchStartY > video.getBoundingClientRect().bottom - Math.min(90, video.clientHeight * 0.3);
     }
   });
 
   lightbox.addEventListener("touchmove", (event) => {
     if (event.touches.length === 2) {
       event.preventDefault();
+      if (showingVideo()) return;
       setZoom(pinchStartScale * (touchDistance(event.touches) / pinchStartDistance));
     } else if (event.touches.length === 1 && zoomScale > MIN_SCALE) {
       event.preventDefault();
@@ -526,7 +541,7 @@ function setupLightboxZoom(lightbox, img) {
   // Swipe na mobile: prst doľava = ďalšia fotka, doprava = predchádzajúca.
   // Zvislý pohyb (scroll) aj koniec pinchu (ešte drží druhý prst) ignorujeme.
   lightbox.addEventListener("touchend", (event) => {
-    if (zoomScale > MIN_SCALE || event.touches.length > 0) return;
+    if (zoomScale > MIN_SCALE || event.touches.length > 0 || touchOnVideoControls) return;
     const deltaX = event.changedTouches[0].clientX - touchStartX;
     const deltaY = event.changedTouches[0].clientY - touchStartY;
     if (Math.abs(deltaX) < 50 || Math.abs(deltaX) < Math.abs(deltaY)) return;
@@ -534,12 +549,37 @@ function setupLightboxZoom(lightbox, img) {
   });
 }
 
+// Zastaví a odpojí video v lightboxe - inak by hralo (a sťahovalo sa) ďalej
+// aj po prepnutí na fotku alebo po zatvorení.
+function unloadLightboxVideo() {
+  const video = lightboxEl?.querySelector("video");
+  if (!video || !video.getAttribute("src")) return;
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
+}
+
 function showLightboxPhoto() {
   const item = lightboxItems[lightboxIndex];
   const img = lightboxEl.querySelector("img");
-  img.src = item.url;
-  img.alt = item.alt || "";
+  const video = lightboxEl.querySelector("video");
+  const isVideo = item.type === "video";
+
+  img.classList.toggle("hidden", isVideo);
+  video.classList.toggle("hidden", !isVideo);
   resetLightboxZoom();
+
+  if (isVideo) {
+    img.removeAttribute("src");
+    video.src = item.url;
+    // Otvorenie je reakcia na klik, takže prehliadač prehrávanie povolí;
+    // ak nie (šetrič batérie), ostane pripravené s tlačidlom play.
+    video.play().catch(() => {});
+  } else {
+    unloadLightboxVideo();
+    img.src = item.url;
+    img.alt = item.alt || "";
+  }
 
   // Šípky nemá zmysel ukazovať, keď je v galérii len jedna fotka.
   const showArrows = lightboxItems.length > 1;
@@ -569,13 +609,24 @@ function openLightbox(items, index) {
 // Klik na ktorúkoľvek fotku v galérii ju otvorí na celú obrazovku aj so
 // zvyškom galérie, aby sa dalo medzi fotkami prepínať. Volá sa vždy po
 // prekreslení galérie, keďže staré <img> uzly zmiznú s ňou.
+// Video sa v dlaždici neprehráva - je to len náhľad s ikonou play; hrá až
+// v lightboxe, kde sa dá rovnako ako pri fotke swipnúť na ďalšiu položku.
 function setupGalleryLightbox(gallery) {
-  const images = Array.from(gallery.querySelectorAll(".photo > img"));
-  const items = images.map((img) => ({ url: img.src, alt: img.alt }));
+  const media = Array.from(gallery.querySelectorAll(".photo > img, .photo > video"));
+  const items = media.map((el) => el.tagName === "VIDEO"
+    ? { type: "video", url: el.getAttribute("src").split("#")[0] }
+    : { type: "photo", url: el.src, alt: el.alt });
 
-  images.forEach((img, index) => {
-    img.addEventListener("click", () => openLightbox(items, index));
+  media.forEach((el, index) => {
+    el.addEventListener("click", () => openLightbox(items, index));
   });
+}
+
+// Náhľad videa do galérie. Fragment #t=0.001 prinúti iOS Safari vykresliť
+// prvú snímku - inak by dlaždica ostala čierna, kým sa video nespustí.
+function videoTile(url) {
+  return `<video src="${url}#t=0.001" muted playsinline preload="metadata"></video>
+    <span class="photo-play">${icon("play")}</span>`;
 }
 
 /* ---------- Ikony ---------- */
@@ -601,6 +652,7 @@ const ICONS = {
   users: '<circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c0-3.6 2.8-6 6.2-6s6.2 2.4 6.2 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6.2M21.2 20c0-3-1.9-5.2-4.6-5.8"/>',
   user: '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/>',
   video: '<rect x="3" y="6.5" width="13" height="11" rx="2"/><path d="m16 10 5-2.5v9L16 14"/>',
+  play: '<path d="M8.5 5.5v13l10.5-6.5Z"/>',
   image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.6"/><path d="m20.5 15.5-4.5-4.5-7 7M3.5 18l4-4 3 3"/>',
   calendar: '<rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
