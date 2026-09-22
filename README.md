@@ -81,7 +81,12 @@ Na server sa kopíruje ručne (`scp server/retention.py lukasko@server:/home/luk
 
 Toto sa nedá spraviť z kódu:
 
-1. ✅ **Authentication → URL Configuration** — Site URL `https://napamiatku.com` a Redirect URL `https://napamiatku.com/set-password`, inak by nefungovali odkazy z emailov na ostrej doméne.
+1. ✅ **Authentication → URL Configuration** — v self-hosted verzii sú to premenné v `docker/.env` (`SITE_URL` → `GOTRUE_SITE_URL`, `ADDITIONAL_REDIRECT_URLS` → `GOTRUE_URI_ALLOW_LIST`):
+   ```
+   SITE_URL=https://www.napamiatku.com
+   ADDITIONAL_REDIRECT_URLS=https://www.napamiatku.com/**,https://napamiatku.com/**
+   ```
+   Web sa servuje na **www** (apex robí 308 redirect na www), takže `window.location.origin` v prehliadači je `https://www.napamiatku.com`. Keď táto adresa nie je v allow-liste, GoTrue `redirect_to` **ticho zahodí** a pošle človeka na `SITE_URL` — odkaz na obnovu hesla potom končí na úvodnej stránke namiesto `/set-password`. Obe varianty (www aj apex) tam preto musia byť. Po zmene treba `docker compose up -d auth`.
 2. ✅ **Authentication → Emails → SMTP Settings** — predvolený Supabase mailer posiela len pár emailov za hodinu a slúži na testovanie. Pre ostrú prevádzku vlastný SMTP cez schránku na vlastnej doméne (Seznam Email Profi):
    - Host: `smtp.seznam.cz`
    - Port: `465` (SSL/TLS)
