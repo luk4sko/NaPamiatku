@@ -404,10 +404,12 @@
       allPhotos.forEach((photo) => { if (photo.uploaded_by_nickname && photo.uploaded_by_nickname !== "Organizátor") guests.add(photo.uploaded_by_nickname.trim().toLowerCase()); });
       allMessages.forEach((message) => { if (message.nickname) guests.add(message.nickname.trim().toLowerCase()); });
 
-      document.getElementById("statPhotos").textContent = photos;
-      document.getElementById("statVideos").textContent = videos;
-      document.getElementById("statMessages").textContent = allMessages.length;
-      document.getElementById("statGuests").textContent = guests.size;
+      // animateNumber si prečíta aktuálne zobrazenú hodnotu a doráta k novej -
+      // pri živom obnovovaní tak číslo naozaj "vidno" stúpať, nielen skočiť.
+      animateNumber(document.getElementById("statPhotos"), photos);
+      animateNumber(document.getElementById("statVideos"), videos);
+      animateNumber(document.getElementById("statMessages"), allMessages.length);
+      animateNumber(document.getElementById("statGuests"), guests.size);
 
       // Rozmazané pozadie hlavičky z najnovšej fotky.
       const cover = allPhotos.find((photo) => photo.media_type !== "video");

@@ -227,11 +227,17 @@
       const approved = allEvents.filter((event) => event.status === "approved");
       const photos = approved.reduce((sum, event) => sum + event.photoCount + event.videoCount, 0);
       const messages = approved.reduce((sum, event) => sum + event.messageCount, 0);
+      // Čísla sú vo vlastnom <span data-value>, aby ich vedel animateNumber
+      // po vložení do stránky napočítať od 0 - samotný text okolo (ikona,
+      // slovo v správnom tvare) sa nemení.
       const parts = [];
-      parts.push(icon("calendar") + " " + approved.length + " " + plural(approved.length, "event", "eventy", "eventov"));
-      parts.push(icon("camera") + " " + photos + " " + plural(photos, "fotka", "fotky", "fotiek"));
-      parts.push(icon("chat") + " " + messages + " " + plural(messages, "odkaz", "odkazy", "odkazov"));
-      document.getElementById("summary").innerHTML = parts.map((part) => "<span>" + part + "</span>").join("");
+      parts.push([icon("calendar"), approved.length, plural(approved.length, "event", "eventy", "eventov")]);
+      parts.push([icon("camera"), photos, plural(photos, "fotka", "fotky", "fotiek")]);
+      parts.push([icon("chat"), messages, plural(messages, "odkaz", "odkazy", "odkazov")]);
+      document.getElementById("summary").innerHTML = parts
+        .map(([iconHtml, value, label]) => `<span>${iconHtml} <span class="stat-num" data-value="${value}">0</span> ${label}</span>`)
+        .join("");
+      document.querySelectorAll("#summary .stat-num").forEach((el) => animateNumber(el, Number(el.dataset.value)));
     }
 
     /* ---------- Eventy ---------- */

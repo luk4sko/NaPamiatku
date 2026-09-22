@@ -956,6 +956,36 @@ section[id] {
     radial-gradient(34rem 28rem at -8% 108%, color-mix(in srgb, #c89b6a 14%, transparent), transparent 65%);
 }
 
+/* Tretia svetelná škvrna, ktorá sa pomaly a nekonečne posúva a mierne
+   naberá/stráca veľkosť - stránka tak pôsobí "živo" aj bez toho, aby si
+   scrolloval alebo hol myšou. Zámerne len transform (nie blur ani zmena
+   pozadia) - to isté zdôvodnenie ako pri .hero-wrap vyššie: transform je
+   jediná vlastnosť, ktorú prehliadač vie animovať bez prekresľovania. */
+.hero-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  z-index: 0;
+  background: radial-gradient(30rem 24rem at 32% 42%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%);
+  animation: glow-drift 22s ease-in-out infinite;
+  pointer-events: none;
+}
+
+:root[data-theme="light"] .hero-wrap::before {
+  background: radial-gradient(30rem 24rem at 32% 42%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
+}
+
+@keyframes glow-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(4%, -3%) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-wrap::before {
+    animation: none;
+  }
+}
+
 .hero {
   position: relative;
   display: grid;
@@ -994,12 +1024,26 @@ section[id] {
 .hero-copy > *:nth-child(4) { animation-delay: 0.29s; }
 .hero-copy > *:nth-child(5) { animation-delay: 0.37s; }
 
-/* Telefón s fotkami nabieha o niečo dlhšie - je to najväčší prvok na
-   obrazovke a rýchly pohyb by pri takej ploche pôsobil trhane. */
+/* Telefón s fotkami nabieha vlastnou, výraznejšou animáciou - je to
+   najväčší a najvýraznejší prvok na obrazovke, tak si ju zaslúži. Krivka
+   cubic-bezier(0.34, 1.56, 0.64, 1) je "back out": prvok prestrelí svoju
+   konečnú polohu a mierny kúsok sa vráti späť, ako keby sadol na miesto -
+   oproti hero-rise vyššie (ktorá len dobrzďuje) je to citeľne živšie. */
 .hero-visual {
   /* position kvôli QR karte (.qr-float), ktorá sa kladie na telefón. */
   position: relative;
-  animation: hero-rise 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+  animation: hero-drop 1.1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
+}
+
+@keyframes hero-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-38px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .hero h1 {
@@ -1262,6 +1306,15 @@ section[id] {
 
 /* Karta je len text, nie odkaz. Zdvih a zvýraznenie pri prejdení myšou by
    sľubovali kliknutie, ktoré nikam nevedie - preto tu žiaden hover nie je. */
+/* Dlaždica nie je odkaz, ale pod myšou sa aj tak jemne nakláňa (3D tilt,
+   pozri initTiltCards v app.js) - čisto pre živosť stránky, nie ako
+   náznak klikateľnosti. Prechod je krátky, nech naklonenie sleduje myš
+   plynulo a nie trhane, ale rovnaký prechod poslúži aj na návrat späť
+   na rovinu pri opustení kurzorom. */
+[data-tilt] {
+  transition: transform 0.15s ease-out;
+}
+
 .step {
   counter-increment: step;
   padding: 1.85rem 1.6rem;
@@ -1333,7 +1386,6 @@ section[id] {
   }
 }
 
-/* Rovnako ako pri .step - dlaždica nie je odkaz, takže nereaguje na myš. */
 .bento-card {
   position: relative;
   overflow: hidden;
@@ -2278,6 +2330,15 @@ a.button:hover {
   color: var(--accent);
 }
 
+/* Číslo v súhrne pri prvom zobrazení napočíta od 0 (animateNumber v
+   app.js). Rovnaká šírka číslic ako pri .stat-tile - nech riadok pri
+   počítaní neposkakuje. */
+.stat-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .app-hero-actions {
   display: flex;
   align-items: center;
@@ -2346,6 +2407,9 @@ a.button:hover {
   font-family: "Playfair Display", Georgia, serif;
   font-size: 1.45rem;
   line-height: 1.1;
+  /* Číslice v rovnakej šírke - pri počítaní nahor (animateNumber) sa tak
+     karta nezachveje, ako by sa menila šírka číslic v behu. */
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-tile span {
