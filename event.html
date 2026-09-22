@@ -128,7 +128,7 @@
           </div>
           <div class="share-body">
             <h3><span data-icon="qr"></span>QR kód a odkaz pre hostí</h3>
-            <p class="muted">Hosť naskenuje kód mobilom, zadá heslo a môže pridávať fotky. Kto kód nenaskenuje, dostane odkaz správou.</p>
+            <p class="muted">Hosť naskenuje kód mobilom, napíše svoje meno a môže pridávať fotky — žiadne heslo, žiadna registrácia. Kto kód nenaskenuje, dostane odkaz správou.</p>
             <div class="field">
               <label for="guestLink">Odkaz pre hostí</label>
               <div class="copy-row">
@@ -142,7 +142,7 @@
 
         <div class="card settings-card">
           <h3><span data-icon="image"></span>Živá stena na TV</h3>
-          <p class="muted">Otvor na notebooku pripojenom k televízoru alebo projektoru. Fotky od hostí sa striedajú na celej obrazovke a nové sa objavia samy — v rohu je QR kód s heslom, aby hostia vedeli, kam pridávať. Po otvorení stlač <kbd>F</kbd> pre celú obrazovku.</p>
+          <p class="muted">Otvor na notebooku pripojenom k televízoru alebo projektoru. Fotky od hostí sa striedajú na celej obrazovke a nové sa objavia samy — v rohu je QR kód, aby hostia vedeli, kam pridávať. Po otvorení stlač <kbd>F</kbd> pre celú obrazovku.</p>
           <a class="button secondary" id="openWallLink" href="#" target="_blank" rel="noopener"><span data-icon="image"></span>Otvoriť živú stenu</a>
         </div>
 
@@ -168,11 +168,6 @@
                   <button type="button" class="chip active" data-theme="light"><span data-icon="sparkles"></span>Svetlá</button>
                   <button type="button" class="chip" data-theme="dark"><span data-icon="moon"></span>Tmavá</button>
                 </div>
-              </div>
-              <div class="field">
-                <label for="printPassword">Heslo na kartičke (voliteľné)</label>
-                <input type="text" id="printPassword" maxlength="40" autocomplete="off" placeholder="napr. lucka2026" />
-                <p class="muted" style="margin:0;font-size:0.8rem">Heslo sa nikam neukladá - ide len do náhľadu a tlače v tomto prehliadači.</p>
               </div>
               <div class="button-row">
                 <button type="button" id="printCardButton"><span data-icon="print"></span>Vytlačiť kartičku</button>
@@ -211,21 +206,6 @@
         </div>
 
         <div class="card settings-card">
-          <h3><span data-icon="key"></span>Heslo eventu</h3>
-          <p class="muted">Heslo, ktoré zadávajú hostia po naskenovaní QR kódu. Vyber jednoduché - budeš ho hovoriť nahlas.</p>
-          <form id="passwordForm">
-            <div class="field">
-              <label for="newEventPassword">Nové heslo (aspoň 4 znaky)</label>
-              <div class="password-field">
-                <input type="password" id="newEventPassword" minlength="4" required autocomplete="off" />
-              </div>
-            </div>
-            <button type="submit"><span data-icon="check"></span>Zmeniť heslo</button>
-            <p id="passwordMessage" class="message"></p>
-          </form>
-        </div>
-
-        <div class="card settings-card">
           <h3><span data-icon="gift"></span>Dary</h3>
           <p class="muted">Hostia uvidia platobný QR kód. Sumu si zvolia sami vo svojej bankovej aplikácii - k peniazom sa nikdy nedostaneme my ani NaPamiatku.</p>
           <form id="giftForm">
@@ -254,7 +234,7 @@
 
         <div class="card settings-card danger-zone hidden" id="suspendEventCard">
           <h3><span data-icon="alert"></span>Pozastaviť pre hostí</h3>
-          <p class="muted">Moderovanie: pozastavený event je pre hostí nedostupný (heslo neprejde), organizátor ho stále vidí. Fotky ostávajú.</p>
+          <p class="muted">Moderovanie: pozastavený event je pre hostí nedostupný (odkaz prestane fungovať), organizátor ho stále vidí. Fotky ostávajú.</p>
           <button type="button" class="danger" id="suspendEventButton"></button>
         </div>
 
@@ -475,7 +455,6 @@
     const TENT_CAMERA = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS.camera + "</svg>";
 
     function tentFaceHtml() {
-      const password = document.getElementById("printPassword").value.trim();
       return `
         <div class="tent-face ${tentTheme}">
           <div class="tent-qr"><img src="${tentQrDataUrl}" alt="QR kód" /><p class="tent-qr-caption">${TENT_CAMERA}Naskenuj mobilom</p></div>
@@ -485,10 +464,9 @@
             ${currentEvent.event_date ? `<p class="tent-date">${escapeHtml(formatDateLong(currentEvent.event_date))}</p>` : ""}
             <ol class="tent-steps">
               <li><span>1</span>Naskenuj kód mobilom</li>
-              <li><span>2</span>Zadaj heslo${password ? "" : " od organizátora"}</li>
+              <li><span>2</span>Napíš svoje meno</li>
               <li><span>3</span>Pridaj fotky a odkaz</li>
             </ol>
-            ${password ? `<div class="tent-password"><small>Heslo</small>${escapeHtml(password)}</div>` : ""}
           </div>
           <p class="tent-footer"><span class="tent-logo">Na<b>Pamiatku</b></span><span>${escapeHtml(guestUrl().replace(/^https?:\/\//, ""))}</span></p>
         </div>`;
@@ -546,7 +524,6 @@
       renderTentNotes();
     });
     document.querySelectorAll("#tentSize .chip").forEach((chip) => chip.classList.toggle("active", chip.dataset.size === tentSize));
-    document.getElementById("printPassword").addEventListener("input", renderTentPreview);
 
     // Tlač: jeden list na výšku (A4 alebo A5), kartička cez celý list.
     // Horná polovica je otočená o 180°, aby po preložení stáli obe strany správne.
@@ -1069,19 +1046,6 @@
       renderHeader();
       showMessage(messageEl, "");
       showToast("Údaje eventu uložené.", "ok");
-    });
-
-    document.getElementById("passwordForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const messageEl = document.getElementById("passwordMessage");
-      const { error } = await supabaseClient.rpc("set_event_password", {
-        p_event_id: currentEvent.id,
-        p_password: document.getElementById("newEventPassword").value,
-      });
-      if (error) return showMessage(messageEl, error.message, "error");
-      document.getElementById("passwordForm").reset();
-      showMessage(messageEl, "");
-      showToast("Heslo eventu zmenené. Nezabudni ho povedať hosťom.", "ok");
     });
 
     /* ---------- Zmazanie eventu (len majiteľ) ---------- */

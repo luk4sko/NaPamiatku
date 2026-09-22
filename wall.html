@@ -10,33 +10,13 @@
 </head>
 <body class="wall-body">
   <!-- Živá stena: stránka pre TV alebo projektor na akcii. Fotky od hostí sa
-       striedajú na celej obrazovke, nové sa objavia samy. V rohu je QR kód
-       s heslom, aby hostia vedeli, kam fotky pridať. Otvára ju organizátor
-       (odkaz v záložke QR kód), heslo zadá raz. -->
-
-  <!-- 1. Brána s heslom - rovnaká ako u hosťa. -->
-  <section id="passwordStep" class="gate hidden">
-    <img class="gate-bg" src="img/hostia-konfety-xl.webp" alt="" aria-hidden="true" />
-    <div class="gate-card">
-      <a class="logo" href="/">Na<span>Pamiatku</span></a>
-      <h1>Živá stena</h1>
-      <p>Zadaj heslo eventu. Fotky od hostí sa potom budú striedať na celej obrazovke — ideálne na TV alebo projektor.</p>
-      <form id="passwordForm">
-        <div class="field">
-          <label for="eventPassword">Heslo eventu</label>
-          <div class="password-field">
-            <input type="password" id="eventPassword" required autocomplete="off" />
-          </div>
-        </div>
-        <button type="submit" id="passwordButton"><span data-icon="lock"></span>Spustiť</button>
-        <p id="passwordMessage" class="message"></p>
-      </form>
-    </div>
-  </section>
+       striedajú na celej obrazovke, nové sa objavia samy. V rohu je QR kód,
+       aby hostia vedeli, kam fotky pridať. Otvára ju organizátor (odkaz
+       v záložke QR kód) a stena sa spustí hneď. -->
 
   <div id="notFound" class="page hidden"></div>
 
-  <!-- 2. Samotná stena. -->
+  <!-- Samotná stena. -->
   <main id="wall" class="wall hidden">
     <!-- Dve vrstvy fotiek: kým je jedna na obrazovke, druhá sa načíta a potom
          sa prelínajú - bez čierneho preblikávania medzi fotkami. -->
@@ -65,12 +45,11 @@
       <div class="wall-panel-text">
         <strong id="wallEventName"></strong>
         <span>Naskenuj a pridaj svoje fotky</span>
-        <span class="wall-password" id="wallPassword"></span>
       </div>
     </aside>
 
     <a class="logo wall-logo" href="/" tabindex="-1">Na<span>Pamiatku</span></a>
-    <p class="wall-hint" id="wallHint">F — celá obrazovka · medzerník — pauza · ← → — listovanie · H — skryť heslo</p>
+    <p class="wall-hint" id="wallHint">F — celá obrazovka · medzerník — pauza · ← → — listovanie</p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -83,15 +62,11 @@
     document.documentElement.setAttribute("data-theme", "dark");
 
     const slug = new URLSearchParams(window.location.search).get("slug");
-    // Rovnaký kľúč ako hosťovská stránka - kto už event otvoril ako hosť
-    // v tomto prehliadači, heslo znova nezadáva.
-    const PASSWORD_KEY = "napamiatku-pw-" + slug;
     const INTERVAL = 7000;   // ako dlho je jedna fotka na obrazovke
     const POLL = 20000;      // ako často sa pýtame na nové fotky
     const MAX_PHOTOS = 300;  // na TV nemá zmysel točiť tisíc fotiek
 
     let eventInfo = null;
-    let eventPassword = null;
     let photos = [];         // najnovšie prvé
     let index = -1;
     let timer = null;
@@ -104,9 +79,10 @@
 
     async function init() {
       if (!slug) return showNotFound();
-      const saved = localStorage.getItem(PASSWORD_KEY);
-      if (saved && (await tryOpen(saved)) === true) return start();
-      document.getElementById("passwordStep").classList.remove("hidden");
+      // Stena sa spustí rovno z odkazu - rovnako ako hosťovská stránka
+      // stojí prístup na tom, že slug v adrese sa nedá uhádnuť.
+      if ((await tryOpen()) === true) return start();
+      showNotFound();
     }
 
     function showNotFound() {
@@ -115,42 +91,23 @@
       box.innerHTML = emptyState({ iconName: "alert", title: "Event sa nenašiel", text: "Skontroluj odkaz." });
     }
 
-    async function tryOpen(password) {
+    async function tryOpen() {
       let result;
       try {
-        result = await supabaseClient.rpc("guest_open_event", { p_slug: slug, p_password: password });
+        result = await supabaseClient.rpc("guest_open_event", { p_slug: slug });
       } catch (error) {
         return friendlyError(error);
       }
       if (result.error && /fetch|network/i.test(result.error.message)) return friendlyError(result.error);
       if (result.error || !result.data) return false;
       eventInfo = result.data;
-      eventPassword = password;
       return true;
     }
 
-    document.getElementById("passwordForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const messageEl = document.getElementById("passwordMessage");
-      const button = document.getElementById("passwordButton");
-      button.disabled = true;
-      showMessage(messageEl, "Overujem...");
-      const opened = await tryOpen(document.getElementById("eventPassword").value);
-      button.disabled = false;
-      if (opened !== true) {
-        showMessage(messageEl, opened === false ? "Nesprávne heslo. Skús to znova." : opened, "error");
-        return;
-      }
-      localStorage.setItem(PASSWORD_KEY, eventPassword);
-      start();
-    });
-
     async function start() {
-      document.getElementById("passwordStep").classList.add("hidden");
       document.getElementById("wall").classList.remove("hidden");
       document.title = eventInfo.name + " — živá stena";
       document.getElementById("wallEventName").textContent = eventInfo.name;
-      document.getElementById("wallPassword").textContent = "Heslo: " + eventPassword;
 
       const guestUrl = window.location.origin + "/guest?slug=" + encodeURIComponent(slug);
       document.getElementById("wallQr").src = await makeQrDataUrl(guestUrl, 400);
@@ -165,7 +122,7 @@
     /* ---------- Fotky ---------- */
 
     async function loadPhotos() {
-      const { data, error } = await supabaseClient.rpc("guest_list_photos", { p_slug: slug, p_password: eventPassword });
+      const { data, error } = await supabaseClient.rpc("guest_list_photos", { p_slug: slug });
       if (error) return; // dočasný výpadok - stena točí, čo má
       const fresh = (data || []).filter((photo) => photo.media_type !== "video").slice(0, MAX_PHOTOS);
       const wasEmpty = photos.length === 0;
@@ -235,7 +192,6 @@
       if (event.key === "ArrowLeft") prev();
       if (event.key === " ") { event.preventDefault(); paused = !paused; document.body.classList.toggle("wall-paused", paused); schedule(); }
       if (event.key === "f" || event.key === "F") toggleFullscreen();
-      if (event.key === "h" || event.key === "H") document.getElementById("wallPassword").classList.toggle("hidden");
     });
 
     function toggleFullscreen() {

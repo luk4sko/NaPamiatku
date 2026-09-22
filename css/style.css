@@ -1709,6 +1709,10 @@ section[id] {
   mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
 }
 
+/* Pás beží stále - zámerne sa nezastavuje ani pri prejdení myšou. Pauza na
+   :hover vyzerala ako zaseknutá stránka: kurzor cez pás prejde aj náhodou
+   (je hneď pod hero sekciou) a fotky sa nedá klikať ani otvoriť, takže
+   zastavenie nemalo čo ponúknuť. */
 .marquee-track {
   display: flex;
   padding: 0.7rem 0;
@@ -1730,10 +1734,6 @@ section[id] {
 @keyframes marquee-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
-}
-
-.marquee:hover .marquee-track {
-  animation-play-state: paused;
 }
 
 /* ---------- Ukážka galérie ---------- */
@@ -4227,30 +4227,6 @@ span.avatar:hover {
   color: #14110f;
 }
 
-.tent-password {
-  display: inline-flex;
-  flex-direction: column;
-  margin-top: 6mm;
-  padding: 2.5mm 6mm;
-  border: 0.6mm dashed var(--tent-accent);
-  border-radius: 3.5mm;
-  background: var(--tent-soft);
-  font-size: 16pt;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--tent-accent);
-  line-height: 1.2;
-}
-
-.tent-password small {
-  font-size: 8pt;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--tent-muted);
-  margin-bottom: 0.5mm;
-}
-
 .tent-footer {
   position: absolute;
   left: 16mm;
@@ -5263,14 +5239,6 @@ kbd {
 .wall-panel-text span {
   font-size: 0.95rem;
   color: rgba(255, 255, 255, 0.75);
-}
-
-.wall-password {
-  margin-top: 0.3rem;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 1.15rem !important;
-  color: var(--accent) !important;
-  letter-spacing: 0.06em;
 }
 
 .wall-logo {

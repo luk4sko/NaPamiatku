@@ -16,8 +16,8 @@ Farby sú CSS premenné na `:root`; svetlý režim ich prepisuje cez `[data-them
 ## Roly
 
 - **Majiteľ** — prevádzkovateľ (admin). Vidí a spravuje všetky eventy, môže event pozastaviť pre hostí alebo zmazať (moderovanie, nahlásený obsah), pozýva klientov.
-- **Klient** — má pridelený vlastný event. Požiada oň, nastaví mu heslo pre hostí, mazať fotky a odkazy.
-- **Hosť** — bez účtu a bez prihlasovania. Naskenuje QR kód, zadá heslo eventu a rovno je vnútri. Prezývka je nepovinná — ak si žiadnu nezvolí, appka mu vygeneruje náhodnú (napr. „Veselý hosť"). Nahráva a sťahuje fotky, píše do knihy hostí, môže poslať dar.
+- **Klient** — má pridelený vlastný event. Vytvorí ho, rozdá QR kód a odkaz, maže fotky a odkazy, vie odkaz zneplatniť.
+- **Hosť** — bez účtu, bez prihlasovania a bez hesla. Naskenuje QR kód a rovno je vnútri. Prezývka je nepovinná — ak si žiadnu nezvolí, appka mu vygeneruje náhodnú (napr. „Veselý hosť"). Nahráva a sťahuje fotky, píše do knihy hostí, môže poslať dar.
 
 Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť aj ručne (pozvánkou z dashboardu) — obe cesty vedú k rovnakému výsledku, len jedna ich vytvorí sama a druhá počká na pozvánku. Nový účet dostane rolu `klient` automaticky (DB trigger). Event je aktívny hneď po vytvorení (schvaľovanie bolo zrušené 2026-09-21 — služba je zadarmo, takže brána nemala čo strážiť); ochranou pred zneužitím je overený e-mail, strop 20 aktívnych eventov na účet a možnosť majiteľa event pozastaviť.
 
@@ -31,7 +31,7 @@ Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť 
 | `set-password.html` | Nastavenie hesla po pozvánke / po obnove |
 | `dashboard.html` | Prehľad eventov s náhľadmi a počtami fotiek; Majiteľ vidí všetky eventy a spravuje účty |
 | `event.html` | Správa jedného eventu — fotky (filter, výber, ZIP, živé obnovovanie), kniha hostí (tlač, export), QR kód + tlačiteľná kartička, nastavenia, dary |
-| `guest.html` | Verejná stránka pre hostí (cez `?slug=`): heslo → meno → fotky, kniha hostí, dary |
+| `guest.html` | Neverejná stránka pre hostí (cez `?slug=`): meno → fotky, kniha hostí, dary |
 | `podmienky.html` | Obchodné podmienky, pravidlá obsahu a nahlasovanie (DSA), sprostredkovateľská doložka |
 | `ochrana-osobnych-udajov.html` | Zásady ochrany osobných údajov (GDPR čl. 13) |
 | `cookies.html` | Informácie o cookies a úložisku prehliadača + vyhlásenie Cookiebot |
@@ -39,7 +39,7 @@ Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť 
 ## Databázová schéma
 
 - `profiles` — rola používateľa (`majitel` / `klient`), vytvára sa triggerom pri registrácii
-- `events` — event/projekt (`client_id`, `status`, `password_hash`, verejný `slug`, nastavenia darov)
+- `events` — event/projekt (`client_id`, `status`, tajný `slug`, nastavenia darov)
 - `photos` — fotky priradené k eventu (prezývka autora je uložená priamo pri fotke)
 - `guestbook_messages` — odkazy hostí
 
@@ -49,9 +49,9 @@ Hosť nemá v databáze žiadny vlastný riadok ani účet — prezývka je len 
 
 ## Ako je to zabezpečené
 
-Hostia nemajú účet, ale **nemajú ani priamy prístup k tabuľkám**. RLS politiky dovolia čítať a mazať dáta len Majiteľovi a Klientovi daného eventu. Hosť pracuje výhradne cez `SECURITY DEFINER` funkcie (`guest_open_event`, `guest_list_photos`, `guest_add_photo`, `guest_list_messages`, `guest_add_message`), ktoré pri **každom** volaní znova overia heslo eventu v databáze.
+Hostia nemajú účet, ale **nemajú ani priamy prístup k tabuľkám**. RLS politiky dovolia čítať a mazať dáta len Majiteľovi a Klientovi daného eventu. Hosť pracuje výhradne cez `SECURITY DEFINER` funkcie (`guest_open_event`, `guest_list_photos`, `guest_add_photo`, `guest_list_messages`, `guest_add_message`), ktoré pri **každom** volaní znova overia v databáze, že slug patrí existujúcemu a aktívnemu eventu (`find_event_by_slug`).
 
-Heslo eventu je uložené ako bcrypt hash (`pgcrypto`), nikdy v čitateľnej podobe. Overuje ho databáza, nie prehliadač.
+Vstup pre hostí stráži samotný `slug`: je to `gen_random_uuid()`, teda 122 náhodných bitov, ktoré sa nedajú uhádnuť ani vyskúšať hrubou silou, a `guest.html` má `noindex`, takže odkaz nenájdu vyhľadávače. Je to model „tajný odkaz" (ako nezverejnené video na YouTube). Keď odkaz unikne, organizátor ho zneplatní cez `regenerate_event_slug` a starý QR kód prestane fungovať. Heslá eventov boli zrušené 2026-09-22 — na akcii sa hovorili nahlas a tlačili vedľa QR kódu, takže nič nechránili, len brzdili hostí (migrácia `20260922120000_remove_event_passwords.sql`).
 
 Ďalšie opatrenia:
 - Storage bucket `photos` má limit veľkosti (100 MB, rovnaký ako `FILE_SIZE_LIMIT` storage služby) a povolené len obrázkové a video MIME typy; video väčšie ako 100 MB odmietne už prehliadač (`videoSizeError()`)

@@ -568,3 +568,23 @@ A tu platí pravidlo kaskády: **štýly napísané autorom stránky majú predn
 - majiteľ môže event kedykoľvek pozastaviť: `set_event_status(…, 'rejected')` — hosťom neprejde heslo, lebo `find_event_by_password` hľadá len `status = 'approved'`; organizátor event vidí ďalej, fotky ostávajú. Stĺpec `status` sa teda nezrušil, len `rejected` teraz znamená „pozastavený".
 
 **Poučenie pre obhajobu:** bezpečnostné zdôvodnenie z 2026-09-05 („samotný účet bez schváleného eventu nemá k ničomu prístup") touto zmenou prestalo platiť a bolo treba ho nahradiť iným (strop + pozastavenie + overený e-mail). Rovnako ako pri registrácii: keď sa zmení kód, treba znova prejsť dôvody, prečo bolo niečo predtým vyhodnotené ako bezpečné.
+## 2026-09-22 — Zrušenie hesiel eventov (prechod na model „tajný odkaz")
+
+**Rozhodnutie:** heslo eventu úplne zmizlo. Hosť naskenuje QR kód, napíše meno a je vnútri. V databáze pribudla migrácia `20260922120000_remove_event_passwords.sql`: `find_event_by_password(slug, heslo)` nahradila `find_event_by_slug(slug)`, všetkým `guest_*` funkciám ubudol parameter `p_password`, zmizli `set_event_password` aj stĺpec `events.password_hash`, a `request_event` už heslo nepýta.
+
+**Prečo:** heslo na akcii nič nechránilo. Organizátor ho hovoril nahlas do mikrofónu alebo ho dal vytlačiť na kartičku hneď vedľa QR kódu — kto videl kód, videl aj heslo. Zato spoľahlivo brzdilo hostí: preklepy, diakritika, a kto prišiel neskôr, musel niekoho hľadať a pýtať sa. Bezpečnostný prvok, ktorý v reálnom nasadení stojí vedľa toho, čo má chrániť, nie je bezpečnostný prvok — je to prekážka navyše.
+
+**Čo chráni event teraz:** samotný `slug` v adrese. Je to `gen_random_uuid()`, teda 122 náhodných bitov. Skúšať ich hrubou silou je nemožné a `guest.html` má `noindex`, takže odkaz nenájdu ani vyhľadávače. Je to presne ten istý model, aký používa nezverejnené video na YouTube alebo zdieľaný odkaz v Google Drive: **kto pozná odkaz, je dnu**. Keď odkaz unikne, organizátor ho zneplatní tlačidlom „Vygenerovať nový odkaz" (`regenerate_event_slug`) a starý QR kód prestane fungovať — fotky pritom ostanú.
+
+**Čím sa to teda reálne zhoršilo (a čo treba vedieť na obhajobe):** predtým bolo treba dve veci (odkaz **a** heslo), teraz stačí jedna. Kto dostane preposlaný odkaz, dostane prístup bez toho, aby sa musel pýtať na heslo. V praxi je ten rozdiel malý, lebo heslo sa beztak šírilo spolu s odkazom, ale čestné zdôvodnenie znie: **vymenili sme bezpečnosť na papieri za použiteľnosť na akcii** a vedome sme si to dovolili, lebo ide o fotky zo svadby v kruhu pozvaných hostí, nie o zdravotné či finančné údaje. Keby appka niesla citlivejší obsah, toto rozhodnutie by správne nebolo.
+
+**Čo sa nezmenilo:**
+- Heslá **účtov organizátorov** (Supabase Auth) ostávajú nedotknuté — tu išlo výhradne o heslo, ktoré zadával hosť.
+- Hranica bezpečnosti je stále v databáze, nie v prehliadači: hosť nemá k tabuľkám žiadny prístup a každá `guest_*` funkcia si pri každom volaní znova overí, že slug patrí existujúcemu a aktívnemu eventu.
+- Pozastavenie eventu majiteľom funguje ďalej — `find_event_by_slug` hľadá len `status = 'approved'`, takže „pozastavený" event odkaz okamžite prestane otvárať. (Formulácia z 2026-09-21 „hosťom neprejde heslo" už teda neplatí doslovne; platí „hosťom neprejde odkaz".)
+
+**Poučenie pre obhajobu (už tretíkrát ten istý vzorec):** zmena kódu podkopala staršie zdôvodnenie. V poznámke z 2026-08-31 stálo *„heslo eventu je nutné, bez neho by galéria bola verejná"* — to bolo vtedy pravdivé len preto, že sme si predstavovali slug ako niečo verejné. Nie je: je to náhodné UUID. Argument bolo treba nahradiť presnejším („galéria nie je verejná, lebo odkaz je neuhádnuteľný a neindexovaný"), nie ho potichu zmazať.
+
+**Ďalšie z tejto relácie:**
+
+- **Pás fotiek na úvodnej stránke sa už nezastavuje pri prejdení myšou.** Pravidlo `.marquee:hover .marquee-track { animation-play-state: paused }` zmizlo. Pauza na `:hover` má zmysel len vtedy, keď divák s obsahom niečo urobí — prečíta si dlhší text, klikne na položku. Tento pás je čisto dekoračný (`aria-hidden="true"`, fotky sa nedajú otvoriť) a je hneď pod hero sekciou, takže kurzor cezeň prechádzal aj náhodou pri scrollovaní. Zastavený pás potom vyzeral ako zaseknutá stránka. Výnimka ostáva jedna: `@media (prefers-reduced-motion: reduce)` animáciu naďalej vypína úplne — to nie je pohodlie, ale prístupnosť (pohyb na obrazovke spúšťa u časti ľudí nevoľnosť alebo migrénu).

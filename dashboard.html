@@ -121,7 +121,7 @@
       <div class="dialog-head">
         <div>
           <h3>Nový event</h3>
-          <p class="muted">Event je aktívny hneď po vytvorení. Heslo budú zadávať hostia po naskenovaní QR kódu — vyber jednoduché, ktoré im vieš povedať.</p>
+          <p class="muted">Event je aktívny hneď po vytvorení. Hneď dostaneš QR kód a odkaz — kto ho má, je vnútri, žiadne heslo hostia nezadávajú.</p>
         </div>
         <button type="button" class="secondary small icon-button" data-dialog-close aria-label="Zavrieť"><span data-icon="x"></span></button>
       </div>
@@ -130,17 +130,9 @@
           <label for="eventName">Názov eventu</label>
           <input type="text" id="eventName" required maxlength="80" placeholder="napr. Svadba Lucia & Marek" />
         </div>
-        <div class="field-row">
-          <div class="field">
-            <label for="eventDate">Dátum (voliteľné)</label>
-            <input type="date" id="eventDate" />
-          </div>
-          <div class="field">
-            <label for="eventPassword">Heslo pre hostí</label>
-            <div class="password-field">
-              <input type="password" id="eventPassword" minlength="4" required autocomplete="off" />
-            </div>
-          </div>
+        <div class="field">
+          <label for="eventDate">Dátum (voliteľné)</label>
+          <input type="date" id="eventDate" />
         </div>
         <div class="dialog-actions">
           <button type="button" class="secondary" data-dialog-close>Zrušiť</button>
@@ -451,7 +443,6 @@
       const { data: newEventId, error } = await supabaseClient.rpc("request_event", {
         p_name: document.getElementById("eventName").value,
         p_event_date: document.getElementById("eventDate").value || null,
-        p_password: document.getElementById("eventPassword").value,
       });
 
       if (error) {

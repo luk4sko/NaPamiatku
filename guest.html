@@ -9,36 +9,16 @@
   <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
 </head>
 <body>
-  <!-- 1. krok: brána s heslom. Toto je úplne prvá vec, ktorú hosť po
-       naskenovaní QR kódu uvidí, preto dostala celú obrazovku a fotku. -->
-  <section id="passwordStep" class="gate hidden">
+  <!-- 1. krok: meno. Bez neho hosť nemôže nič pridať, preto je to samostatná
+       obrazovka a nie políčko niekde na stránke. Je to zároveň úplne prvá
+       vec, ktorú hosť po naskenovaní QR kódu uvidí - preto celá obrazovka
+       a fotka. -->
+  <section id="nameStep" class="gate hidden">
     <img class="gate-bg" src="img/hostia-konfety-xl.webp" alt="" aria-hidden="true" />
     <button class="secondary small gate-theme icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
 
     <div class="gate-card">
       <a class="logo" href="/">Na<span>Pamiatku</span></a>
-      <h1>Zadaj heslo podujatia</h1>
-      <p>Heslo ti povie organizátor. Zapamätáme si ho v tomto prehliadači, takže ho zadávaš len raz.</p>
-      <form id="passwordForm">
-        <div class="field">
-          <label for="eventPassword">Heslo</label>
-          <div class="password-field">
-            <input type="password" id="eventPassword" required autocomplete="off" />
-          </div>
-        </div>
-        <button type="submit" id="passwordButton"><span data-icon="lock"></span>Vstúpiť</button>
-        <p id="passwordMessage" class="message"></p>
-      </form>
-    </div>
-  </section>
-
-  <!-- 2. krok: meno. Bez neho hosť nemôže nič pridať, preto je to samostatná
-       obrazovka a nie políčko niekde na stránke. -->
-  <section id="nameStep" class="gate hidden">
-    <img class="gate-bg" src="img/pripitok-svetielka-sm.webp" alt="" aria-hidden="true" />
-    <button class="secondary small gate-theme icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
-
-    <div class="gate-card">
       <p class="eyebrow" id="nameStepEvent"></p>
       <h1>Ako sa voláš?</h1>
       <p>Pod týmto menom uvidia ostatní tvoje fotky a odkazy.</p>
@@ -217,13 +197,11 @@
 
     // Kľúče v localStorage sú odvodené od slug-u, aby si prehliadač
     // pamätal údaje zvlášť pre každé podujatie.
-    const PASSWORD_KEY = "napamiatku-pw-" + slug;
     const NICKNAME_KEY = "napamiatku-nick-" + slug;
     // ID fotiek a odkazov, ktoré poslal tento prehliadač - pre filter "Moje".
     const MINE_KEY = "napamiatku-mine-" + slug;
 
     let eventInfo = null;
-    let eventPassword = null;
     let nickname = null;
     let allPhotos = [];
     let photoFilter = "all";
@@ -240,27 +218,29 @@
     async function init() {
       if (!slug) return showNotFound();
 
-      const saved = localStorage.getItem(PASSWORD_KEY);
-      if (saved) {
-        const opened = await tryOpen(saved);
-        if (opened === true) return afterOpen();
-        // Zapamätané heslo zabudneme len keď je naozaj zlé - pri výpadku
-        // servera ho necháme, aby hosť po obnovení nemusel heslo hľadať.
-        if (opened === false) localStorage.removeItem(PASSWORD_KEY);
-        else showMessage(document.getElementById("passwordMessage"), opened, "error");
-      }
-      document.getElementById("passwordStep").classList.remove("hidden");
+      // Heslá sme zrušili, ale v prehliadačoch hostí z predošlých akcií
+      // zostalo uložené. Nech tam nezavadzia - aj preto, že stránka
+      // o cookies už žiadne uložené heslo neuvádza.
+      localStorage.removeItem("napamiatku-pw-" + slug);
+
+      // Žiadna brána s heslom - event sa otvára rovno z odkazu. Prístup
+      // stráži samotný slug v adrese: je to náhodné UUID, ktoré sa nedá
+      // uhádnuť, a stránka má noindex, takže ju vyhľadávače neukážu.
+      const opened = await tryOpen();
+      if (opened === true) return afterOpen();
+      // false = event neexistuje alebo je pozastavený. Reťazec = server
+      // neodpovedal; to je dočasné a nesmie to vyzerať ako zrušený event.
+      if (opened === false) return showNotFound();
+      showLoadError(opened);
     }
 
-    // Overenie hesla robí databáza (funkcia guest_open_event).
-    // V prehliadači nikdy nemáme zoznam hesiel ani ich hashe.
-    // Vracia true (otvorené), false (zlé heslo) alebo reťazec s chybou, keď
-    // server neodpovedal - to nie je chyba hosťa a nesmie to vyzerať ako
-    // nesprávne heslo.
-    async function tryOpen(password) {
+    // Či je event dostupný, rozhoduje databáza (funkcia guest_open_event).
+    // Prehliadač si prístup priznať nevie - pýta sa naň pri každom volaní.
+    // Vracia true (otvorené), false (nedostupný) alebo reťazec s chybou.
+    async function tryOpen() {
       let result;
       try {
-        result = await supabaseClient.rpc("guest_open_event", { p_slug: slug, p_password: password });
+        result = await supabaseClient.rpc("guest_open_event", { p_slug: slug });
       } catch (error) {
         return friendlyError(error);
       }
@@ -268,7 +248,6 @@
       if (result.error || !result.data) return false;
 
       eventInfo = result.data;
-      eventPassword = password;
       return true;
     }
 
@@ -283,9 +262,20 @@
       });
     }
 
-    // Po hesle nasleduje meno. Ak ho už máme uložené, ideme rovno na obsah.
+    // Výpadok spojenia - na rozdiel od zrušeného eventu sa oplatí skúsiť znova.
+    function showLoadError(message) {
+      document.getElementById("guestFooter").classList.remove("hidden");
+      const box = document.getElementById("notFound");
+      box.classList.remove("hidden");
+      box.innerHTML = emptyState({
+        iconName: "alert",
+        title: "Podujatie sa nepodarilo načítať",
+        text: message + " Skús stránku obnoviť.",
+      });
+    }
+
+    // Prvý krok pre hosťa je meno. Ak ho už máme uložené, ideme rovno na obsah.
     async function afterOpen() {
-      document.getElementById("passwordStep").classList.add("hidden");
       document.title = eventInfo.name + " — NaPamiatku";
       nickname = localStorage.getItem(NICKNAME_KEY) || null;
       if (!nickname) return showNameStep();
@@ -338,27 +328,6 @@
       });
     }
 
-    /* ---------- Heslo ---------- */
-
-    document.getElementById("passwordForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const messageEl = document.getElementById("passwordMessage");
-      const button = document.getElementById("passwordButton");
-      button.disabled = true;
-      showMessage(messageEl, "Overujem...");
-
-      const opened = await tryOpen(document.getElementById("eventPassword").value);
-      button.disabled = false;
-
-      if (opened !== true) {
-        showMessage(messageEl, opened === false ? "Nesprávne heslo. Skús to znova." : opened, "error");
-        return;
-      }
-      localStorage.setItem(PASSWORD_KEY, eventPassword);
-      showMessage(messageEl, "");
-      await afterOpen();
-    });
-
     /* ---------- Meno ---------- */
 
     document.getElementById("nameForm").addEventListener("submit", (event) => {
@@ -398,7 +367,6 @@
 
       const { data, error } = await supabaseClient.rpc("guest_list_photos", {
         p_slug: slug,
-        p_password: eventPassword,
       });
 
       if (error) {
@@ -552,8 +520,7 @@
         // Riadok v databáze vytvorí až funkcia, ktorá znova overí heslo eventu.
         const { data: photoId, error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
           p_slug: slug,
-          p_password: eventPassword,
-          p_nickname: nickname,
+            p_nickname: nickname,
           p_storage_path: path,
           p_media_type: isVideo ? "video" : "photo",
         });
@@ -594,7 +561,6 @@
 
       const { error } = await supabaseClient.rpc("guest_report_photo", {
         p_slug: slug,
-        p_password: eventPassword,
         p_photo_id: reportPhotoId,
         p_reason: document.getElementById("reportReason").value.trim(),
         p_contact: document.getElementById("reportContact").value.trim() || null,
@@ -612,7 +578,6 @@
       const list = document.getElementById("messageList");
       const { data, error } = await supabaseClient.rpc("guest_list_messages", {
         p_slug: slug,
-        p_password: eventPassword,
       });
 
       if (error) {
@@ -658,7 +623,6 @@
 
       const { data: messageId, error } = await supabaseClient.rpc("guest_add_message", {
         p_slug: slug,
-        p_password: eventPassword,
         p_nickname: nickname,
         p_message: messageText.value,
       });

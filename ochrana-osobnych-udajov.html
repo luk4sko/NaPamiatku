@@ -61,7 +61,7 @@
       <p>V službe vystupujú dve skupiny ľudí:</p>
       <ul>
         <li><strong>Organizátor (klient)</strong> - osoba, ktorá si vytvorí účet, požiada o event a dostane QR kód pre hostí.</li>
-        <li><strong>Hosť</strong> - osoba, ktorá naskenuje QR kód, zadá heslo eventu a pridáva fotky, videá alebo odkazy do knihy hostí. Hosť nemá účet.</li>
+        <li><strong>Hosť</strong> - osoba, ktorá naskenuje QR kód eventu a pridáva fotky, videá alebo odkazy do knihy hostí. Hosť nemá účet.</li>
       </ul>
       <p>Pri údajoch o <strong>účte organizátora</strong> (e-mail, meno, prihlásenie) sme <strong>prevádzkovateľom</strong> podľa čl. 4 ods. 7 GDPR - rozhodujeme o účele aj prostriedkoch spracúvania.</p>
       <p>Pri <strong>obsahu eventu</strong> (fotky, videá, odkazy hostí a ich mená) je prevádzkovateľom <strong>organizátor</strong> - je to jeho oslava a jeho hostia, on rozhoduje, čo sa s obsahom stane. My tento obsah spracúvame v jeho mene ako <strong>sprostredkovateľ</strong> (čl. 28 GDPR) na základe <a href="/podmienky#spracuvanie">sprostredkovateľskej doložky v obchodných podmienkach</a>. Ak ste hosť a chcete, aby bola fotka, na ktorej ste, odstránená, môžete sa obrátiť na organizátora alebo priamo na nás - fotku odstránime a organizátora informujeme.</p>
@@ -81,7 +81,7 @@
               <td>plnenie zmluvy (čl. 6 ods. 1 písm. b GDPR)</td>
             </tr>
             <tr>
-              <td><strong>Event:</strong> názov, dátum, heslo pre hostí (uložené len ako hash), nastavenia darov (IBAN, meno príjemcu, správa)</td>
+              <td><strong>Event:</strong> názov, dátum, tajný odkaz (slug) pre hostí, nastavenia darov (IBAN, meno príjemcu, správa)</td>
               <td>poskytovanie služby - stránka pre hostí, QR kód, platobný QR kód pre dary</td>
               <td>plnenie zmluvy</td>
             </tr>
@@ -101,8 +101,8 @@
               <td>oprávnený záujem na bezpečnej prevádzke služby (čl. 6 ods. 1 písm. f)</td>
             </tr>
             <tr>
-              <td><strong>Údaje v prehliadači</strong> (localStorage): prihlasovací token, zapamätané heslo eventu a meno hosťa, zvolený vzhľad</td>
-              <td>aby ste sa nemuseli prihlasovať a zadávať heslo eventu pri každej návšteve</td>
+              <td><strong>Údaje v prehliadači</strong> (localStorage): prihlasovací token, meno hosťa, zvolený vzhľad</td>
+              <td>aby ste sa nemuseli prihlasovať a zadávať svoje meno pri každej návšteve</td>
               <td>nevyhnutné na poskytnutie služby, ktorú ste si vyžiadali - podrobnosti v <a href="/cookies">informáciách o cookies</a></td>
             </tr>
           </tbody>
@@ -116,7 +116,7 @@
       <p>Fotka, na ktorej je rozpoznateľná osoba, je osobný údaj tejto osoby. Preto platí:</p>
       <ul>
         <li>Hosť smie nahrávať len fotky a videá, ktoré sám vytvoril, a len také, s ktorých zdieľaním medzi účastníkmi eventu môžu zobrazené osoby rozumne súhlasiť. Podrobné pravidlá sú v <a href="/podmienky#obsah">podmienkach používania</a>.</li>
-        <li>Fotky sú prístupné len ľuďom, ktorí poznajú odkaz eventu <em>a</em> heslo eventu. Nie sú verejne vyhľadateľné ani indexované vyhľadávačmi.</li>
+        <li>Fotky sú prístupné len ľuďom, ktorí poznajú odkaz na event. Ten obsahuje náhodný identifikátor (128-bitové UUID), ktorý sa nedá uhádnuť ani vyskúšať. Galéria nie je verejne vyhľadateľná ani indexovaná vyhľadávačmi. Organizátor môže odkaz kedykoľvek zneplatniť a vygenerovať nový.</li>
         <li>Organizátor môže ktorúkoľvek fotku kedykoľvek zmazať. Každý môže fotku nahlásiť tlačidlom priamo pri nej; nahlásenie preveríme a nevhodný obsah odstránime.</li>
         <li>Fotky nepoužívame na žiadny iný účel - netrénujeme na nich modely, nepredávame ich, nezobrazujeme ich v reklame ani na úvodnej stránke.</li>
       </ul>
@@ -173,8 +173,8 @@
       <h2>8. Bezpečnosť</h2>
       <ul>
         <li>Všetka komunikácia je šifrovaná (HTTPS).</li>
-        <li>Heslá účtov aj heslá eventov ukladáme výlučne ako kryptografické hashe - nikto vrátane nás ich nedokáže prečítať.</li>
-        <li>Prístup k údajom eventu je v databáze obmedzený pravidlami na úrovni riadkov (Row Level Security): organizátor vidí len svoje eventy, hosť pracuje výhradne cez funkcie, ktoré pri každom volaní overia heslo eventu.</li>
+        <li>Heslá účtov ukladáme výlučne ako kryptografické hashe - nikto vrátane nás ich nedokáže prečítať.</li>
+        <li>Prístup k údajom eventu je v databáze obmedzený pravidlami na úrovni riadkov (Row Level Security): organizátor vidí len svoje eventy, hosť nemá k tabuľkám žiadny priamy prístup a pracuje výhradne cez funkcie, ktoré pri každom volaní znova overia odkaz na event.</li>
         <li>Fotky sú uložené na serveri v EÚ pod náhodnými názvami; odkaz na stránku eventu sa dá kedykoľvek zneplatniť a vygenerovať nový.</li>
       </ul>
     </section>
