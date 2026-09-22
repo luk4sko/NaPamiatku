@@ -54,13 +54,8 @@
         </form>
 
         <p class="muted" style="margin:1rem 0 0">
-          <button type="button" class="auth-link-button" id="forgotToggle">Zabudol si heslo?</button>
+          <a class="auth-link-button" id="forgotLink" href="/forgot-password">Zabudol si heslo?</a>
         </p>
-        <div class="auth-extra hidden" id="forgotBox">
-          <p class="muted">Pošleme ti na email vyššie odkaz, cez ktorý si nastavíš nové heslo.</p>
-          <button type="button" class="secondary small" id="resetButton"><span data-icon="mail"></span>Poslať odkaz na obnovu</button>
-          <p id="resetMessage" class="message"></p>
-        </div>
 
         <div class="auth-foot">
           <p>Nemáš účet? <a href="/register">Zaregistruj sa</a></p>
@@ -103,28 +98,11 @@
       window.location.href = "/dashboard";
     });
 
-    document.getElementById("forgotToggle").addEventListener("click", () => {
-      document.getElementById("forgotBox").classList.toggle("hidden");
-    });
-
-    document.getElementById("resetButton").addEventListener("click", async () => {
-      const resetMessageEl = document.getElementById("resetMessage");
+    // Ak už má email napísaný tu, posunieme ho na stránku obnovy so sebou,
+    // nech ho nemusí písať druhýkrát.
+    document.getElementById("forgotLink").addEventListener("click", (event) => {
       const email = document.getElementById("email").value.trim();
-
-      if (!email) {
-        showMessage(resetMessageEl, "Najprv vyplň email vyššie.", "error");
-        return;
-      }
-
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + "/set-password",
-      });
-
-      if (error) {
-        showMessage(resetMessageEl, error.message, "error");
-        return;
-      }
-      showMessage(resetMessageEl, "Ak účet existuje, poslali sme naň email s odkazom.", "ok");
+      if (email) event.currentTarget.href = "/forgot-password?email=" + encodeURIComponent(email);
     });
   </script>
 </body>

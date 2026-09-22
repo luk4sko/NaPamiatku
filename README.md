@@ -27,7 +27,8 @@ Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť 
 |---|---|
 | `index.html` | Verejná úvodná (predajná) stránka |
 | `register.html` | Registrácia Klienta (email → odkaz na nastavenie hesla) |
-| `login.html` | Prihlásenie + obnova hesla |
+| `login.html` | Prihlásenie |
+| `forgot-password.html` | Zabudnuté heslo — odoslanie odkazu na obnovu |
 | `set-password.html` | Nastavenie hesla po pozvánke / po obnove |
 | `dashboard.html` | Prehľad eventov s náhľadmi a počtami fotiek; Majiteľ vidí všetky eventy a spravuje účty |
 | `event.html` | Správa jedného eventu — fotky (filter, výber, ZIP, živé obnovovanie), kniha hostí (tlač, export), QR kód + tlačiteľná kartička, nastavenia, dary |
@@ -80,7 +81,7 @@ Na server sa kopíruje ručne (`scp server/retention.py lukasko@server:/home/luk
 
 Toto sa nedá spraviť z kódu:
 
-1. ✅ **Authentication → URL Configuration** — Site URL `https://napamiatku.com` a Redirect URL `https://napamiatku.com/set-password.html`, inak by nefungovali odkazy z emailov na ostrej doméne.
+1. ✅ **Authentication → URL Configuration** — Site URL `https://napamiatku.com` a Redirect URL `https://napamiatku.com/set-password`, inak by nefungovali odkazy z emailov na ostrej doméne.
 2. ✅ **Authentication → Emails → SMTP Settings** — predvolený Supabase mailer posiela len pár emailov za hodinu a slúži na testovanie. Pre ostrú prevádzku vlastný SMTP cez schránku na vlastnej doméne (Seznam Email Profi):
    - Host: `smtp.seznam.cz`
    - Port: `465` (SSL/TLS)

@@ -3620,7 +3620,7 @@ a.button:hover {
   margin-top: 1.5rem;
 }
 
-/* ---------- Prihlásenie: zabudnuté heslo ako rozbaľovací riadok ---------- */
+/* ---------- Zabudnuté heslo: potvrdenie po odoslaní odkazu ---------- */
 
 .auth-extra {
   margin-top: 1.25rem;
