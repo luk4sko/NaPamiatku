@@ -1306,15 +1306,6 @@ section[id] {
 
 /* Karta je len text, nie odkaz. Zdvih a zvýraznenie pri prejdení myšou by
    sľubovali kliknutie, ktoré nikam nevedie - preto tu žiaden hover nie je. */
-/* Dlaždica nie je odkaz, ale pod myšou sa aj tak jemne nakláňa (3D tilt,
-   pozri initTiltCards v app.js) - čisto pre živosť stránky, nie ako
-   náznak klikateľnosti. Prechod je krátky, nech naklonenie sleduje myš
-   plynulo a nie trhane, ale rovnaký prechod poslúži aj na návrat späť
-   na rovinu pri opustení kurzorom. */
-[data-tilt] {
-  transition: transform 0.15s ease-out;
-}
-
 .step {
   counter-increment: step;
   padding: 1.85rem 1.6rem;
@@ -1386,6 +1377,7 @@ section[id] {
   }
 }
 
+/* Rovnako ako pri .step - dlaždica nie je odkaz, takže nereaguje na myš. */
 .bento-card {
   position: relative;
   overflow: hidden;

@@ -26,8 +26,7 @@
      Drag & drop .................. setupDropzone, createUploadList
      Hromadné stiahnutie .......... downloadAsZip
      QR kódy ...................... makeQrDataUrl, makePaymentQrDataUrl
-     Animácie ...................... animateNumber, initTiltCards,
-                                    initMagneticButtons
+     Animácie ...................... animateNumber
      Spustenie na každej stránke .. čo sa pustí samo po načítaní
 
    Štýly k týmto prvkom sú v css/style.css - ten má na začiatku vlastný
@@ -1239,43 +1238,6 @@ function animateNumber(el, value) {
   requestAnimationFrame(tick);
 }
 
-// Karta sa nakláňa (3D tilt) smerom k pozícii kurzora - dáva pocit, že
-// reaguje na pohyb myši. Len na zariadeniach so skutočnou myšou (hover) a
-// len ak používateľ nemá zapnuté obmedzenie pohybu.
-function initTiltCards(selector) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  if (!window.matchMedia("(hover: hover)").matches) return;
-
-  document.querySelectorAll(selector).forEach((card) => {
-    const maxTilt = 6; // stupne - viac by pôsobilo hravo až rušivo
-    card.addEventListener("mousemove", (event) => {
-      const rect = card.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width - 0.5;
-      const y = (event.clientY - rect.top) / rect.height - 0.5;
-      card.style.transform = `perspective(700px) rotateX(${(-y * maxTilt).toFixed(2)}deg) rotateY(${(x * maxTilt).toFixed(2)}deg)`;
-    });
-    card.addEventListener("mouseleave", () => { card.style.transform = ""; });
-  });
-}
-
-// Tlačidlo sa jemne "ťahá" za kurzorom, kým je nad ním - typický detail
-// moderných landing stránok. Mimo tlačidla sa nič nehýbe.
-function initMagneticButtons(selector) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  if (!window.matchMedia("(hover: hover)").matches) return;
-
-  document.querySelectorAll(selector).forEach((button) => {
-    const strength = 0.35; // 0-1, koľko z pohybu myši sa prenesie na tlačidlo
-    button.addEventListener("mousemove", (event) => {
-      const rect = button.getBoundingClientRect();
-      const x = event.clientX - (rect.left + rect.width / 2);
-      const y = event.clientY - (rect.top + rect.height / 2);
-      button.style.transform = `translate(${(x * strength).toFixed(1)}px, ${(y * strength).toFixed(1)}px)`;
-    });
-    button.addEventListener("mouseleave", () => { button.style.transform = ""; });
-  });
-}
-
 /* ---------- Spustenie na každej stránke ---------- */
 
 initTheme();
@@ -1286,8 +1248,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupLogoutButtons();
   setupIdentityMenus();
   hydrateIcons();
-  initTiltCards("[data-tilt]");
-  initMagneticButtons("[data-magnetic]");
   document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
     button.addEventListener("click", toggleTheme);
   });
