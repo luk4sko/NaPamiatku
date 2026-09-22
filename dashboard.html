@@ -187,6 +187,9 @@
     // na chvíľu zasekla a väčšinu by aj tak nikto nescrolloval.
     const PAGE_SIZE = 24;
     let listLimit = PAGE_SIZE;
+    // Karty nabehnú so stagger animáciou len pri úplne prvom vykreslení -
+    // pri hľadaní alebo prepínaní filtra by to už len rušivo blikalo.
+    let firstEventRender = true;
 
     async function init() {
       const session = await requireAuth();
@@ -356,8 +359,14 @@
         : `${visible.length} z ${total} ${plural(total, "eventu", "eventov", "eventov")}`;
 
       listEl.innerHTML = "";
+      let cardIndex = 0;
       for (const event of visible.slice(0, listLimit)) {
         const li = document.createElement("li");
+        if (firstEventRender) {
+          li.className = "event-card-in";
+          li.style.setProperty("--d", `${Math.min(cardIndex, 10) * 0.06}s`);
+          cardIndex++;
+        }
         const cover = event.cover ? ` style="background-image:url('${escapeHtml(event.cover)}')"` : "";
         const dateText = event.event_date ? formatDateLong(event.event_date) : "Dátum nezadaný";
         const relative = event.event_date ? relativeDate(event.event_date) : "";
@@ -380,6 +389,7 @@
           </a>`;
         listEl.appendChild(li);
       }
+      firstEventRender = false;
       renderLoadMore(listEl, visible.length, () => { listLimit += PAGE_SIZE; renderEvents(); });
     }
 

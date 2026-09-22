@@ -345,11 +345,18 @@ button {
   background: var(--accent);
   color: var(--accent-text);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
 button:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+/* Stlačenie sa má cítiť, nielen vidieť - tlačidlo sa jemne prepadne.
+   Cieľom je 0.96, nie menej: pri väčšom zmenšení "poskakuje" text vo
+   vnútri a pôsobí to rozbité namiesto pružné. */
+button:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 button:disabled {
@@ -498,12 +505,44 @@ form > button {
   box-shadow: var(--shadow);
 }
 
+/* Dlaždica, ktorá práve pribudla živým obnovením (pozri event.html,
+   renderGallery). Triedu dostane len tých pár skutočne nových fotiek,
+   nie celá galéria - tá by pri každom obnovení zbytočne poskočila. */
+.photo-new {
+  animation: photo-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes photo-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-new {
+    animation: none;
+  }
+}
+
 /* Iba priamy potomok = samotná fotka/video. */
 .photo > img,
 .photo > video {
   width: 100%;
   display: block;
   cursor: zoom-in;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Jemné priblíženie pod myšou - naznačuje, že dlaždica sa dá otvoriť
+   (rovnako ako .event-card nižšie). Orezanie zabezpečuje .photo, ktorá
+   má overflow: hidden, takže fotka nepretečie cez zaoblený roh. */
+@media (hover: hover) {
+  .photo:hover > img,
+  .photo:hover > video {
+    transform: scale(1.05);
+  }
 }
 
 /* Video, ktoré server ešte prekódúva: zástupná dlaždica bez obrázka. */
@@ -2514,6 +2553,27 @@ a.button:hover {
   gap: 1rem;
 }
 
+/* Karty pri prvom načítaní dashboardu nabehnú jedna za druhou (pozri
+   dashboard.html, renderEvents). Pri ďalšom prekreslení (hľadanie, filter)
+   triedu už nedostanú - blikanie pri každom stlačení klávesy by rušilo. */
+.event-card-in {
+  animation: card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-card-in {
+    animation: none;
+  }
+}
+
 .event-card {
   display: flex;
   flex-direction: column;
@@ -2543,6 +2603,15 @@ a.button:hover {
   align-items: center;
   justify-content: center;
   color: color-mix(in srgb, var(--accent) 70%, transparent);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Titulná fotka sa pod myšou jemne priblíži - orezanie zaisťuje
+   overflow: hidden na .event-card. */
+@media (hover: hover) {
+  .event-card:hover .event-card-cover {
+    transform: scale(1.06);
+  }
 }
 
 .event-card-cover .ui-icon {

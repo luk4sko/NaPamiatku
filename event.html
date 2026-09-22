@@ -596,9 +596,15 @@
       if (silent && signature === fingerprint(allPhotos)) return;
       const added = silent ? data.length - allPhotos.length : 0;
 
+      // Ktoré fotky sú nové, poznáme podľa id - data sú zoradené od
+      // najnovších, takže sú to prvých `added` položiek. Podľa id, nie
+      // podľa indexu v poli, lebo po prefiltrovaní (napr. len videá) by
+      // sa poradie posunulo a animovali by sa nesprávne dlaždice.
+      const newIds = added > 0 ? new Set(data.slice(0, added).map((photo) => photo.id)) : null;
+
       allPhotos = data;
       renderStats();
-      renderGallery();
+      renderGallery(newIds);
       watchPendingVideos(allPhotos, () => loadPhotos(true));
       if (added > 0) showToast(`Pribudli nové súbory: ${added}`, "ok");
       await loadReports();
@@ -677,7 +683,7 @@
       });
     }
 
-    function renderGallery() {
+    function renderGallery(newIds) {
       const gallery = document.getElementById("gallery");
       const photos = visiblePhotos();
 
@@ -696,6 +702,7 @@
       }
 
       gallery.innerHTML = "";
+      let newIndex = 0;
       for (const photo of photos.slice(0, galleryLimit)) {
         const nickname = photo.uploaded_by_nickname || "Hosť";
         // storage_path ide do HTML atribútu, preto ho aj tu ošetríme. Do
@@ -708,11 +715,14 @@
           ? videoTile(url, photo)
           : `<img ${photoImgAttrs(photo.storage_path)} alt="Fotka od ${escapeHtml(nickname)}" loading="lazy" />`;
 
+        const isNew = !!newIds && newIds.has(photo.id);
         const figure = document.createElement("figure");
         figure.dataset.name = nickname;
         figure.dataset.date = formatDateTime(photo.created_at);
-        figure.className = "photo" + (selectedIds.has(photo.id) ? " selected" : "");
+        figure.className = "photo" + (selectedIds.has(photo.id) ? " selected" : "") + (isNew ? " photo-new" : "");
         figure.dataset.id = photo.id;
+        // Malý odstup medzi novými dlaždicami, nech nenabehnú všetky naraz.
+        if (isNew) { figure.style.setProperty("--d", `${newIndex * 0.08}s`); newIndex++; }
         figure.innerHTML = `
           ${mediaTag}
           ${isVideo ? `<span class="photo-tag">${icon("video")}video</span>` : ""}
