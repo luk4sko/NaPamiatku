@@ -19,7 +19,7 @@
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
-  <nav class="site-nav" id="siteNav">
+  <nav class="site-nav">
     <div class="site-nav-inner">
       <a class="logo" href="/">Na<span>Pamiatku</span></a>
 
@@ -341,12 +341,8 @@
       revealItems.forEach((item) => observer.observe(item));
     }
 
-    /* ---------- Hlavička po scrollnutí ---------- */
-
-    const siteNav = document.getElementById("siteNav");
-    const onScroll = () => siteNav.classList.toggle("scrolled", window.scrollY > 20);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    // Pozn.: stmavnutie lišty po odscrollovaní rieši app.js pre všetky
+    // stránky naraz (hľadaj "scrolled"), preto tu už nič navyše netreba.
   </script>
 </body>
 </html>

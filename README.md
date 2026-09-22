@@ -36,6 +36,11 @@ Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť 
 | `podmienky.html` | Obchodné podmienky, pravidlá obsahu a nahlasovanie (DSA), sprostredkovateľská doložka |
 | `ochrana-osobnych-udajov.html` | Zásady ochrany osobných údajov (GDPR čl. 13) |
 | `cookies.html` | Informácie o cookies a úložisku prehliadača + vyhlásenie Cookiebot |
+| `wall.html` | Živá stena pre TV/projektor (cez `?slug=`) — fotky sa striedajú na celej obrazovke |
+| `404.html` | Stránka pre neexistujúcu adresu |
+| `css/style.css` | Všetky štýly. Na začiatku súboru je obsah s očíslovanými časťami a návod „kde čo zmeniť" (farby sú len v bloku premenných na jednom mieste) |
+| `js/app.js` | Spoločné funkcie pre všetky stránky (téma, ikony, lightbox, toasty, dialógy, nahrávanie, QR). Na začiatku je zoznam sekcií |
+| `js/supabaseClient.js` | Pripojenie k Supabase (adresa servera + verejný kľúč) |
 
 ## Databázová schéma
 

@@ -1,5 +1,36 @@
-// Spoločné funkcie pre všetky stránky NaPamiatku.
-// Načítava sa až po js/supabaseClient.js.
+/* ======================================================================
+   NaPamiatku - spoločné funkcie pre všetky stránky
+   ======================================================================
+
+   Načítava sa až po js/supabaseClient.js (ten vytvára premennú
+   supabaseClient, s ktorou tu pracujeme). Každá stránka si potom v svojom
+   <script> zoberie, čo potrebuje - tu nie je nič, čo by patrilo len jednej.
+
+   ČO KDE NÁJDEŠ (poradie sekcií v súbore)
+
+     Svetlý / tmavý režim ......... applyTheme, toggleTheme
+     Ikonka očka pri heslách ...... setupPasswordToggles
+     Prihlásenie a role ........... requireAuth, loadProfile, renderIdentity,
+                                    logout
+     Pomocné funkcie .............. escapeHtml, showMessage, formatDate,
+                                    plural, relativeDate, photoUrl,
+                                    friendlyError
+     Práca s obrázkami ............ compressImage, mediaKind, downloadFile
+     Lightbox ..................... fotka na celú obrazovku, zoom a swipe
+     Ikony ........................ sada SVG ikon (ICONS) + hydrateIcons
+     Toasty ....................... showToast
+     Potvrdzovací dialóg .......... confirmDialog (náhrada za confirm())
+     Prázdne stavy ................ emptyState, skeletonCards
+     Záložky ...................... setupTabs
+     Dlhé zoznamy ................. renderLoadMore
+     Drag & drop .................. setupDropzone, createUploadList
+     Hromadné stiahnutie .......... downloadAsZip
+     QR kódy ...................... makeQrDataUrl, makePaymentQrDataUrl
+     Spustenie na každej stránke .. čo sa pustí samo po načítaní
+
+   Štýly k týmto prvkom sú v css/style.css - ten má na začiatku vlastný
+   obsah s číslovanými časťami.
+   ====================================================================== */
 
 /* ---------- Svetlý / tmavý režim ---------- */
 
