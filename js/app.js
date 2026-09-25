@@ -1219,14 +1219,14 @@ async function makePaymentQrDataUrl({ iban, amount, message, recipient }) {
 // Prečísluje obsah prvku od hodnoty, ktorú práve zobrazuje, po novú -
 // namiesto toho, aby číslo len skočilo. Predošlú hodnotu si nemusí nikto
 // pamätať, číta ju priamo z textContent. Kto má zapnuté obmedzenie pohybu,
-// dostane hotové číslo rovno.
-function animateNumber(el, value) {
+// dostane hotové číslo rovno. Dĺžka je voliteľná - bez nej 600 ms, čo sedí
+// na drobné zmeny (+1 fotka); veľké čísla na úvodnej stránke bežia dlhšie.
+function animateNumber(el, value, duration = 600) {
   const from = parseInt(el.textContent, 10) || 0;
   if (from === value || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     el.textContent = value;
     return;
   }
-  const duration = 600;
   const start = performance.now();
   function tick(now) {
     const progress = Math.min((now - start) / duration, 1);
