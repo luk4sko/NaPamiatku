@@ -11,7 +11,7 @@ SaaS webová aplikácia pre svadby a eventy — hostia zdieľajú fotografie na 
 
 ## Vzhľad
 
-Farby sú CSS premenné na `:root`; svetlý režim ich prepisuje cez `[data-theme="light"]`. **Predvolený je tmavý režim**, voľba používateľa sa pamätá v `localStorage`. Rozloženie je mobile-first, galéria je masonry cez CSS stĺpce.
+Farby sú CSS premenné na `:root` (svetlý režim); tmavý ich prepisuje cez `:root[data-theme="dark"]`. **Predvolený je svetlý režim**; tmavý si používateľ zapne tlačidlom a voľba sa pamätá v `localStorage` (hodnoty `svetly` / `tmavy`). Rozloženie je mobile-first, galéria je masonry cez CSS stĺpce.
 
 ## Roly
 

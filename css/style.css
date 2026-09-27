@@ -24,8 +24,8 @@
 
    KDE ČO ZMENIŤ (najčastejšie úpravy)
 
-     akákoľvek farba ......... ČASŤ 1, blok :root (tmavý režim) a
-                               :root[data-theme="light"] (svetlý). Inde sa
+     akákoľvek farba ......... ČASŤ 1, blok :root (svetlý režim) a
+                               :root[data-theme="dark"] (tmavý). Inde sa
                                farby nepíšu natvrdo - stačí zmeniť premennú
                                a prejaví sa všade naraz.
      farba odkazov a tlačidiel  premenná --accent
@@ -44,8 +44,8 @@
    niečo zmeniť, netreba hľadať, či to o dvetisíc riadkov nižšie niečo
    neprebíja.
 
-   Typografia: Playfair Display na nadpisy (elegantný, svadobný charakter),
-   Inter na text (výborne čitateľný na mobiloch). Oba majú latin-ext,
+   Typografia: Playfair Display na nadpisy (pôsobí ako tlačený časopis,
+   nie ako šablóna aplikácie), Inter na text (výborne čitateľný na mobiloch). Oba majú latin-ext,
    takže zvládnu slovenskú diakritiku (ľ, š, č, ť, ž, ô, ä).
    Súbory písiem sú na vlastnom serveri (css/fonts/) - pozri fonts.css.
    ====================================================================== */
@@ -63,76 +63,84 @@
    hodnoty tu sa prejaví na celej stránke naraz - a netreba ju hľadať
    na dvadsiatich miestach.
 
-   Predvolený je tmavý režim (:root). Svetlý sa zapína tým, že JavaScript
-   nastaví na <html> atribút data-theme="light" (pozri applyTheme v app.js),
-   a vtedy platia hodnoty z druhého bloku. Preto stačí, aby bol každý
-   odtieň zapísaný dvakrát - raz pre tmavý a raz pre svetlý režim. */
+   Farby: svetlá teplá biela ako papier, takmer čierny text a koňakovo
+   hnedá na zvýraznenie. Hnedá je tu svetlejšia a teplejšia než pôvodná
+   zlatohnedá a stránka je predvolene svetlá - v tmavom režime pôsobila
+   celá stránka príliš ťažko.
+
+   Svetlý režim je v :root a je predvolený. Tmavý (:root[data-theme="dark"])
+   sa zapne len vtedy, keď si ho človek vyberie tlačidlom s mesiacom -
+   pozri initTheme v app.js. Každý odtieň je zapísaný dvakrát - raz pre
+   svetlý a raz pre tmavý režim.
+
+   Kontrast (pomer jasu textu a pozadia) má byť podľa pravidiel
+   prístupnosti WCAG aspoň 4,5:1. Pri každej farbe textu je v poznámke
+   namerané číslo - pri zmene farby ho treba prepočítať. */
 
 :root {
   /* --- Pozadia --- */
-  --bg: #14110f;             /* pozadie celej stránky */
-  --bg-alt: #1a1613;         /* striedavé pásy sekcií, vnútro vstupných polí */
-  --surface: #1f1a17;        /* karty, dialógy, rozbaľovacie menu */
-  --surface-hover: #272120;  /* karta alebo riadok pod kurzorom */
+  --bg: #faf7f2;             /* pozadie celej stránky (svetlý papier) */
+  --bg-alt: #f2ece3;         /* striedavé pásy sekcií, vnútro vstupných polí */
+  --surface: #ffffff;        /* karty, dialógy, rozbaľovacie menu */
+  --surface-hover: #fcfaf6;  /* karta alebo riadok pod kurzorom */
 
   /* --- Text --- */
-  --text: #f5f0ea;           /* bežný text a nadpisy */
-  --text-muted: #a2988c;     /* vysvetlivky, dátumy, popisky pod nadpismi */
+  --text: #1d1a16;           /* bežný text a nadpisy (16:1) */
+  --text-muted: #5e564c;     /* vysvetlivky, dátumy, popisky (6,8:1, na páse 6,1:1) */
 
   /* --- Čiary a orámovania --- */
-  --border: #322b26;         /* jemné orámovanie kariet a polí */
-  --border-strong: #443b34;  /* výraznejšia čiara, orámovanie tlačidiel */
+  --border: #e6ddd0;         /* jemné orámovanie kariet a polí */
+  --border-strong: #d2c5b3;  /* výraznejšia čiara, orámovanie tlačidiel */
 
-  /* --- Značková zlatá ---
-     Používa sa na odkazy, aktívne záložky a čipy, ikony a hlavné tlačidlá. */
-  --accent: #c89b6a;         /* základná zlatá */
-  --accent-hover: #d8ad7c;   /* zlatá pod kurzorom */
-  --accent-soft: rgba(200, 155, 106, 0.12);  /* jemné podfarbenie (aktívny čip) */
-  --accent-text: #14110f;    /* farba textu NA zlatom pozadí (v tlačidle) */
-  --accent-deep: #8b5e34;    /* tmavší koniec zlatého prechodu (avatar, žiara v pozadí) */
+  /* --- Značková hnedá ---
+     Odkazy, aktívne záložky a čipy, ikony a hlavné tlačidlá.
+     Na pozadí 5,5:1, na páse 5:1, biely text na nej 5,8:1. */
+  --accent: #8b5a2b;
+  --accent-hover: #744a22;   /* pod kurzorom */
+  --accent-soft: rgba(139, 90, 43, 0.09);  /* jemné podfarbenie (aktívny čip) */
+  --accent-text: #ffffff;    /* farba textu NA hnedom pozadí (v tlačidle) */
+  --accent-deep: #6e4520;    /* tmavší koniec prechodu (avatar) - len dekorácia */
 
   /* --- Stavové farby --- */
-  --danger: #e5646f;         /* mazanie, chyby, pozastavený event */
-  --success: #55c47a;        /* potvrdenia, hotovo */
+  --danger: #c1121f;         /* mazanie, chyby, pozastavený event */
+  --success: #157f3c;        /* potvrdenia, hotovo */
 
   /* --- Tiene a zaoblenie --- */
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
+  --shadow: 0 1px 2px rgba(60, 40, 20, 0.06);
+  --shadow-lg: 0 24px 50px -16px rgba(60, 40, 20, 0.2);
   --radius: 12px;            /* bežné zaoblenie (polia, malé karty) */
   --radius-lg: 20px;         /* väčšie zaoblenie (veľké karty, dlaždice) */
 }
 
-/* Svetlý režim - rovnaké premenné, iné hodnoty.
+/* Tmavý režim - rovnaké premenné, iné hodnoty.
 
-   Zápis `:root[...]` (nie len `[data-theme="light"]`) je tu dôležitý:
+   Zápis `:root[...]` (nie len `[data-theme="dark"]`) je tu dôležitý:
    atribút data-theme majú aj tlačidlá na výber farby kartičky na stôl
    (event.html, "Svetlá / Tmavá"). Bez obmedzenia na koreňový prvok by si
-   tlačidlo „Svetlá" natiahlo celú svetlú paletu aj uprostred tmavej
-   stránky - a jeho text by bol tmavohnedý na tmavom pozadí. */
-:root[data-theme="light"] {
-  --bg: #faf7f3;
-  --bg-alt: #f2ece4;
-  --surface: #ffffff;
-  --surface-hover: #faf7f3;
-  --text: #1c1917;
-  --text-muted: #6f6459;
-  --border: #e7ded3;
-  --border-strong: #d5c8b8;
+   tlačidlo „Tmavá" natiahlo celú tmavú paletu aj uprostred svetlej
+   stránky - a jeho text by bol svetlý na svetlom pozadí. */
+:root[data-theme="dark"] {
+  --bg: #15120f;
+  --bg-alt: #1b1714;
+  --surface: #201b17;
+  --surface-hover: #29231e;
+  --text: #f4efe7;           /* 16,3:1 */
+  --text-muted: #b0a698;     /* 7,8:1 */
+  --border: #332c26;
+  --border-strong: #4a4038;
 
-  /* Zlatá je tu tmavšia než v tmavom režime zámerne: na svetlom podklade
-     musí byť text čitateľný. Pomer jasu textu a pozadia (kontrast) má byť
-     podľa pravidiel prístupnosti WCAG aspoň 4,5:1; pôvodný svetlejší odtieň
-     #9a6b3d mal na pásoch sekcií len 3,9:1, tento má 4,8:1. */
-  --accent: #8a5f36;
-  --accent-hover: #74502c;
-  --accent-soft: rgba(138, 95, 54, 0.09);
-  --accent-text: #ffffff;
-  --accent-deep: #8b5e34;    /* rovnaký v oboch režimoch - je to dekorácia, nie text */
+  /* V tme je hnedá svetlejšia (karamelová) - tmavá hnedá by na čiernom
+     pozadí zanikla. Text na nej je preto tmavý, nie biely (8,3:1). */
+  --accent: #d4a373;         /* na pozadí 8,3:1 */
+  --accent-hover: #e0b588;
+  --accent-soft: rgba(212, 163, 115, 0.13);
+  --accent-text: #15120f;
+  --accent-deep: #8b5a2b;
 
-  --danger: #c1121f;
-  --success: #157f3c;
-  --shadow: 0 1px 2px rgba(60, 45, 30, 0.06);
-  --shadow-lg: 0 20px 50px -12px rgba(60, 45, 30, 0.18);
+  --danger: #f0737c;
+  --success: #55c47a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 50px -16px rgba(0, 0, 0, 0.6);
 }
 
 * {
@@ -151,6 +159,10 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  /* Playfair má predvolene "starodávne" číslice, ktoré skáču pod riadok -
+     nula v nich vyzerá ako písmeno o. lining-nums zapne bežné číslice
+     všade naraz (dedí sa), aj v nadpisoch a na kartičke na stôl. */
+  font-variant-numeric: lining-nums;
 }
 
 h1, h2, h3 {
@@ -336,7 +348,8 @@ textarea {
   filter: none;
 }
 
-button {
+button,
+.btn {
   padding: 0.75rem 1.25rem;
   font-size: 0.975rem;
   font-family: inherit;
@@ -349,14 +362,28 @@ button {
   transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
-button:hover:not(:disabled) {
+button:hover:not(:disabled),
+.btn:hover {
   background: var(--accent-hover);
+}
+
+/* Odkaz, ktorý vyzerá ako hlavné tlačidlo (napr. "Založiť akciu" na úvodnej
+   stránke). Odkaz nesmie obsahovať <button> - HTML nedovoľuje vložiť jeden
+   klikací prvok do druhého a čítačky pre nevidiacich by ho ohlásili dvakrát. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  line-height: 1.3;
 }
 
 /* Stlačenie sa má cítiť, nielen vidieť - tlačidlo sa jemne prepadne.
    Cieľom je 0.96, nie menej: pri väčšom zmenšení "poskakuje" text vo
    vnútri a pôsobí to rozbité namiesto pružné. */
-button:active:not(:disabled) {
+button:active:not(:disabled),
+.btn:active {
   transform: scale(0.96);
 }
 
@@ -388,12 +415,14 @@ button.danger:hover:not(:disabled) {
   border-color: var(--danger);
 }
 
-button.small {
+button.small,
+.btn.small {
   padding: 0.4rem 0.7rem;
   font-size: 0.85rem;
 }
 
-button.large {
+button.large,
+.btn.large {
   padding: 0.9rem 1.75rem;
   font-size: 1.05rem;
 }
@@ -777,52 +806,40 @@ form > button {
    ČASŤ 3 - ÚVODNÁ STRÁNKA (index.html)
    ======================================================================
 
-   Vzhľad úvodnej stránky stojí na troch veciach:
-   - typografia ako v časopise: veľké nadpisy v Playfair, zlatá kurzíva na
-     druhej polovici nadpisu, veľa voľného miesta,
-   - "hmatateľné" prvky: vytlačené fotky s okrajom, zrnitosť filmu,
-     kartička na stôl v 3D scéne,
-   - ukážky, ktoré žijú samy od seba (galéria, kniha hostí, časová os) -
-     pohyb nezávisí od myši, len od času a od toho, čo je na obrazovke.
+   Úvodná stránka má byť ľahko čitateľná aj na mobile vonku na slnku:
+   - veľké nadpisy v Playfair, text v Inter a veľa voľného miesta,
+   - jedna farba na zvýraznenie (koňakovo hnedá) a svetlé pozadie,
+   - namiesto ikon a sloganov ukážky z aplikácie: telefón s galériou,
+     kartička na stôl, formulár, nahrávanie.
 
-   Poradie: lišta → hero → pás fotiek → ako to funguje → čo v tom je →
-   ukážkový večer → pre koho → výzva → pätička → odhaľovanie a pohyb. */
+   Pohyb je len tam, kde niečo vysvetľuje: ukážka v hero sa prepína medzi
+   akciami, galéria sa sama plní a časomiera nabehne. Nič z toho nereaguje
+   na myš a pri "obmedziť pohyb" v systéme sa nehýbe nič.
 
-/* Odkazy v hlavičke vedú na kotvy (#ako-to-funguje a spol.). Bez tohto by
-   prehliadač na cieľ skočil okamžite a človek stratí prehľad, kam sa dostal.
-   Plynulý posun mu dá vidieť, ktorým smerom a ako ďaleko sa stránka pohla. */
+   Na začiatku sú prvky, ktoré používajú aj ďalšie stránky (lišta, logo,
+   .section, .eyebrow, pätička). Potom ide úvodná stránka zhora nadol:
+   hero → na aké akcie → ako to funguje → čo dostanete → zadarmo →
+   kto za tým je → otázky → výzva → odhaľovanie pri scrollovaní. */
+
+/* Odkazy v lište vedú na kotvy (#akcie a spol.). Plynulý posun ukáže,
+   ktorým smerom a ako ďaleko sa stránka pohla - pri skoku sa človek stratí. */
 html {
   scroll-behavior: smooth;
 }
 
-/* Hlavička je prilepená navrchu, takže by prekryla začiatok sekcie.
-   scroll-margin-top posunie cieľ zastavenia o jej výšku (67 px) nižšie -
-   nie je to odsadenie obsahu, platí výhradne pre skok na kotvu. */
+/* Lišta je prilepená navrchu, takže by prekryla začiatok sekcie.
+   scroll-margin-top posunie miesto zastavenia o jej výšku nižšie. */
 section[id] {
   scroll-margin-top: 4.5rem;
 }
 
-/* Úvodná stránka je širšia než aplikácia - veľká typografia potrebuje
+/* Úvodná stránka je širšia než aplikácia - veľké nadpisy potrebujú
    priestor. Obmedzené na body.landing, aby sa dashboard nezmenil. */
 .landing .site-nav-inner,
 .landing .site-footer-inner,
+.landing .site-footer-legal,
 .landing .section {
-  max-width: 1200px;
-}
-
-/* Zrnitosť filmu cez celú stránku. Je to šum vygenerovaný priamo v SVG
-   (feTurbulence), takže nejde o ďalší súbor na stiahnutie. Plocha je
-   fixed a pointer-events: none - neposúva sa so stránkou a nezavadzia
-   klikaniu. Pri 5 % priehľadnosti ju oko nevníma ako vzor, len ako
-   "fotografický" povrch namiesto dokonale hladkej digitálnej farby. */
-.landing::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  max-width: 1160px;
 }
 
 /* Pomôcka: text je v HTML pre čítačky nevidiacich, ale na obrazovke ho
@@ -839,30 +856,30 @@ section[id] {
   border: 0;
 }
 
-/* ---------- Lišta ---------- */
+/* ---------- Lišta (aj na právnych stránkach, dashboarde a evente) ---------- */
 
 .site-nav {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
   backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid transparent;
   transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
 }
 
-/* Kým je stránka hore, hlavička splýva s hero sekciou. Po odscrollovaní
-   stmavne a dostane tieň, aby sa neztrácala v obsahu pod ňou. */
+/* Kým je stránka hore, lišta splýva s pozadím. Po odscrollovaní dostane
+   čiaru a tieň, aby sa nestrácala v obsahu pod ňou (trieda z app.js). */
 .site-nav.scrolled {
-  background: color-mix(in srgb, var(--bg) 97%, transparent);
-  border-bottom-color: var(--border-strong);
-  box-shadow: 0 10px 30px -22px rgba(0, 0, 0, 0.95);
+  background: color-mix(in srgb, var(--bg) 96%, transparent);
+  border-bottom-color: var(--border);
+  box-shadow: 0 10px 30px -24px rgba(40, 25, 10, 0.55);
 }
 
 .site-nav-inner {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 1rem 1.25rem;
+  padding: 0.85rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -881,37 +898,24 @@ section[id] {
 }
 
 .nav-links a {
-  position: relative;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.925rem;
+  font-size: 0.95rem;
   font-weight: 500;
-  padding: 0.2rem 0;
-  transition: color 0.15s;
+  padding: 0.3rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
 }
 
-/* Podčiarknutie sa vysúva zľava doprava (scaleX + transform-origin),
-   nie že by len skočilo - pôsobí to jemnejšie. */
-.nav-links a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1.5px;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.28s ease;
+.nav-links a:hover {
+  color: var(--text);
+  border-bottom-color: var(--accent);
 }
-
-.nav-links a:hover { color: var(--text); }
-.nav-links a:hover::after { transform: scaleX(1); }
 
 .nav-login {
   color: var(--text);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   padding: 0 0.4rem;
   white-space: nowrap;
@@ -942,32 +946,23 @@ section[id] {
 .section {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 5rem 1.25rem;
-}
-
-.section-tight {
-  padding-top: 3rem;
-  padding-bottom: 3rem;
+  padding: 3.75rem 1.25rem;
 }
 
 @media (min-width: 900px) {
-  .landing .section { padding-top: 7rem; padding-bottom: 7rem; }
-  .landing .section-tight { padding-top: 4rem; padding-bottom: 5rem; }
+  .landing .section { padding-top: 6.5rem; padding-bottom: 6.5rem; }
 }
 
-/* Farebný pruh cez celú šírku okna. Obsah vnútri drží .section,
+/* Farebný pás cez celú šírku okna. Obsah vnútri drží .section,
    takže zostáva zarovnaný rovnako ako v ostatných sekciách. */
 .band {
   background: var(--bg-alt);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
 }
 
-/* .eyebrow a .section-head používajú aj ďalšie stránky (dashboard,
-   právne stránky), preto zostávajú. Úvodná stránka má vlastné .kicker
-   a .split-head nižšie. */
+/* Malý nadpisok nad nadpisom sekcie (používajú ho aj guest.html
+   a právne stránky). */
 .eyebrow {
-  font-size: 0.775rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -975,64 +970,25 @@ section[id] {
   margin: 0 0 1rem;
 }
 
-.section-head {
-  max-width: 620px;
+/* Úvod sekcie: nadpisok, nadpis a jedna-dve vety pod ním. */
+.section-intro {
+  max-width: 640px;
   margin-bottom: 3rem;
 }
 
-.section-head h2 {
-  font-size: clamp(1.75rem, 4vw, 2.4rem);
-  margin: 0 0 0.75rem;
-}
-
-/* :not(.eyebrow) - bez toho by toto pravidlo prebilo zlatú farbu nadpisku
-   .eyebrow, pretože má vyššiu špecificitu (trieda + element vs. trieda). */
-.section-head p:not(.eyebrow) {
-  color: var(--text-muted);
-  font-size: 1.05rem;
-  margin: 0;
-}
-
-/* Hlavička sekcie "ako v časopise": veľký nadpis vľavo, krátky text vpravo
-   zarovnaný k spodku nadpisu. Druhá polovica nadpisu je zlatá kurzíva -
-   to je opakujúci sa motív celej stránky (hero, sekcie aj výzva). */
-.split-head {
-  display: grid;
-  gap: 1.25rem;
-  margin-bottom: 3.5rem;
-}
-
-@media (min-width: 900px) {
-  .split-head {
-    grid-template-columns: 1.25fr 1fr;
-    gap: 4rem;
-    align-items: end;
-    margin-bottom: 4.5rem;
-  }
-}
-
-.split-head h2 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5vw, 3.7rem);
-  line-height: 1.04;
+.section-intro h2 {
+  font-size: clamp(2rem, 4.6vw, 3.1rem);
+  line-height: 1.08;
   letter-spacing: -0.02em;
+  margin: 0 0 0.9rem;
 }
 
-.split-head p {
-  margin: 0;
-  max-width: 30rem;
+/* :not(.eyebrow) - bez toho by toto pravidlo prebilo farbu nadpisku,
+   pretože má vyššiu špecificitu (trieda + element vs. trieda). */
+.section-intro p:not(.eyebrow) {
   color: var(--text-muted);
-  font-size: 1.08rem;
-}
-
-/* Zlatá kurzíva v nadpisoch. Tenší rez (500) - kurzíva v 600 pôsobí ťažko. */
-.hero h1 em,
-.split-head h2 em,
-.cta h2 em,
-.occasion-word em {
-  font-style: italic;
-  font-weight: 500;
-  color: var(--accent);
+  font-size: 1.1rem;
+  margin: 0;
 }
 
 /* Odkaz, ktorý nie je tlačidlo: text so šípkou. Vedľa hlavného tlačidla
@@ -1046,6 +1002,7 @@ section[id] {
   text-decoration: underline;
   text-decoration-color: var(--border-strong);
   text-underline-offset: 6px;
+  padding: 0.45rem 0;  /* väčšia plocha na ťuknutie prstom (aspoň 32 px) */
   transition: text-decoration-color 0.2s, color 0.2s;
 }
 
@@ -1054,57 +1011,31 @@ section[id] {
   text-decoration-color: var(--accent);
 }
 
-.text-link span {
-  display: inline-block;
-  transition: transform 0.25s;
-}
-
-.text-link:hover span {
-  transform: translateY(3px);
-}
-
 /* ---------- Hero ---------- */
 
-/* Teplé svetelné škvrny v pozadí. Riešia „holé rohy" na veľkom monitore -
-   bez nich je okolo hero sekcie len prázdna plocha.
-
-   Zámerne sú to obyčajné radiálne gradienty a nie rozmazané (filter: blur)
-   prvky: gradient je už sám o sebe mäkký, kreslí sa priamo do pozadia a
-   nevyrába zvlášť skladanú vrstvu. Verzia s blur(90px) cez pol obrazovky
-   robila pri scrollovaní chyby vo vykresľovaní a na slabších mobiloch
-   by zbytočne brzdila. */
+/* Teplé svetelné škvrny v pozadí. Riešia "holé rohy" na veľkom monitore -
+   bez nich je okolo hero sekcie len prázdna plocha. Sú to obyčajné radiálne
+   gradienty (nie rozmazané prvky s filter: blur), takže nebrzdia scrollovanie
+   ani na slabších mobiloch. */
 .hero-wrap {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(38rem 30rem at 88% -12%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 65%),
-    radial-gradient(34rem 28rem at -8% 108%, color-mix(in srgb, var(--accent-deep) 26%, transparent), transparent 65%);
+    radial-gradient(38rem 30rem at 88% -12%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 65%),
+    radial-gradient(34rem 28rem at -8% 108%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 65%);
 }
 
-/* V svetlom režime by rovnaká intenzita pôsobila ako špinavý fľak. */
-:root[data-theme="light"] .hero-wrap {
-  background:
-    radial-gradient(38rem 30rem at 88% -12%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 65%),
-    radial-gradient(34rem 28rem at -8% 108%, color-mix(in srgb, #c89b6a 14%, transparent), transparent 65%);
-}
-
-/* Tretia svetelná škvrna, ktorá sa pomaly a nekonečne posúva a mierne
-   naberá/stráca veľkosť - stránka tak pôsobí "živo" aj bez toho, aby si
-   scrolloval alebo hýbal myšou. Zámerne len transform (nie blur ani zmena
-   pozadia) - transform je jediná vlastnosť, ktorú prehliadač vie animovať
-   bez prekresľovania. */
+/* Tretia škvrna sa pomaly a nekonečne posúva a mierne naberá na veľkosti -
+   stránka tak pôsobí živo, aj keď človek nescrolluje ani nehýbe myšou.
+   Animuje sa len transform, ktorý prehliadač zvládne bez prekresľovania. */
 .hero-wrap::before {
   content: "";
   position: absolute;
   inset: -15%;
   z-index: 0;
-  background: radial-gradient(30rem 24rem at 32% 42%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%);
+  background: radial-gradient(30rem 24rem at 32% 42%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
   animation: glow-drift 22s ease-in-out infinite;
   pointer-events: none;
-}
-
-:root[data-theme="light"] .hero-wrap::before {
-  background: radial-gradient(30rem 24rem at 32% 42%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
 }
 
 @keyframes glow-drift {
@@ -1112,109 +1043,62 @@ section[id] {
   50% { transform: translate(4%, -3%) scale(1.1); }
 }
 
-.hero-section {
-  padding-top: 3.5rem;
-  padding-bottom: 4.5rem;
+.hero {
+  position: relative;
+  z-index: 1;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+  display: grid;
+  gap: 3rem;
+  align-items: center;
 }
 
-@media (min-width: 900px) {
-  .landing .hero-section {
+@media (min-width: 960px) {
+  .hero {
+    grid-template-columns: 1.08fr 1fr;
+    gap: 3.5rem;
     padding-top: 4.5rem;
     padding-bottom: 6rem;
   }
 }
 
-.hero {
-  position: relative;
-  display: grid;
-  gap: 3.5rem;
-  align-items: center;
-}
-
-@media (min-width: 900px) {
-  .hero {
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 3rem;
-  }
-}
-
-/* Nábeh hero sekcie hneď po načítaní. Prvky prichádzajú po sebe, nie naraz -
-   oko tak prirodzene prejde zhora nadol až k tlačidlám. Výplň `backwards`
-   drží prvok skrytý aj počas čakania na svoj štart; bez nej by bliknul. */
-@keyframes hero-rise {
-  from {
-    opacity: 0;
-    transform: translateY(26px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.hero-copy > * {
-  animation: hero-rise 0.95s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-
-.hero-copy > *:nth-child(1) { animation-delay: 0.05s; }
-.hero-copy > *:nth-child(2) { animation-delay: 0.13s; }
-.hero-copy > *:nth-child(3) { animation-delay: 0.21s; }
-.hero-copy > *:nth-child(4) { animation-delay: 0.29s; }
-.hero-copy > *:nth-child(5) { animation-delay: 0.37s; }
-
-/* Krátky riadok nad nadpisom. Namiesto kapitálok s riedkym písmom
-   (typický vzhľad šablón) kurzíva s tenkou zlatou čiarou pred sebou. */
-.kicker {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  margin: 0 0 1.5rem;
-  font-family: "Playfair Display", Georgia, serif;
-  font-style: italic;
-  font-size: 1.15rem;
-  color: var(--accent);
-}
-
-.kicker::before {
-  content: "";
-  width: 2.25rem;
-  height: 1px;
-  background: currentColor;
-}
-
 .hero h1 {
-  font-size: clamp(2.7rem, 6.2vw, 5.3rem);
-  line-height: 1.02;
+  font-size: clamp(2.5rem, 6.2vw, 4.4rem);
+  line-height: 1.03;
   letter-spacing: -0.025em;
-  margin: 0 0 1.6rem;
+  margin: 0 0 1.4rem;
 }
 
-/* Zlatá polovica nadpisu začína vždy na novom riadku - inak by "Na"
-   zostalo visieť na konci predošlého riadku a "jednom mieste" pod ním. */
 .hero h1 em {
-  display: block;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
 }
 
 .hero-lead {
   font-size: 1.15rem;
   color: var(--text-muted);
-  margin: 0 0 2.2rem;
-  max-width: 33rem;
+  max-width: 34rem;
+  margin: 0 0 1rem;
+}
+
+.hero-free {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 2rem;
+}
+
+.hero-free strong {
+  color: var(--accent);
 }
 
 .hero-actions {
   display: flex;
-  gap: 1.1rem 1.75rem;
   flex-wrap: wrap;
   align-items: center;
-}
-
-/* Na mobile je tlačidlo cez celú šírku - palcom sa trafí ľahšie. */
-@media (max-width: 520px) {
-  .hero-actions > a:first-child,
-  .hero-actions button {
-    width: 100%;
-  }
+  gap: 1rem 1.75rem;
+  margin-bottom: 2rem;
 }
 
 /* Tri fakty pod tlačidlami. <dl> (zoznam pojmov a vysvetlení) sedí
@@ -1223,10 +1107,10 @@ section[id] {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
-  margin: 3rem 0 0;
-  padding-top: 1.4rem;
-  border-top: 1px solid var(--border);
   max-width: 34rem;
+  margin: 0;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--border-strong);
 }
 
 .hero-facts dt {
@@ -1234,7 +1118,6 @@ section[id] {
   font-size: 1.75rem;
   font-weight: 600;
   line-height: 1.1;
-  font-variant-numeric: lining-nums;
   white-space: nowrap;
 }
 
@@ -1250,577 +1133,401 @@ section[id] {
   .hero-facts dd { font-size: 0.78rem; }
 }
 
-/* ---------- 3D scéna v hero sekcii ----------
+/* Číslice rovnako široké - kým číslo nabieha, text vedľa neposkakuje. */
+.count-up {
+  font-variant-numeric: lining-nums tabular-nums;
+}
 
-   Celá scéna je obyčajné HTML, ktoré CSS "postaví do priestoru":
-   - perspective (na .scene-stage) určuje, ako ďaleko je oko od scény.
-     Menšie číslo = výraznejšia perspektíva, väčšie = plochejší pohľad.
-   - transform-style: preserve-3d hovorí, že deti si majú zachovať vlastnú
-     hĺbku. Bez neho by prehliadač všetko sploštil do roviny rodiča.
-   - translateZ posúva prvok k nám (+) alebo od nás (-), rotateX/rotateY
-     ho natáča okolo vodorovnej / zvislej osi.
+/* Text hero sa pri načítaní vysunie zdola, ukážka sa zjaví o chvíľu neskôr.
+   Len raz, pri prvom zobrazení - nie pri každom scrollovaní. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-copy > * {
+    animation: rise-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
 
-   Scéna je navrhnutá na plochu 480 × 540 px a podľa šírky obrazovky sa
-   celá zmenšuje premennou --s. Pozor na opacity: prvok s priehľadnosťou
-   pod 1 prehliadač sploští do 2D - preto nábeh objektov robí len zmena
-   veľkosti (scale), nie prelínanie. */
+  .hero-copy > *:nth-child(2) { animation-delay: 0.07s; }
+  .hero-copy > *:nth-child(3) { animation-delay: 0.14s; }
+  .hero-copy > *:nth-child(4) { animation-delay: 0.21s; }
+  .hero-copy > *:nth-child(5) { animation-delay: 0.28s; }
 
+  .hero-visual {
+    animation: rise-in 1s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Ukážka vpravo: kartička na stôl a iPhone. Obe sú poskladané v "scéne"
+   s pevnou veľkosťou 500 × 560 px, ktorá sa na menších displejoch celá
+   zmenší cez --s. Tak netreba prepočítavať každý prvok zvlášť. */
 .hero-visual {
+  --s: 1;
+  width: calc(500px * var(--s));
+  height: calc(560px * var(--s));
+  margin: 0 auto;
   position: relative;
 }
 
-.scene {
-  --s: 0.64;
-  position: relative;
-  height: calc(540px * var(--s));
+@media (max-width: 560px) {
+  .hero-visual { --s: 0.68; }
 }
 
-@media (min-width: 420px) { .scene { --s: 0.74; } }
-@media (min-width: 600px) { .scene { --s: 0.9; } }
-@media (min-width: 900px) { .scene { --s: 0.76; } }
-@media (min-width: 1100px) { .scene { --s: 0.92; } }
-@media (min-width: 1200px) { .scene { --s: 1; } }
+@media (max-width: 370px) {
+  .hero-visual { --s: 0.6; }
+}
 
-/* Javisko pevnej veľkosti, vycentrované a zmenšené. Vlastnosť scale
-   (samostatná, nie transform) sa ťahá od horného okraja (transform-origin),
-   takže výška .scene vyššie presne sedí so zmenšenou scénou. */
-.scene-stage {
+.table-card,
+.phone {
+  position: absolute;
+}
+
+/* Scéna sa zmenšuje od ľavého horného rohu, preto má kontajner vyššie
+   rovnaký rozmer vynásobený --s - inak by pod ňou zostala prázdna medzera. */
+.hero-visual > * {
+  transform-origin: top left;
+}
+
+/* Kartička je papier - biela v oboch režimoch, ako skutočná vytlačená. */
+.table-card {
+  --paper: #fffdf9;
+  --ink: #1d1a16;
+  --ink-muted: #5c554b;
+  --ink-accent: #8b5a2b;
+  left: calc(0px * var(--s));
+  top: calc(140px * var(--s));
+  width: 230px;
+  padding: 1.35rem 1.1rem 1.1rem;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid #e4d8c8;
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 30px 50px -22px rgba(40, 25, 10, 0.45), 0 2px 4px rgba(40, 25, 10, 0.08);
+  transform: scale(var(--s)) rotate(-5deg);
+  z-index: 1;
+}
+
+.table-card p {
+  margin: 0;
+}
+
+.table-card-top {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--ink-accent);
+}
+
+.table-card-qr {
+  display: block;
+  width: 132px;
+  height: 132px;
+  margin: 0.8rem auto 0.7rem;
+}
+
+.table-card-name {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  line-height: 1.25;
+  min-height: 2.5em;  /* dlhší názov (dva riadky) kartičku nenatiahne */
+  display: grid;
+  place-items: center;
+}
+
+.table-card-url {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin-top: 0.3rem !important;
+}
+
+/* ---------- iPhone ----------
+   Poskladaný z vrstiev ako skutočný telefón: titánový rám (prechod medzi
+   svetlou a tmavšou sivou pripomína lesk kovu), pod ním čierny okraj
+   displeja a v ňom obrazovka. Pomer strán 1 : 2,09 a zaoblenie rohov
+   zodpovedajú iPhonu 16. Farby rámu sú rovnaké v oboch režimoch - je to
+   predmet, nie časť stránky. Obrazovka sa farbí podľa režimu. */
+.phone {
+  --titanium: linear-gradient(135deg, #e6e3de 0%, #a9a59e 18%, #dad7d1 42%, #8e8a83 68%, #cfccc6 100%);
+  left: calc(218px * var(--s));
+  top: 0;
+  width: 266px;
+  height: 556px;
+  border-radius: 48px;
+  background: var(--titanium);
+  box-shadow:
+    0 44px 70px -30px rgba(40, 25, 10, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 0 0 2.5px rgba(0, 0, 0, 0.12);
+  transform: scale(var(--s)) rotate(3deg);
+  z-index: 2;
+}
+
+/* Čierny okraj okolo displeja. */
+.phone::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 44px;
+  background: #0c0c0d;
+}
+
+/* Bočné tlačidlá - úzke pásiky vystupujúce z rámu. Vľavo tlačidlo akcie
+   a hlasitosť, vpravo zapínanie. */
+.phone-button {
+  position: absolute;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--titanium);
+}
+
+.phone-button.action { left: -2.5px; top: 104px; height: 28px; }
+.phone-button.volume-up { left: -2.5px; top: 150px; height: 48px; }
+.phone-button.volume-down { left: -2.5px; top: 208px; height: 48px; }
+.phone-button.power { right: -2.5px; top: 168px; height: 76px; }
+
+.phone-screen {
+  position: absolute;
+  inset: 10px;
+  border-radius: 38px;
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Horný riadok: čas, Dynamic Island a ikony signálu, Wi-Fi a batérie. */
+.phone-status {
+  position: relative;
+  flex: none;
+  height: 44px;
+  padding: 0 17px 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.phone-island {
   position: absolute;
   left: 50%;
-  top: 0;
-  width: 480px;
-  height: 540px;
-  margin-left: -240px;
-  scale: var(--s);
-  transform-origin: top center;
-  perspective: 1500px;
-  perspective-origin: 50% 40%;
+  top: 10px;
+  width: 74px;
+  height: 23px;
+  margin-left: -37px;
+  border-radius: 12px;
+  background: #000;
 }
 
-/* Celá skupina objektov sa pomaly kolíše do strán - scéna tak "dýcha" aj
-   bez toho, aby niekto hýbal myšou. rotateX(8deg) = pohľad mierne zhora. */
-.scene-inner {
+.phone-icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.phone-icons svg {
+  display: block;
+  fill: currentColor;
+}
+
+.phone-head {
+  padding: 0.35rem 0.9rem 0.65rem;
+}
+
+.phone-head p {
+  margin: 0;
+}
+
+.phone-name {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.12rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phone-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0.15rem 0 0.65rem !important;
+}
+
+/* Tlačidlo na výber fotiek - ako na skutočnej stránke hosťa. */
+.phone-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0 !important;
+  padding: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: 999px;
+}
+
+.phone-add .ui-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+/* Galéria pokračuje aj pod spodný panel, akoby sa dala posúvať ďalej. */
+.phone-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 0 0.6rem;
+  transition: opacity 0.35s;
+}
+
+.phone-grid.swap {
+  opacity: 0;
+}
+
+.phone-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.phone-toast {
   position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-  transform: rotateX(8deg) rotateY(-14deg);
-  animation: scene-sway 18s ease-in-out infinite alternate;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: 5.1rem;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 24px -12px rgba(40, 25, 10, 0.35);
 }
 
-@keyframes scene-sway {
-  from { transform: rotateX(8deg) rotateY(-20deg); }
-  to { transform: rotateX(6deg) rotateY(-8deg); }
-}
-
-/* Spoločné pre objekty v scéne. Poloha a natočenie každého objektu je
-   v premennej --pos (nastavená nižšie pri každom objekte zvlášť).
-   Dve animácie naraz:
-   - scene-pop - jednorazový nábeh zo zmenšenia s "prestrelením" cez 1,
-   - scene-bob (translate) - nekonečné jemné vznášanie hore-dole.
-   --in = kedy objekt nabehne, --bob = ako rýchlo sa vznáša.
-
-   Prečo nábeh nemení samostatnú vlastnosť scale: tá sa v CSS vykoná až PO
-   transform, takže by zväčšovala aj posun translateZ - objekt by počas
-   nábehu "cestoval" k nám a telefón s kartičkou by na chvíľu prešli cez
-   seba. scale(0) napísané až na konci transform zmenšuje objekt na jeho
-   mieste, poloha v priestore sa nemení. */
-.stand,
-.phone-3d,
-.instax {
+/* Spodný panel so záložkami - rovnaký ako na stránke hosťa v mobile.
+   Priesvitné pozadie s rozmazaním je typické pre iOS. */
+.phone-dock {
   position: absolute;
-  transform-style: preserve-3d;
-  transform: var(--pos);
-  animation:
-    scene-pop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) var(--in, 0s) backwards,
-    scene-bob var(--bob, 6s) ease-in-out var(--in, 0s) infinite alternate;
+  left: 0.55rem;
+  right: 0.55rem;
+  bottom: 1.35rem;
+  display: flex;
+  justify-content: space-around;
+  padding: 0.4rem 0.3rem;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 10px 24px -14px rgba(40, 25, 10, 0.4);
 }
 
-@keyframes scene-pop {
-  from { transform: var(--pos) scale(0); }
+.phone-dock span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
-@keyframes scene-bob {
+.phone-dock .on {
+  color: var(--accent);
+}
+
+.phone-dock .ui-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+/* Konfety okolo telefónu. Poloha je v súradniciach scény (500 × 560 px),
+   preto sa násobí --s rovnako ako telefón a kartička. Každá sa pomaly
+   pohupuje (translate) a pootáča (transform) - sú to dve samostatné
+   vlastnosti, takže sa navzájom neprepíšu. */
+.confetti {
+  position: absolute;
+  z-index: 3;
+  left: calc(var(--x) * var(--s));
+  top: calc(var(--y) * var(--s));
+  width: 10px;
+  height: 4px;
+  border-radius: 1px;
+  rotate: var(--r);
+  animation: confetti-drift 7s ease-in-out var(--d) infinite alternate;
+}
+
+.confetti.gold { background: linear-gradient(90deg, #a8733f, #e8c48f, #a8733f); }
+.confetti.cream { background: #efe2cf; box-shadow: 0 0 0 1px rgba(60, 40, 20, 0.08); }
+.confetti.blush { background: #e2b4a0; }
+
+@keyframes confetti-drift {
+  from { translate: 0 0; transform: rotate(0deg); }
+  to { translate: 6px 16px; transform: rotate(50deg); }
+}
+
+/* Telefón a kartička sa jemne vznášajú, každý iným tempom. Používa sa
+   vlastnosť translate - transform už drží zmenšenie a natočenie. */
+@media (prefers-reduced-motion: no-preference) {
+  .phone { animation: float 6.5s ease-in-out infinite alternate; }
+  .table-card { animation: float 5.5s ease-in-out -2s infinite alternate; }
+}
+
+@keyframes float {
   from { translate: 0 0; }
   to { translate: 0 -10px; }
 }
 
-/* Stojanček stojí na stole - nevznáša sa, len nabehne. Je posunutý
-   dozadu (translateZ -30px): spodok prednej dosky sa vykláňa k nám až
-   o 65 px, takže najbližší bod kartičky je na z ≈ 36 - bezpečne za
-   telefónom (z ≥ 54). Keby boli v rovnakej hĺbke, ich plochy by sa
-   v rohu pretínali a pri nábehu by "išli cez seba". */
-.stand {
-  --in: 0.1s;
-  --pos: translateZ(-30px);
-  left: 0;
-  top: 300px;
-  width: 300px;
-  height: 212px;
-  animation: scene-pop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) var(--in) backwards;
-}
-
-/* Obe dosky sú zavesené za horný okraj (transform-origin: top) - tam je
-   ohyb papiera. Predná sa spodkom vykloní k nám, zadná od nás, a vznikne
-   písmeno A, presne ako pri skutočnej preloženej kartičke. */
-.stand-front,
-.stand-back {
-  position: absolute;
-  inset: 0;
-  transform-origin: top center;
-  border-radius: 3px;
-}
-
-.stand-back {
-  transform: rotateX(-18deg);
-  background: linear-gradient(#e6dccd, #cfc2b0);
-}
-
-/* Tieň na stole: plochý ovál "položený" na zem (rotateX 90°) presne
-   pod spodnými hranami dosák. */
-.stand-shadow {
-  position: absolute;
-  left: -40px;
-  top: 132px;
-  width: 380px;
-  height: 140px;
-  transform: rotateX(90deg);
-  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.5), transparent);
-}
-
-:root[data-theme="light"] .stand-shadow {
-  background: radial-gradient(closest-side, rgba(70, 50, 30, 0.28), transparent);
-}
-
-/* Predná strana = zmenšená kópia kartičky z event.html. CSS nemá skutočné
-   svetlo, preto ho napodobňuje gradient: spodok dosky je o kúsok tmavší,
-   ako keby svetlo padalo zhora. */
-.stand-front {
-  transform: rotateX(18deg);
-  display: grid;
-  grid-template-columns: 102px 1fr;
-  gap: 16px;
-  align-items: center;
-  padding: 18px 20px 30px;
-  color: #1c1917;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0) 45%, rgba(120, 90, 60, 0.12)),
-    radial-gradient(160px 120px at 0% 100%, rgba(154, 107, 61, 0.1), transparent 70%),
-    #fffdfa;
-}
-
-/* Tenký rámik kúsok od okraja - rovnako ako na vytlačenej kartičke. */
-.stand-front::before {
-  content: "";
-  position: absolute;
-  inset: 7px;
-  border: 1px solid #e2d6c7;
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-.stand-qr img {
-  display: block;
-  width: 102px;
-  height: 102px;
-  padding: 4px;
-  background: #fff;
-  border: 1px solid #e2d6c7;
-  border-radius: 6px;
-}
-
-.stand-qr span {
-  display: block;
-  margin-top: 5px;
-  text-align: center;
-  font-size: 6.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #6f6459;
-}
-
-.stand-body {
-  min-width: 0;
-}
-
-.stand-eyebrow {
-  margin: 0 0 4px;
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #9a6b3d;
-}
-
-.stand-name {
-  margin: 0;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.1;
-}
-
-.stand-date {
-  margin: 3px 0 0;
-  font-family: "Playfair Display", Georgia, serif;
-  font-style: italic;
-  font-size: 10px;
-  color: #6f6459;
-}
-
-.stand-steps {
-  list-style: none;
-  display: grid;
-  gap: 4px;
-  margin: 8px 0 0;
-  padding: 8px 0 0;
-  border-top: 1px solid #e2d6c7;
-  font-size: 8.5px;
-}
-
-.stand-steps li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.stand-steps span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: #9a6b3d;
-  color: #fff;
-  font-size: 7px;
-  font-weight: 700;
-}
-
-.stand-foot {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 11px;
-  margin: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 7px;
-  color: #6f6459;
-}
-
-.stand-foot b {
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 10px;
-  color: #1c1917;
-}
-
-.stand-foot i {
-  font-style: normal;
-  color: #9a6b3d;
-}
-
-/* Telefón. Rám má gradient (lesk vľavo hore), hrúbku robí ::before -
-   rovnaký tvar posunutý o 9 px dozadu. Keď sa scéna natočí, jeho okraj
-   vykukne spoza rámu a vyzerá ako bok telefónu. */
-.phone-3d {
-  --in: 0.3s;
-  --bob: 5.5s;
-  left: 326px;
-  top: 125px;
-  width: 168px;
-  height: 346px;
-  padding: 6px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, #5a524b, #211d1a 45%, #2d2824);
-  box-shadow: 0 40px 60px -30px rgba(0, 0, 0, 0.7);
-  --pos: translateZ(70px) rotateY(-8deg) rotateZ(6deg);
-}
-
-.phone-3d::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: #171412;
-  transform: translateZ(-9px);
-}
-
-/* Displej preberá farby stránky (var(--bg), var(--text)...), takže sa
-   s prepnutím režimu prepne aj galéria v telefóne. */
-.phone-3d-screen {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-  padding: 9px 10px 0;
-  border-radius: 25px;
-  background: var(--bg);
-  color: var(--text);
-}
-
-/* Odlesk skla - svetlý šikmý pruh cez displej. */
-.phone-3d-screen::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 38%);
-  pointer-events: none;
-}
-
-/* Stmavnutie spodku, aby tlačidlo "Pridať fotky" nesplývalo s fotkami. */
-.phone-3d-screen::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  height: 80px;
-  background: linear-gradient(transparent, var(--bg));
-}
-
-.p3-status {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0 8px 12px;
-  font-size: 8px;
-  font-weight: 600;
-}
-
-/* Výrez na kameru ("dynamic island") uprostred stavového riadku. */
-.p3-status::before {
-  content: "";
+/* Čiarka na spodku obrazovky, ktorou sa v iPhone vracia domov. */
+.phone-home {
   position: absolute;
   left: 50%;
-  top: -2px;
-  width: 52px;
-  height: 15px;
-  margin-left: -26px;
-  border-radius: 999px;
-  background: #000;
-}
-
-/* Ikonka batérie: obrys + výplň na 70 % */
-.p3-status i {
-  width: 16px;
-  height: 8px;
-  border: 1px solid currentColor;
-  border-radius: 2px;
-  background: linear-gradient(90deg, currentColor 70%, transparent 70%) 1px 1px / calc(100% - 2px) calc(100% - 2px) no-repeat;
-}
-
-.p3-date,
-.p3-meta {
-  margin: 0 4px;
-  font-size: 7.5px;
-  color: var(--text-muted);
-}
-
-.p3-date {
-  font-family: "Playfair Display", Georgia, serif;
-  font-style: italic;
-}
-
-.p3-title {
-  margin: 1px 4px 2px;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.15;
-}
-
-.p3-tabs {
-  display: flex;
-  gap: 2px;
-  margin: 8px 0 0;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: 7.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.p3-tabs b,
-.p3-tabs span {
-  padding: 4px 7px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.p3-tabs b {
-  background: var(--accent);
-  color: var(--accent-text);
-}
-
-/* V telefóne sú dve sady fotiek naraz - večerná (tmavý režim) a denná
-   (svetlý režim). Ležia presne na sebe (position: absolute) a prepnutie
-   režimu zmení ich priehľadnosť, takže sa plynulo prelínajú. */
-.phone-set {
-  position: absolute;
-  top: 124px;
-  left: 10px;
-  right: 10px;
-  bottom: 0;
-  column-count: 2;
-  column-gap: 5px;
-  transition: opacity 0.55s ease;
-}
-
-.phone-set img {
-  display: block;
-  width: 100%;
-  margin-bottom: 5px;
-  break-inside: avoid;
-  border-radius: 6px;
-  object-fit: cover;
-  aspect-ratio: 3 / 4;
-}
-
-/* Striedanie pomerov strán robí z mriežky masonry nástenku. */
-.phone-set img:nth-child(2n) { aspect-ratio: 1 / 1; }
-.phone-set img:nth-child(3n) { aspect-ratio: 4 / 5; }
-
-.phone-set[data-set="light"] { opacity: 0; }
-:root[data-theme="light"] .phone-set[data-set="dark"] { opacity: 0; }
-:root[data-theme="light"] .phone-set[data-set="light"] { opacity: 1; }
-
-/* Upozornenie na novú fotku sa každých 7 sekúnd objaví a zmizne -
-   rovnaká správa, akú dostane organizátor v skutočnej galérii. */
-.p3-toast {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: 134px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin: 0;
-  padding: 5px 10px;
-  white-space: nowrap;
-  font-size: 7.5px;
-  font-weight: 500;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.5);
-  transform: translateX(-50%);
-  animation: toast-cycle 7s ease-in-out 2s infinite backwards;
-}
-
-.p3-toast i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--success);
-}
-
-@keyframes toast-cycle {
-  0%, 8% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
-  14%, 62% { opacity: 1; transform: translateX(-50%); }
-  70%, 100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
-}
-
-.p3-button {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  bottom: 16px;
-  margin: 0;
-  padding: 8px 16px;
-  white-space: nowrap;
-  font-size: 9px;
-  font-weight: 600;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-text);
-  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.6);
-  transform: translateX(-50%);
-}
-
-/* Instax fotky: papier s bielym okrajom, širším dole na popis perom.
-   Papier je v oboch režimoch rovnaký - je to predmet, nie časť stránky. */
-.instax {
-  margin: 0;
-  width: 104px;
-  padding: 7px 7px 0;
-  border-radius: 3px;
-  background: linear-gradient(160deg, #fffdf8, #ece3d5);
-  box-shadow: 0 24px 40px -20px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.instax img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 46 / 62;
-  object-fit: cover;
-}
-
-.instax figcaption {
-  padding: 6px 2px 9px;
-  text-align: center;
-  font-family: "Playfair Display", Georgia, serif;
-  font-style: italic;
-  font-size: 10px;
-  color: #4b4038;
-}
-
-/* Rozmiestnenie: stojanček vľavo dole, telefón vpravo, fotky hore.
-   Fotka "b" je zámerne kúsok za stojančekom (menšie translateZ) - spodok
-   jej zakryje kartička a scéna tak pôsobí vrstvene, nie ako rad obrázkov. */
-.instax-a { --in: 0.5s;  --bob: 6.5s; left: -25px; top: 95px;  --pos: translateZ(-30px) rotateY(18deg) rotateZ(-9deg); }
-.instax-b { --in: 0.65s; --bob: 5s;   left: 95px;  top: 165px; --pos: translateZ(-70px) rotateY(6deg) rotateZ(7deg); }
-.instax-c { --in: 0.4s;  --bob: 7s;   left: 180px; top: -5px;  --pos: translateZ(-130px) rotateZ(4deg); }
-.instax-d { --in: 0.55s; --bob: 6s;   left: 315px; top: -25px; --pos: translateZ(-80px) rotateY(-14deg) rotateZ(11deg); }
-
-/* Konfety. Zlaté majú gradient, ktorý napodobňuje lesk kovu. Každá sa
-   pomaly pohupuje a pootáča (translate a rotate sú samostatné vlastnosti,
-   takže neprepíšu polohu v priestore, ktorá je v transform). */
-.confetti {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: 9px;
+  bottom: 7px;
+  width: 100px;
   height: 4px;
-  border-radius: 1px;
-  transform: translateZ(var(--z)) rotateX(var(--r)) rotateZ(var(--r));
-  animation: confetti-drift 7s ease-in-out var(--d) infinite alternate;
+  margin-left: -50px;
+  border-radius: 2px;
+  background: var(--text);
+  opacity: 0.85;
 }
 
-.confetti.gold { background: linear-gradient(90deg, #b8894f, #f0cf94, #b8894f); }
-.confetti.cream { background: #f5ead9; }
-.confetti.blush { background: #e6b3a2; }
-
-@keyframes confetti-drift {
-  from { translate: 0 0; rotate: 0deg; }
-  to { translate: 6px 16px; rotate: 50deg; }
+/* Upozornenie "Klára pridala…" vyskočí s malým odrazom. */
+.pop {
+  animation: toast-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
+@keyframes toast-pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
 
 /* ---------- Pás vytlačených fotiek ---------- */
 
 .prints {
   overflow: hidden;
   padding: 2.5rem 0 3rem;
+  background: var(--bg-alt);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  background: var(--bg-alt);
-  /* Okraje pásu necháme zblednúť do pozadia, nech nekončí ostrým rezom. */
+  /* Okraje pásu zblednú do pozadia, nech nekončí ostrým rezom. */
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
 
-/* Pás beží stále - zámerne sa nezastavuje ani pri prejdení myšou. Fotky sa
-   nedajú otvoriť, takže zastavenie nemá čo ponúknuť.
-
-   Mierne natočenie (rotate) robí vlastnosť `rotate`, posun animácia cez
-   `transform` - sú to dve samostatné vlastnosti, takže sa neprepisujú.
-   transform-origin v strede obrazovky (50vw) drží pás vodorovne vycentrovaný:
-   vľavo je o pár pixelov nižšie, vpravo vyššie, a nikde neuteká z rámu. */
+/* Pás beží stále, ani pod myšou sa nezastaví - fotky sa nedajú otvoriť,
+   takže zastavenie nemá čo ponúknuť. Mierne natočenie robí vlastnosť
+   rotate, posun animácia cez transform - navzájom sa neprepisujú. */
 .prints-track {
   display: flex;
   align-items: flex-start;
@@ -1830,15 +1537,15 @@ section[id] {
   animation: marquee-scroll 90s linear infinite;
 }
 
-/* Medzery riešime cez margin, nie cez gap. Pás je v HTML dvakrát za sebou
-   a posúva sa presne o polovicu svojej šírky; s gapom by posledná medzera
-   chýbala a slučka by po každom kole nepatrne poskočila. */
+/* Medzery cez margin, nie gap: pás je v HTML dvakrát za sebou a posúva sa
+   presne o polovicu šírky. S gapom by posledná medzera chýbala a slučka by
+   po každom kole nepatrne poskočila. */
 .prints figure {
   margin: 0 1.1rem 0 0;
   padding: 7px 7px 0;
-  background: #fbf8f3;       /* papier fotky - rovnaký v oboch režimoch */
+  background: #fffdf9;       /* papier fotky - rovnaký v oboch režimoch */
   border-radius: 3px;
-  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 14px 30px -14px rgba(40, 25, 10, 0.45), 0 1px 2px rgba(40, 25, 10, 0.15);
 }
 
 /* Každá fotka je natočená trochu inak - ako keby ich niekto rozložil rukou. */
@@ -1867,7 +1574,7 @@ section[id] {
   font-family: "Inter", sans-serif;
   font-style: normal;
   font-size: 0.72rem;
-  color: #85796d;
+  color: #6f6459;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1876,432 +1583,229 @@ section[id] {
   to { transform: translateX(-50%); }
 }
 
-/* ---------- Ako to funguje ---------- */
+/* ---------- Na aké akcie ---------- */
 
-.how {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.occasions {
   display: grid;
-  gap: 2.75rem;
+  gap: 1.25rem;
 }
 
-@media (min-width: 760px) {
-  .how {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 3rem;
-  }
+@media (min-width: 640px) {
+  .occasions { grid-template-columns: 1fr 1fr; }
 }
 
-/* Každý krok začína tenkou čiarou s kratším zlatým úsekom vľavo - rovnaký
-   motív ako čiara pred .kicker v hero sekcii. */
-.how li {
-  position: relative;
-  padding-top: 1.75rem;
-  border-top: 1px solid var(--border-strong);
+@media (min-width: 980px) {
+  .occasions { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 }
 
-.how li::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: 0;
-  width: 3.5rem;
-  height: 1px;
-  background: var(--accent);
-}
-
-/* Veľké číslo len obrysom (text-stroke): výrazné, a pritom neprekričí
-   nadpis pod ním. lining-nums: Playfair má predvolene staroslohové
-   číslice, pri ktorých "3" klesá pod riadok - verzálne stoja všetky
-   na jednej línii. */
-.how-num {
-  display: block;
-  margin-bottom: 1.4rem;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: clamp(3.4rem, 6vw, 4.6rem);
-  font-weight: 500;
-  line-height: 1;
-  font-variant-numeric: lining-nums;
-  color: transparent;
-  -webkit-text-stroke: 1px var(--accent);
-}
-
-.how h3 {
-  margin: 0 0 0.6rem;
-  font-size: 1.45rem;
-}
-
-.how p {
-  margin: 0;
-  color: var(--text-muted);
-}
-
-/* ---------- Čo v tom je ---------- */
-
-/* Hlavná ukážka: živá galéria vľavo, text vpravo. */
-.feature-live {
-  display: grid;
-  gap: 3.5rem;
-  align-items: center;
-}
-
-@media (min-width: 900px) {
-  .feature-live {
-    grid-template-columns: 1.2fr 1fr;
-    gap: 5rem;
-  }
-}
-
-.live-demo {
-  position: relative;
-  padding: 1.25rem 1.25rem 1.6rem;
+/* Karty nie sú klikacie, preto nemajú ani efekt pod kurzorom - človek by
+   márne čakal, že ho niekam zavedú. */
+.occasion {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
-  box-shadow: var(--shadow-lg);
-}
-
-.live-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.live-title {
-  margin: 0;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 1.3rem;
-  font-weight: 600;
-}
-
-.live-meta {
-  margin: 0.1rem 0 0;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Odznak "Naživo" s bodkou, okolo ktorej sa rozbieha kruh - ako pri
-   nahrávaní. Kruh je box-shadow, ktorý rastie a bledne. */
-.live-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--success) 13%, transparent);
-  color: var(--success);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.live-badge i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: live-pulse 1.8s ease-out infinite;
-}
-
-@keyframes live-pulse {
-  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 60%, transparent); }
-  to { box-shadow: 0 0 0 9px color-mix(in srgb, var(--success) 0%, transparent); }
-}
-
-.live-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin-top: 1.1rem;
-}
-
-.live-grid figure {
-  position: relative;
-  margin: 0;
-  aspect-ratio: 1;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: var(--bg-alt);
+  box-shadow: var(--shadow);
 }
 
-.live-grid img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.occasion > img {
   display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
 }
 
-/* Prezývka hosťa - rovnaký princíp ako v skutočnej galérii v appke. */
-.live-grid figcaption {
-  position: absolute;
-  left: 0.45rem;
-  bottom: 0.45rem;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  background: rgba(10, 8, 7, 0.6);
-  backdrop-filter: blur(6px);
-  color: #f5f0ea;
-  font-size: 0.72rem;
-  font-weight: 500;
+.occasion h3 {
+  font-size: 1.3rem;
+  margin: 1.1rem 1.25rem 0.35rem;
 }
 
-/* Nová fotka: dlaždica "vyskočí" zo zmenšenia a na chvíľu dostane zlatý
-   rámik (::after), ktorý potom zhasne. */
-.live-grid figure.fresh img {
-  animation: tile-in 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.live-grid figure.fresh::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 2px var(--accent);
-  animation: ring-out 1.8s ease forwards;
-  pointer-events: none;
-}
-
-@keyframes tile-in {
-  from { transform: scale(1.25); opacity: 0; }
-  to { transform: none; opacity: 1; }
-}
-
-@keyframes ring-out {
-  0%, 55% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* Upozornenie "X práve pridala fotku" visí pod galériou na jej spodnom okraji. */
-.live-toast {
-  position: absolute;
-  left: 50%;
-  bottom: -1.2rem;
-  translate: -50% 0;
-  margin: 0;
-  padding: 0.55rem 1.15rem;
-  white-space: nowrap;
-  font-size: 0.85rem;
+.occasion p {
+  margin: 0 1.25rem 1.35rem;
   color: var(--text-muted);
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  box-shadow: var(--shadow-lg);
 }
 
-.live-toast b {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.live-toast.pop {
-  animation: toast-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes toast-pop {
-  from { opacity: 0; transform: translateY(8px) scale(0.94); }
-  to { opacity: 1; transform: none; }
-}
-
-.feature-live-copy h3 {
-  margin: 0 0 0.9rem;
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  line-height: 1.15;
-}
-
-.feature-live-copy > p {
-  margin: 0;
+.occasions-more {
+  margin: 2rem 0 0;
   color: var(--text-muted);
   font-size: 1.05rem;
 }
 
-.tick-list {
+/* ---------- Ako to funguje ---------- */
+
+.steps {
   list-style: none;
-  margin: 1.75rem 0 0;
+  margin: 0;
   padding: 0;
-}
-
-.tick-list li {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.75rem 0;
-  border-top: 1px solid var(--border);
-}
-
-.tick-list li::before {
-  content: "";
-  flex-shrink: 0;
-  width: 1rem;
-  height: 1px;
-  background: var(--accent);
-}
-
-/* Tri menšie karty pod hlavnou ukážkou. */
-.feature-trio {
   display: grid;
-  gap: 1rem;
-  margin-top: 5rem;
+  gap: 2.5rem;
 }
 
-@media (min-width: 760px) {
-  .feature-trio { grid-template-columns: repeat(3, 1fr); }
+@media (min-width: 900px) {
+  .steps { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
 }
 
-/* Karta nie je odkaz, takže nereaguje na myš (žiadny zdvih pri hover -
-   sľuboval by kliknutie, ktoré nikam nevedie). Flex stĺpec + margin-top:
-   auto na poslednom prvku drží ukážky v kartách zarovnané pri spodku. */
-.feature-card {
-  display: flex;
-  flex-direction: column;
-  padding: 1.6rem;
+/* Okienko s ukážkou nad každým krokom. */
+.step-demo {
+  height: 200px;
+  margin-bottom: 1.25rem;
+  display: grid;
+  place-items: center;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-.feature-card h3 {
-  margin: 0 0 0.45rem;
-  font-size: 1.2rem;
-}
-
-.feature-card > p {
-  margin: 0;
-  color: var(--text-muted);
+.step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
   font-size: 0.95rem;
 }
 
-/* Ikonka je tenká obrysová kresba, nie emoji. Emoji vykresľuje každý
-   systém vlastným štýlom, takže sada ikon nikdy nepôsobí ako jeden celok. */
-.feature-icon {
-  display: block;
-  width: 1.9rem;
-  height: 1.9rem;
-  margin-bottom: 1.1rem;
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.step h3 {
+  font-size: 1.35rem;
+  margin: 0.75rem 0 0.4rem;
 }
 
-/* Odkaz z knihy hostí. Pevná minimálna výška, aby karta neposkakovala,
-   keď sa vymení kratší odkaz za dlhší. */
-.wish {
-  margin: auto 0 0;
-  padding: 1rem 1.1rem;
-  min-height: 8rem;
+.step p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* Krok 1: zmenšený formulár na založenie akcie. */
+.mini-form {
+  width: 78%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mini-label {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mini-input {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.4rem;
   background: var(--bg-alt);
-  border-left: 2px solid var(--accent);
-  border-radius: 0 12px 12px 0;
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
 }
 
-.feature-card .wish {
-  margin-top: 1.4rem;
+.mini-button {
+  align-self: flex-start;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.42rem 0.8rem;
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: 7px;
 }
 
-.wish p {
-  margin: 0 0 0.45rem;
+/* Krok 2: zmenšená kartička - papier, teda biela v oboch režimoch. */
+.mini-card {
+  width: 150px;
+  padding: 0.8rem 0.7rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+  background: #fffdf9;
+  color: #1d1a16;
+  border: 1px solid #e4d8c8;
+  border-radius: 5px;
+  box-shadow: 0 18px 30px -16px rgba(40, 25, 10, 0.4);
+  transform: rotate(-3deg);
+}
+
+.mini-card-top {
   font-family: "Playfair Display", Georgia, serif;
   font-style: italic;
-  line-height: 1.45;
+  font-size: 0.75rem;
+  color: #8b5a2b;
 }
 
-.wish cite {
-  font-style: normal;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+.mini-card-qr {
+  width: 84px;
+  height: 84px;
 }
 
-.wish.out {
-  opacity: 0;
-  transform: translateY(6px);
-}
-
-.gift-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-top: auto;
-  padding-top: 1.4rem;
-}
-
-.gift-chips span {
-  padding: 0.35rem 0.8rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.gift-chips .on {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.mini-card-name {
+  font-family: "Playfair Display", Georgia, serif;
   font-weight: 600;
+  font-size: 0.78rem;
+  line-height: 1.2;
 }
 
-/* Ukážka zneplatnenia odkazu: starý prečiarknutý, nový platný. */
-.link-demo {
+/* Krok 3: fotky a pás nahrávania, ktorý sa naplní, keď sa krok objaví. */
+.mini-upload {
+  width: 80%;
+}
+
+.mini-upload-grid {
   display: grid;
-  gap: 0.35rem;
-  margin: auto 0 0;
-  padding-top: 1.4rem;
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 0.8rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
 }
 
-.link-old {
+.mini-upload-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.mini-progress {
+  display: block;
+  height: 6px;
+  margin: 0.85rem 0 0.4rem;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.mini-progress i {
+  display: block;
+  width: 60%;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+}
+
+.js .step.in .mini-progress i {
+  animation: progress-fill 2.2s 0.3s ease-out both;
+}
+
+@keyframes progress-fill {
+  from { width: 0; }
+  to { width: 60%; }
+}
+
+.mini-upload-text {
+  font-size: 0.75rem;
   color: var(--text-muted);
-  text-decoration: line-through;
-  text-decoration-color: var(--danger);
 }
 
-.link-new {
-  color: var(--success);
-}
-
-.mini-facts {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 2.75rem;
-  margin: 3rem 0 0;
-  padding: 0;
-  font-size: 0.925rem;
-  color: var(--text-muted);
-}
-
-.mini-facts li {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.mini-facts svg {
-  width: 1.3rem;
-  height: 1.3rem;
-  flex-shrink: 0;
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* ---------- Ukážkový večer (časová os) ---------- */
-
-/* Šesť momentov vedľa seba. Nad nimi je čiara s bodkami: sivá "koľaj"
-   (li::before) a zlatá výplň (li::after). Každý úsek výplne je samostatný
-   a štartuje s oneskorením podľa poradia (--i z HTML) - spolu to vyzerá
-   ako jedna čiara, ktorá sa kreslí zľava doprava.
-
-   Na užšej obrazovke sa os neláme do riadkov, ale posúva do strany
-   (overflow-x) - časová os je z podstaty vodorovná. */
+/* ---------- Jeden večer (časová os) ----------
+   Šesť momentov vedľa seba. Nad nimi je čiara s bodkami: sivá "koľaj"
+   (li::before) a hnedá výplň (li::after). Každý úsek výplne štartuje
+   s oneskorením podľa poradia (--i z HTML) - spolu to vyzerá ako jedna
+   čiara, ktorá sa kreslí zľava doprava. Na užšej obrazovke sa os posúva
+   do strany - časová os je z podstaty vodorovná. */
 .timeline {
   --gap: 1.25rem;
   --line: -1.9rem;            /* výška čiary nad obsahom položky */
@@ -2316,9 +1820,8 @@ section[id] {
   scrollbar-width: thin;
 }
 
-/* Na širokej obrazovke sa celá os zmestí, posúvanie netreba. overflow:
-   visible tu je dôležité - natočené fotky presahujú rám o pár pixelov
-   a pri overflow-x: auto by sa pod osou zbytočne objavil posuvník. */
+/* Na širokej obrazovke sa celá os zmestí. overflow: visible - natočené
+   fotky presahujú o pár pixelov a zbytočne by sa objavil posuvník. */
 @media (min-width: 1100px) {
   .timeline {
     grid-template-columns: repeat(6, 1fr);
@@ -2362,7 +1865,6 @@ section[id] {
   font-style: italic;
   font-size: 1.1rem;
   color: var(--accent);
-  font-variant-numeric: lining-nums;
 }
 
 .timeline time::before {
@@ -2384,19 +1886,19 @@ section[id] {
   margin: 0;
   aspect-ratio: 4 / 5;
   padding: 5px;
-  background: #fbf8f3;
+  background: #fffdf9;
   border-radius: 4px;
-  box-shadow: 0 16px 34px -16px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 16px 34px -16px rgba(40, 25, 10, 0.45);
   rotate: -1.4deg;
 }
 
 .timeline li:nth-child(even) .tl-photo { rotate: 1.2deg; }
 
 .tl-photo img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
   border-radius: 2px;
 }
 
@@ -2413,7 +1915,7 @@ section[id] {
 }
 
 /* Položky sú skryté, kým sa os neobjaví (JS pridá .in). Každá nabehne
-   presne vtedy, keď k nej dorazí zlatá čiara - rovnaké oneskorenie --i. */
+   presne vtedy, keď k nej dorazí čiara - rovnaké oneskorenie --i. */
 .js .timeline li {
   opacity: 0;
   transform: translateY(18px);
@@ -2435,54 +1937,381 @@ section[id] {
   background: var(--accent);
 }
 
-.count-up {
-  font-variant-numeric: lining-nums tabular-nums;
+/* ---------- Čo dostanete ---------- */
+
+.features-layout {
+  display: grid;
+  gap: 3rem;
+  align-items: start;
 }
 
-/* ---------- Pre koho ---------- */
-
-.occasion {
-  text-align: center;
+@media (min-width: 960px) {
+  .features-layout { grid-template-columns: 0.85fr 1.15fr; gap: 4rem; }
 }
 
-.occasion-lead {
+/* Ukážková galéria - sama od seba do nej pribúdajú fotky. */
+.live {
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.live-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.live-top b {
+  display: block;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.live-top span {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--accent) !important;
+}
+
+.live-badge i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  50% { opacity: 0.25; }
+}
+
+.live-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.live-grid figure {
+  position: relative;
   margin: 0;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.live-grid img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Meno hosťa leží na fotke, preto má vlastné tmavé podfarbenie -
+   inak by na svetlej fotke nebolo čitateľné. */
+.live-grid figcaption {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 999px;
+}
+
+.live-grid figure.fresh {
+  animation: tile-in 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tile-in {
+  from { opacity: 0; transform: scale(0.86); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Odkaz z knihy hostí pod galériou. Pevná minimálna výška, aby karta
+   neposkakovala, keď sa kratší odkaz vymení za dlhší. */
+.wish {
+  margin: 0.85rem 0 0;
+  padding: 0.9rem 1rem;
+  min-height: 7.8rem;
+  background: var(--bg-alt);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.wish-label {
+  margin-bottom: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.wish p {
+  margin: 0 0 0.45rem;
   font-family: "Playfair Display", Georgia, serif;
   font-style: italic;
-  font-size: 1.35rem;
+  line-height: 1.45;
+}
+
+.wish cite {
+  font-style: normal;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
-/* Veľké meniace sa slovo. Výška riadku je pevná, takže keď sa slovo
-   vymení, nič pod ním neposkočí. nowrap - dlhšie slovo ("rodinné
-   stretnutia") sa nesmie zalomiť na dva riadky. */
-.occasion-word {
-  margin: 0.25rem 0 1.4rem;
-  min-height: 1.1em;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: clamp(2.2rem, 8vw, 6.5rem);
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  white-space: nowrap;
-}
-
-.occasion-word em {
-  display: inline-block;
-  transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.occasion-word em.out {
+.wish.out {
   opacity: 0;
-  transform: translateY(-0.25em);
+  transform: translateY(6px);
 }
 
-.occasion-rest {
+.live-toast {
+  margin: 0.85rem 0 0;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.88rem;
+  background: var(--bg-alt);
+  border-radius: 10px;
+}
+
+/* Zoznam funkcií ako tlačený prehľad: tenká čiara nad každou položkou,
+   ikona v riadku s nadpisom - žiadne farebné dlaždice s ikonami. */
+.features {
+  list-style: none;
   margin: 0;
-  font-size: 0.925rem;
+  padding: 0;
+  display: grid;
+  gap: 1.5rem 2.25rem;
+}
+
+@media (min-width: 640px) {
+  .features { grid-template-columns: 1fr 1fr; }
+}
+
+.features li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border-strong);
+}
+
+.features .ui-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-top: 0.1rem;
+  color: var(--accent);
+}
+
+.features h3 {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0 0 0.3rem;
+}
+
+.features p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.97rem;
+}
+
+/* ---------- Zadarmo ----------
+   Pás v značkovej farbe. Používa --accent a --accent-text, takže vo
+   svetlom režime je hnedý s bielym textom a v tmavom karamelový
+   s tmavým textom - v oboch prípadoch s kontrastom nad 5:1. */
+.free-band {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.free {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 860px) {
+  .free { grid-template-columns: auto 1fr; gap: 5rem; }
+}
+
+.free-amount {
+  display: block;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(5rem, 15vw, 9rem);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.free-caption {
+  display: block;
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+.free-copy h2 {
+  font-size: clamp(2rem, 4.6vw, 3.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+
+.free-copy p {
+  max-width: 38rem;
+  margin: 0 0 1.25rem;
+  font-size: 1.12rem;
+}
+
+.free-note {
+  padding-top: 1.1rem;
+  border-top: 1px solid color-mix(in srgb, var(--accent-text) 35%, transparent);
+  font-size: 1rem !important;
+  margin-bottom: 0 !important;
+}
+
+/* ---------- Kto za tým je ---------- */
+
+.landing .founder {
+  max-width: 920px;
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 760px) {
+  .landing .founder { grid-template-columns: 220px 1fr; gap: 3.5rem; }
+}
+
+/* Kým tu nie je fotka, sú tu iniciály. Fotku vložíš takto:
+   <div class="founder-photo"><img src="img/lukas.webp" alt="Lukáš Brtko" /></div>
+   a z <div> zmažeš aria-hidden a text "LB". */
+.founder-photo {
+  width: 200px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 3.4rem;
+  font-weight: 600;
+}
+
+.founder-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.founder-copy h2 {
+  font-size: clamp(2rem, 4.6vw, 3rem);
+  line-height: 1.08;
+  margin: 0 0 1rem;
+}
+
+.founder-copy p {
+  max-width: 38rem;
+  font-size: 1.1rem;
+  margin: 0 0 1.25rem;
+}
+
+.founder-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0 !important;
+}
+
+/* ---------- Časté otázky ---------- */
+
+.faq-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 960px) {
+  .faq-layout { grid-template-columns: 0.8fr 1.2fr; gap: 4rem; align-items: start; }
+}
+
+.faq details {
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.faq details:first-child {
+  border-top: 1px solid var(--border-strong);
+}
+
+/* Vlastná šípka namiesto predvoleného trojuholníka - ten vyzerá v každom
+   prehliadači inak. Otvorená otázka ju má otočenú nahor. */
+.faq summary {
+  position: relative;
+  list-style: none;
+  cursor: pointer;
+  padding: 1.15rem 2.5rem 1.15rem 0;
+  font-size: 1.07rem;
+  font-weight: 600;
+  transition: color 0.15s;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::after {
+  content: "";
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 0.2s;
+}
+
+.faq details[open] summary::after {
+  transform: translateY(-25%) rotate(225deg);
+}
+
+.faq summary:hover {
+  color: var(--accent);
+}
+
+.faq summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.faq details p {
+  max-width: 40rem;
+  margin: 0 0 1.3rem;
   color: var(--text-muted);
 }
 
-/* ---------- Záverečná výzva ---------- */
+/* ---------- Výzva na konci ---------- */
 
 .cta {
   position: relative;
@@ -2491,7 +2320,6 @@ section[id] {
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: 28px;
-  padding: 0;
   box-shadow: var(--shadow-lg);
 }
 
@@ -2501,38 +2329,74 @@ section[id] {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.68;
+  opacity: 0.85;
 }
 
-/* Prekryv v farbe pozadia drží text čitateľný nezávisle od toho,
-   ako svetlá je fotka pod ním - a funguje v oboch režimoch. */
+/* Prekryv vo farbe pozadia drží text čitateľný bez ohľadu na to, aká
+   svetlá je fotka pod ním - a funguje v oboch režimoch. */
 .cta-body {
   position: relative;
-  padding: 5.5rem 1.5rem;
+  padding: 5rem 1.5rem;
   background: radial-gradient(
     circle at center,
-    color-mix(in srgb, var(--bg) 72%, transparent),
-    color-mix(in srgb, var(--bg) 93%, transparent)
+    color-mix(in srgb, var(--bg) 70%, transparent),
+    color-mix(in srgb, var(--bg) 82%, transparent)
   );
 }
 
 .cta h2 {
-  font-size: clamp(2.2rem, 5.2vw, 4rem);
-  line-height: 1.04;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.12;
   letter-spacing: -0.02em;
-  margin: 0 0 1.1rem;
+  margin: 0 0 1rem;
 }
 
-/* Na rozdiel od ostatných sekcií tu text leží na fotke, takže stlmená
-   farba by bola na hrane čitateľnosti. */
 .cta p {
-  color: var(--text);
   max-width: 34rem;
-  margin: 0 auto 2.2rem;
+  margin: 0 auto 2rem;
+  color: var(--text);
   font-size: 1.08rem;
 }
 
-/* ---------- Pätička ---------- */
+/* Meniace sa slovo v nadpise. nowrap - "firemný večierok" sa nesmie
+   rozdeliť na dva riadky, nadpis by pri každej výmene poskočil. */
+.occasion-word {
+  display: inline-block;
+  white-space: nowrap;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+  transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.occasion-word.out {
+  opacity: 0;
+  transform: translateY(-0.25em);
+}
+
+/* Fotka sa vo svojom ráme pomaly posúva, kým prechádza obrazovkou - akoby
+   ležala za stránkou. Animáciu riadi pozícia na obrazovke, nie čas
+   (animation-timeline), takže netreba žiadny JS. Prehliadače, ktoré to
+   nepoznajú, blok preskočia a fotka zostane stáť. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cta { view-timeline-name: --cta-photo; }
+
+    .cta-bg {
+      animation: photo-parallax linear both;
+      animation-range: entry 0% exit 100%;
+      animation-timeline: --cta-photo;
+    }
+  }
+}
+
+/* Zväčšenie musí byť väčšie než posun, inak by sa odhalil prázdny okraj. */
+@keyframes photo-parallax {
+  from { transform: translateY(-5%) scale(1.14); }
+  to { transform: translateY(5%) scale(1.14); }
+}
+
+/* ---------- Pätička (aj na ostatných stránkach) ---------- */
 
 .site-footer {
   border-top: 1px solid var(--border);
@@ -2578,15 +2442,13 @@ section[id] {
 
 /* Skrývame len ak beží JS (trieda .js na <html>). Bez tejto poistky by pri
    vypnutom JavaScripte zostala celá stránka neviditeľná - obsah by sa už
-   nemal ako odhaliť. --d je posun štartu, aby prvky nabiehali za sebou.
-   Krivka cubic-bezier(0.16, 1, 0.3, 1) je „expo out": prvok vyrazí rýchlo
-   a posledný kúsok dobrzďuje veľmi pomaly - ako dojazd fyzického predmetu. */
+   nemal ako odhaliť. --d je posun štartu, aby prvky nabiehali za sebou. */
 .js .reveal {
   opacity: 0;
-  transform: translateY(34px);
+  transform: translateY(26px);
   transition:
-    opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   transition-delay: var(--d, 0s);
 }
 
@@ -2595,50 +2457,34 @@ section[id] {
   transform: none;
 }
 
-/* ---------- Posun fotky vo výzve pri scrollovaní ---------- */
-
-/* Fotka sa vo svojom ráme pomaly posúva, kým prechádza obrazovkou. Vzniká
-   dojem hĺbky - akoby ležala za stránkou a nie v nej.
-
-   Časovú os udáva `animation-timeline`: prehliadač prehráva animáciu podľa
-   toho, kde sa prvok práve nachádza v okne, nie podľa času. Nepotrebuje
-   teda žiadny JS ani počúvanie scroll eventov.
-
-   @supports je poistka - prehliadače, ktoré túto vlastnosť nepoznajú, blok
-   preskočia a fotka zostane stáť. Nič sa nerozbije. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    /* Časovú os musí vyhlásiť rám, nie samotná fotka: `view()` meria pohyb
-       voči najbližšiemu rodičovi, ktorý oreže obsah - a tým je práve rám
-       (má overflow: hidden). Pomenovaná os to obchádza. */
-    .cta { view-timeline-name: --cta-photo; }
-
-    .cta-bg {
-      animation: photo-parallax linear both;
-      animation-range: entry 0% exit 100%;
-      /* Musí nasledovať až za skratkou `animation` - tá by inak priradenie
-         časovej osi vynulovala späť na predvolené `auto`. */
-      animation-timeline: --cta-photo;
-    }
-  }
-}
-
-/* Zväčšenie musí byť väčšie než posun, inak by sa pri krajnej polohe
-   odhalil prázdny okraj rámu. */
-@keyframes photo-parallax {
-  from { transform: translateY(-5%) scale(1.14); }
-  to { transform: translateY(5%) scale(1.14); }
-}
-
 /* Kto má v systéme zapnuté „obmedziť pohyb" (napr. kvôli nevoľnosti
-   z animácií), nedostane ani jednu z nich - obsah je rovno na mieste. */
+   z animácií), nedostane ani jednu z animácií - obsah je rovno na mieste. */
 @media (prefers-reduced-motion: reduce) {
   /* Späť na okamžitý skok na kotvu - plynulý posun je tiež pohyb. */
   html {
     scroll-behavior: auto;
   }
 
-  .js .reveal,
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .phone-grid,
+  .live-badge i,
+  .pop,
+  .live-grid figure.fresh,
+  .js .step.in .mini-progress i,
+  .hero-wrap::before,
+  .confetti,
+  .prints-track,
+  .wish,
+  .occasion-word {
+    animation: none;
+    transition: none;
+  }
+
   .js .timeline li {
     opacity: 1;
     transform: none;
@@ -2646,28 +2492,7 @@ section[id] {
   }
 
   .timeline li::after,
-  .timeline time::before,
-  .wish,
-  .occasion-word em {
-    transition: none;
-  }
-
-  /* 3D scéna zostane stáť v základnej polohe - stále je priestorová,
-     len sa nehýbe. Upozornenie v telefóne je vtedy viditeľné stále. */
-  .hero-wrap::before,
-  .prints-track,
-  .hero-copy > *,
-  .scene-inner,
-  .stand,
-  .phone-3d,
-  .instax,
-  .confetti,
-  .p3-toast,
-  .live-badge i {
-    animation: none;
-  }
-
-  .phone-set {
+  .timeline time::before {
     transition: none;
   }
 
@@ -4035,7 +3860,7 @@ a.button:hover {
 }
 
 /* Vodorovný pás náhľadov: posúva sa do strán, nie nadol. Odsadenie 3px
-   je miesto pre zlatý rámik aktívneho náhľadu, aby ho overflow neodrezal. */
+   je miesto pre farebný rámik aktívneho náhľadu, aby ho overflow neodrezal. */
 .upload-strip {
   display: flex;
   gap: 0.5rem;
@@ -4634,7 +4459,7 @@ span.avatar:hover {
   transform: none;
 }
 
-/* Názov podujatia nad otázkou "Ako sa voláš?" - zlatý nadpisok. */
+/* Názov podujatia nad otázkou "Ako sa voláš?" - farebný nadpisok. */
 .gate-card > p.eyebrow {
   color: var(--accent);
   font-size: 0.775rem;
@@ -4940,13 +4765,16 @@ span.avatar:hover {
    predmet - na obrazovke sa len zmenšuje transformáciou. Základ je polovica
    A4 (210 × 148,5 mm); pre A5 sa celá strana pri tlači zmenší cez zoom. */
 .tent-face {
-  --tent-bg: #fffdfa;
-  --tent-text: #1c1917;
-  --tent-muted: #6f6459;
-  --tent-accent: #9a6b3d;
-  --tent-soft: #f6efe6;
-  --tent-border: #e2d6c7;
-  --tent-glow: rgba(154, 107, 61, 0.10);
+  /* Kartička má vlastné farby, nezávislé od režimu stránky - tlačí sa
+     na papier, takže musí vyzerať rovnako bez ohľadu na to, či má
+     organizátor práve zapnutý svetlý alebo tmavý režim. */
+  --tent-bg: #fffdf9;
+  --tent-text: #1d1a16;
+  --tent-muted: #5c554b;
+  --tent-accent: #8b5a2b;
+  --tent-soft: #f7efe6;
+  --tent-border: #e4d8c8;
+  --tent-glow: rgba(139, 90, 43, 0.08);
   box-sizing: border-box;
   width: 210mm;
   height: 148.5mm;
@@ -4968,17 +4796,17 @@ span.avatar:hover {
 }
 
 .tent-face.dark {
-  --tent-bg: #14110f;
-  --tent-text: #f5f0ea;
-  --tent-muted: #a89d90;
-  --tent-accent: #c89b6a;
+  --tent-bg: #15120f;
+  --tent-text: #f4efe7;
+  --tent-muted: #b0a698;
+  --tent-accent: #d4a373;
   --tent-soft: #221c18;
   --tent-border: #3d332c;
-  --tent-glow: rgba(200, 155, 106, 0.14);
+  --tent-glow: rgba(212, 163, 115, 0.12);
 }
 
 /* Tenký rámik kúsok od okraja - kartička pôsobí ako pozvánka, nie ako
-   vytlačená webová stránka. Rohy rámika zvýrazňujú krátke zlaté čiarky. */
+   vytlačená webová stránka. Rohy rámika zvýrazňujú krátke farebné čiarky. */
 .tent-face::before {
   content: "";
   position: absolute;
@@ -5067,7 +4895,7 @@ span.avatar:hover {
   color: var(--tent-accent);
 }
 
-/* Krátka zlatá čiarka pred nadpiskom. */
+/* Krátka farebná čiarka pred nadpiskom. */
 .tent-eyebrow::before {
   content: "";
   width: 7mm;
@@ -5453,6 +5281,13 @@ span.avatar:hover {
   flex-shrink: 0;
 }
 
+/* Na vstupe hosťa (guest.html) je súhlas obyčajný odsek s odkazom, bez
+   zaškrtávacieho políčka. Flex z .consent by z textu, odkazu a zvyšku vety
+   urobil tri úzke stĺpce vedľa seba - odsek preto ostáva bežným blokom. */
+p.consent {
+  display: block;
+}
+
 .upload-terms {
   margin: 0.75rem auto 0 !important;
   font-size: 0.78rem !important;
@@ -5496,7 +5331,7 @@ span.avatar:hover {
   color: var(--accent) !important;
 }
 
-/* Tlačidlá: hlavné zlaté, ostatné obrysové - rovnako ako v appke. */
+/* Tlačidlá: hlavné hnedé, ostatné obrysové - rovnako ako v appke. */
 #CybotCookiebotDialog .CybotCookiebotDialogBodyButton,
 #CybotCookiebotDialog #CybotCookiebotDialogBodyLevelButtonCustomize {
   border-radius: 10px !important;
@@ -5529,7 +5364,7 @@ span.avatar:hover {
   border-color: var(--accent-hover) !important;
 }
 
-/* Záložky (Súhlas / Podrobnosti / O cookies) - zlaté podčiarknutie. */
+/* Záložky (Súhlas / Podrobnosti / O cookies) - farebné podčiarknutie. */
 #CybotCookiebotDialog .CybotCookiebotDialogNavItemLink {
   color: var(--text-muted) !important;
   border-bottom: 2px solid transparent !important;

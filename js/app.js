@@ -35,21 +35,27 @@
 
 /* ---------- Svetlý / tmavý režim ---------- */
 
-// Režim si pamätáme v localStorage, aby zostal aj po zatvorení prehliadača.
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("napamiatku-theme", theme);
 }
 
+// Predvolený je svetlý režim. Tmavý dostane len ten, kto si ho sám zapol
+// tlačidlom s mesiacom - jeho voľbu si pamätáme v localStorage.
+//
+// Uložené hodnoty sú "svetly" a "tmavy". Staršia verzia stránky ukladala
+// "dark" / "light" automaticky pri každej návšteve, aj keď si človek nič
+// nevybral. Tie hodnoty tu zámerne nepoznáme, aby aj doterajší návštevníci
+// dostali nový svetlý režim. (Rovnakú logiku má aj krátky skript v <head>
+// na index.html a guest.html - tam beží ešte pred vykreslením stránky.)
 function initTheme() {
-  // Tmavý režim je značkový a predvolený. Svetlý si používateľ zapne sám
-  // a jeho voľba potom zostáva uložená.
-  applyTheme(localStorage.getItem("napamiatku-theme") || "dark");
+  applyTheme(localStorage.getItem("napamiatku-theme") === "tmavy" ? "dark" : "light");
 }
 
 function toggleTheme() {
   const current = document.documentElement.getAttribute("data-theme");
-  applyTheme(current === "dark" ? "light" : "dark");
+  const next = current === "dark" ? "light" : "dark";
+  applyTheme(next);
+  localStorage.setItem("napamiatku-theme", next === "dark" ? "tmavy" : "svetly");
   updateThemeButtons();
 }
 
