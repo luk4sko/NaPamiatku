@@ -924,8 +924,14 @@ section[id] {
 
 .nav-login:hover { color: var(--accent); }
 
-@media (max-width: 430px) {
-  .nav-login { display: none; }
+/* Na mobile zostáva "Prihlásiť sa" v lište, len s menším odsadením,
+   aby sa zmestilo vedľa tlačidla "Založiť akciu". Na úvodnej stránke
+   sa preto prepínač režimu presúva do pätičky (ČASŤ 11). */
+@media (max-width: 639px) {
+  .nav-login {
+    padding: 0.45rem 0.2rem;  /* výška na ťuknutie prstom */
+    font-size: 0.9rem;
+  }
 }
 
 .logo {
@@ -6332,6 +6338,265 @@ p.consent {
 @media (max-width: 360px) {
   .hero-cta > * {
     flex-basis: 100%;
+  }
+}
+
+/* ---------- Úvodná stránka na mobile ----------
+   Bez týchto úprav sa na úzkom displeji každá sekcia natiahla pod seba
+   a stránka mala vyše 12 000 px, čiže asi 15 obrazoviek. Karty akcií sú
+   preto riadky s malou fotkou, ozdoby sú menšie a ukážka "Naživo" sa
+   skryje - to isté už hore ukazuje telefón, do ktorého sa dá klikať.
+   Na počítači sa nemení nič. */
+
+/* Prepínač režimu v pätičke je len pre mobil. Selektor s .site-footer
+   musí prebiť button.icon-button, ktoré tlačidlu nastavuje display. */
+.site-footer .footer-theme {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  /* Lišta: logo, "Prihlásiť sa" a "Založiť akciu" - prepínač režimu sa
+     vedľa nich nezmestí, je dole v pätičke. */
+  .landing .site-nav-inner {
+    padding: 0.7rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .landing .site-nav [data-theme-toggle] {
+    display: none;
+  }
+
+  .landing .logo {
+    font-size: 1.2rem;
+  }
+
+  .landing .top-bar-actions {
+    gap: 0.4rem;
+  }
+
+  .site-footer .footer-theme {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-color: transparent;
+    color: var(--text-muted);
+  }
+
+  /* Sekcie: menej prázdneho miesta hore, dole a pod nadpisom. */
+  .landing .section {
+    padding-top: 2.75rem;
+    padding-bottom: 2.75rem;
+  }
+
+  .landing .section-intro {
+    margin-bottom: 1.75rem;
+  }
+
+  .landing .section-intro h2,
+  .free-copy h2,
+  .founder-copy h2 {
+    font-size: 1.85rem;
+  }
+
+  .landing .section-intro p:not(.eyebrow),
+  .free-copy p,
+  .founder-copy p {
+    font-size: 1rem;
+  }
+
+  .landing .eyebrow {
+    margin-bottom: 0.6rem;
+  }
+
+  /* Hero: kratší úvod (bez prvej vety) a tlačidlo na celú šírku - ľahko
+     sa trafí palcom. */
+  .hero {
+    padding-top: 1.5rem;
+    padding-bottom: 2.5rem;
+    gap: 2rem;
+  }
+
+  .hero h1 {
+    margin-bottom: 1rem;
+  }
+
+  .hero-lead-intro {
+    display: none;
+  }
+
+  .hero-lead,
+  .hero-free {
+    font-size: 1.05rem;
+  }
+
+  .hero-free,
+  .hero-actions {
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-actions .btn {
+    flex: 1 1 100%;
+  }
+
+  /* Pás vytlačených fotiek je len ozdoba - na mobile tretinu nižší. */
+  .prints {
+    padding: 1.5rem 0 1.75rem;
+  }
+
+  .prints img {
+    height: 110px;
+  }
+
+  .prints figcaption {
+    padding: 0.35rem 0.15rem 0.45rem;
+    font-size: 0.8rem;
+  }
+
+  .prints figcaption span {
+    font-size: 0.65rem;
+  }
+
+  /* Na aké akcie: namiesto šiestich veľkých kariet pod sebou riadky
+     s malou štvorcovou fotkou vľavo a textom vpravo. */
+  .occasions {
+    gap: 0.75rem;
+  }
+
+  .occasion {
+    display: grid;
+    grid-template-columns: 5.25rem 1fr;
+    column-gap: 0.9rem;
+    align-items: start;
+    padding: 0.75rem;
+  }
+
+  .occasion > img {
+    grid-row: 1 / 3;
+    width: 5.25rem;
+    aspect-ratio: 1;
+    border-radius: 12px;
+  }
+
+  .occasion h3 {
+    margin: 0.05rem 0 0.2rem;
+    font-size: 1.1rem;
+  }
+
+  .occasion p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .occasions-more {
+    margin-top: 1.25rem;
+    font-size: 0.95rem;
+  }
+
+  /* Ako to funguje: číslo kroku v riadku s nadpisom, nižšie ukážky. */
+  .steps {
+    gap: 2rem;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.7rem;
+    align-items: center;
+  }
+
+  .step-demo {
+    grid-column: 1 / -1;
+    height: 170px;
+    margin-bottom: 0.9rem;
+  }
+
+  .step h3 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+
+  .step p {
+    grid-column: 1 / -1;
+    margin-top: 0.4rem;
+    font-size: 0.95rem;
+  }
+
+  /* Čo dostanete: bez ukážky "Naživo" (duplikát telefónu v hero),
+     zoznam funkcií hustejšie. Skrytá ukážka nie je na obrazovke, takže
+     jej časovače vôbec nebežia (whileVisible). */
+  .features-layout .live {
+    display: none;
+  }
+
+  .features {
+    gap: 1rem;
+  }
+
+  .features li {
+    padding-top: 0.9rem;
+  }
+
+  .features p {
+    font-size: 0.92rem;
+  }
+
+  /* Zadarmo: menšie "0 €". */
+  .free {
+    gap: 1rem;
+  }
+
+  .free-amount {
+    font-size: 4.5rem;
+  }
+
+  .free-caption {
+    margin-top: 0.4rem;
+  }
+
+  /* Kto za tým je: malá fotka namiesto 200 px kruhu. */
+  .landing .founder {
+    gap: 1rem;
+  }
+
+  .founder-photo {
+    width: 84px;
+    font-size: 1.6rem;
+  }
+
+  /* Otázky a výzva na konci: menej vzduchu. */
+  .faq summary {
+    padding: 0.95rem 2.25rem 0.95rem 0;
+    font-size: 1rem;
+  }
+
+  .cta-body {
+    padding: 3rem 1.25rem;
+  }
+
+  .cta h2 {
+    font-size: 1.75rem;
+  }
+
+  .cta p {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Najužšie telefóny (napr. iPhone SE, 320 px): lišta by sa inak nezmestila. */
+@media (max-width: 350px) {
+  .landing .logo {
+    font-size: 1.1rem;
+  }
+
+  .nav-login {
+    font-size: 0.82rem;
+  }
+
+  .landing .site-nav .btn.small {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.8rem;
   }
 }
 
