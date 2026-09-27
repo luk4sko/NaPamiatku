@@ -1361,19 +1361,69 @@ section[id] {
   margin: 0.15rem 0 0.65rem !important;
 }
 
+/* Tlačidlá v telefóne sú skutočné <button>, no nesmú vyzerať ako veľké
+   tlačidlá stránky. Preto najprv zrušíme spoločný vzhľad (odsadenie,
+   hnedé pozadie, zmenu farby pod kurzorom) a každé si nastaví svoj.
+   Pravidlo pod kurzorom musí mať rovnako silný selektor ako globálne
+   button:hover:not(:disabled), inak by pod kurzorom zhnedlo každé. */
+.phone button {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.phone button:hover:not(:disabled) {
+  background: none;
+}
+
+.phone button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Kým je kurzor nad telefónom, prestane sa vznášať - do pohybujúceho
+   sa cieľa sa kliká zle. */
+.phone:hover {
+  animation-play-state: paused;
+}
+
+/* Každá záložka (Fotky, Kniha hostí, Dary) vyplní priestor medzi
+   stavovým riadkom a spodným panelom. Obsah, ktorý sa nezmestí, zájde
+   pod panel - ako na skutočnom mobile. Atribút hidden treba potvrdiť
+   cez !important, lebo display: flex tlačidiel a záložiek by ho prebil. */
+.phone-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.phone [hidden] {
+  display: none !important;
+}
+
 /* Tlačidlo na výber fotiek - ako na skutočnej stránke hosťa. */
-.phone-add {
+.phone .phone-add {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  margin: 0 !important;
+  margin: 0;
   padding: 0.5rem;
   font-size: 0.78rem;
   font-weight: 600;
   background: var(--accent);
   color: var(--accent-text);
   border-radius: 999px;
+}
+
+.phone .phone-add:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
 
 .phone-add .ui-icon {
@@ -1394,12 +1444,66 @@ section[id] {
   opacity: 0;
 }
 
+/* Každá fotka je tlačidlo - po ťuknutí sa otvorí cez celú obrazovku. */
+.phone .phone-grid button {
+  position: relative;
+  display: block;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
 .phone-grid img {
   display: block;
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 6px;
+  transition: transform 0.3s ease, opacity 0.3s, filter 0.3s;
+}
+
+@media (hover: hover) {
+  .phone-grid button:hover img {
+    transform: scale(1.06);
+  }
+}
+
+/* Novo pridaná fotka: kým sa "nahráva", je bledšia a pri spodku má pás,
+   ktorý sa naplní. ::before je sivá koľaj, ::after hnedá výplň. */
+.phone-grid .new {
+  animation: tile-in 0.4s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.phone-grid .uploading img {
+  opacity: 0.55;
+  filter: saturate(0.5);
+}
+
+.phone-grid .uploading::before,
+.phone-grid .uploading::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.phone-grid .uploading::after {
+  background: var(--accent);
+  transform-origin: left;
+  animation: upload-fill 1.1s ease-in-out both;
+}
+
+@keyframes tile-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes upload-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 .phone-toast {
@@ -1433,23 +1537,320 @@ section[id] {
   box-shadow: 0 10px 24px -14px rgba(40, 25, 10, 0.4);
 }
 
-.phone-dock span {
+.phone .phone-dock button {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.1rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 12px;
   font-size: 0.6rem;
   font-weight: 600;
   color: var(--text-muted);
+  transition: color 0.15s, transform 0.15s;
 }
 
-.phone-dock .on {
+.phone .phone-dock button:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.phone .phone-dock [aria-selected="true"],
+.phone .phone-dock [aria-selected="true"]:hover:not(:disabled) {
   color: var(--accent);
 }
 
 .phone-dock .ui-icon {
   width: 1.1rem;
   height: 1.1rem;
+}
+
+/* ---------- Kniha hostí v telefóne ----------
+   Globálne je každý <form> stĺpec (pole pod poľom). Tu chceme pole
+   a tlačidlo vedľa seba, ako v chatovej aplikácii. */
+.phone-wish-form {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0.6rem 0.6rem;
+}
+
+.phone .phone-wish-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+/* iPhone priblíži stránku, keď má pole písmo menšie ako 16 px. Na
+   dotykových zariadeniach je telefón zmenšený cez --s, takže 16 px
+   v ňom na obrazovke vyzerá rovnako malé ako ostatný text. */
+@media (pointer: coarse) {
+  .phone .phone-wish-form input { font-size: 16px; }
+}
+
+.phone .phone-wish-form button {
+  flex: none;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.phone .phone-wish-form button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.phone-wish-form .ui-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.phone-wishes {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.phone-wishes li {
+  padding: 0.55rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.phone-wishes li.new {
+  animation: toast-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.phone-wishes p {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.phone-wishes cite {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.66rem;
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+.phone-wishes cite::before {
+  content: "— ";
+}
+
+/* ---------- Dary v telefóne ---------- */
+.phone-gift {
+  align-items: center;
+  padding: 0.3rem 0.9rem 0;
+  text-align: center;
+}
+
+.phone-gift-icon {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  margin-bottom: 0.4rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.phone-gift-icon .ui-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.phone-gift p {
+  margin: 0;
+}
+
+.phone-gift .phone-meta {
+  margin: 0.2rem 0 0.75rem;
+  line-height: 1.4;
+}
+
+.phone-amounts {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+}
+
+.phone .phone-amounts button {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+}
+
+.phone .phone-amounts button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.phone .phone-amounts [aria-pressed="true"],
+.phone .phone-amounts [aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+/* QR kód je papier - biely aj v tmavom režime, inak by ho banka nenačítala. */
+.phone-gift-qr {
+  animation: toast-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.phone-gift-qr img {
+  display: block;
+  width: 112px;
+  height: 112px;
+  margin: 0 auto 0.35rem;
+  padding: 4px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.phone-gift-qr p {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Fotka cez celú obrazovku ----------
+   Čierne pozadie ako v galérii mobilu. Prekryje všetko okrem Dynamic
+   Islandu - ten je súčasť telefónu, nie obrazovky (preto má z-index). */
+.phone-island {
+  z-index: 10;
+}
+
+.phone-viewer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  animation: viewer-in 0.25s ease-out;
+}
+
+.phone-viewer img {
+  display: block;
+  width: 100%;
+  max-height: 62%;
+  object-fit: contain;
+}
+
+.phone-viewer-top,
+.phone-viewer-nav {
+  position: absolute;
+  left: 0.7rem;
+  right: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+}
+
+.phone-viewer-top { top: 3rem; }
+.phone-viewer-nav { bottom: 2.2rem; }
+
+.phone .phone-viewer button {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.phone .phone-viewer button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.phone-viewer .ui-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Šípka "ďalšia" je tá istá ikona otočená doprava. */
+#demoViewerNext .ui-icon {
+  rotate: 180deg;
+}
+
+@keyframes viewer-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Poznámka "Vyskúšajte si to" ----------
+   Písaná kurzívou ako poznámka perom, šípka mieri na telefón. Sedí v scéne
+   ako kartička, preto sa poloha aj veľkosť násobia --s. */
+.phone-hint {
+  position: absolute;
+  z-index: 3;
+  left: calc(8px * var(--s));
+  top: calc(452px * var(--s));
+  margin: 0;
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-size: 1.02rem;
+  line-height: 1.3;
+  color: var(--accent);
+  transform: scale(var(--s)) rotate(-4deg);
+  transition: opacity 0.5s;
+}
+
+.phone-hint svg {
+  display: block;
+  margin: 0.15rem 0 0 8.2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.phone-hint.gone {
+  opacity: 0;
+}
+
+/* Animácia používa vlastnosť translate, lebo transform drží zmenšenie
+   a natočenie. Výplň "backwards" (nie "both"): po skončení animácia
+   prestane platiť, takže trieda .gone potom môže poznámku skryť. */
+@media (prefers-reduced-motion: no-preference) {
+  .phone-hint {
+    animation: hint-in 0.8s 1.1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  /* Šípka sa "dokreslí" - čiara sa odkryje od začiatku po hrot. */
+  .phone-hint path {
+    stroke-dasharray: 80;
+    animation: hint-draw 0.9s 1.6s ease-out both;
+  }
+}
+
+@keyframes hint-in {
+  from { opacity: 0; translate: 0 14px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes hint-draw {
+  from { stroke-dashoffset: 80; }
+  to { stroke-dashoffset: 0; }
 }
 
 /* Konfety okolo telefónu. Poloha je v súradniciach scény (500 × 560 px),
@@ -1645,8 +2046,11 @@ section[id] {
   .steps { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
 }
 
-/* Okienko s ukážkou nad každým krokom. */
+/* Okienko s ukážkou nad každým krokom. Ukážky sú obrázky, nie ovládacie
+   prvky - kurzor sa nad nimi nemení a text sa nedá označiť. */
 .step-demo {
+  pointer-events: none;
+  user-select: none;
   height: 200px;
   margin-bottom: 1.25rem;
   display: grid;
@@ -1679,12 +2083,83 @@ section[id] {
   color: var(--text-muted);
 }
 
-/* Krok 1: zmenšený formulár na založenie akcie. */
+/* Krok 1: zmenšený formulár na založenie akcie. Skript ho v slučke
+   "vyplní", kurzor klikne na tlačidlo a ukáže sa potvrdenie. */
 .mini-form {
+  position: relative;
   width: 78%;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+/* Kurzor-šípka. Bez animácie stojí na tlačidle. Pri animácii ho skript
+   posúva cez translate (--cx, --cy) z tohto miesta preč a späť. */
+.mini-cursor {
+  position: absolute;
+  left: 4.4rem;
+  bottom: -0.55rem;
+  fill: var(--text);
+  stroke: var(--bg);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+  translate: var(--cx, 0) var(--cy, 0);
+  transition: translate 0.8s cubic-bezier(0.5, 0, 0.2, 1), opacity 0.3s;
+}
+
+/* Potvrdenie po "kliknutí" prekryje formulár. */
+.mini-done {
+  position: absolute;
+  inset: -0.5rem -0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: var(--surface);
+  opacity: 0;
+  scale: 0.96;
+  transition: opacity 0.35s, scale 0.35s;
+}
+
+.mini-done small {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.mini-done .ui-icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  stroke-width: 2.4;
+}
+
+.mini-form.done .mini-done {
+  opacity: 1;
+  scale: 1;
+}
+
+/* Blikajúci textový kurzor v poli, do ktorého sa práve "píše". */
+.mini-input.typing::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: -0.15em;
+  background: var(--text);
+  animation: caret-blink 0.9s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% { opacity: 0; }
 }
 
 .mini-label {
@@ -1695,8 +2170,13 @@ section[id] {
   color: var(--text-muted);
 }
 
+/* Pevná výška - prázdne pole (pred "písaním") nesmie byť nižšie. */
 .mini-input {
+  height: calc(1.3em + 0.8rem + 2px);
   font-size: 0.85rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
   padding: 0.4rem 0.6rem;
   margin-bottom: 0.4rem;
   background: var(--bg-alt);
@@ -1712,6 +2192,13 @@ section[id] {
   background: var(--accent);
   color: var(--accent-text);
   border-radius: 7px;
+  transition: scale 0.12s, background 0.12s;
+}
+
+/* "Stlačené" tlačidlo vo chvíli, keď naň kurzor klikne. */
+.mini-button.pressed {
+  scale: 0.93;
+  background: var(--accent-hover);
 }
 
 /* Krok 2: zmenšená kartička - papier, teda biela v oboch režimoch. */
@@ -1912,6 +2399,57 @@ section[id] {
   font-size: 0.85rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Posledná zastávka "Na druhý deň" nemá fotku ani číslo - je to prázdne
+   miesto s prerušovaným okrajom, kam ešte fotky pribudnú. Čiara za ňou
+   je prerušovaná a stráca sa: os sa tu nekončí. */
+.tl-more time {
+  white-space: nowrap;
+}
+
+/* Selektor s li. musí prebiť ".timeline li:nth-child(even) .tl-photo",
+   ktorý párne fotky natáča - prázdne miesto má stáť rovno. */
+.timeline li.tl-more .tl-photo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: none;
+  rotate: 0deg;
+}
+
+.tl-more .tl-photo .ui-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  color: var(--accent);
+}
+
+.timeline .tl-more::before {
+  background: repeating-linear-gradient(90deg, var(--border-strong) 0 6px, transparent 6px 11px);
+}
+
+.timeline .tl-more::after {
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 11px);
+}
+
+.timeline .tl-more::before,
+.timeline .tl-more::after {
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent);
+  mask-image: linear-gradient(90deg, #000 40%, transparent);
+}
+
+/* Bodka zostane dutá - tento moment ešte len príde. */
+.timeline.in .tl-more time::before {
+  background: var(--bg);
 }
 
 /* Položky sú skryté, kým sa os neobjaví (JS pridá .in). Každá nabehne
@@ -2472,6 +3010,14 @@ section[id] {
   }
 
   .phone-grid,
+  .phone-grid .new,
+  .phone-grid img,
+  .phone-viewer,
+  .phone-hint,
+  .phone-hint path,
+  .mini-cursor,
+  .mini-done,
+  .mini-input.typing::after,
   .live-badge i,
   .pop,
   .live-grid figure.fresh,

@@ -91,37 +91,50 @@
         </dl>
       </div>
 
-      <div class="hero-visual" aria-hidden="true">
+      <!-- Ukážka nie je celá aria-hidden: v telefóne sú skutočné tlačidlá
+           a skrytý prvok nesmie dostať fokus z klávesnice. Skryté sú len
+           ozdoby (konfety, kartička, rám telefónu). -->
+      <div class="hero-visual">
         <!-- Konfety okolo telefónu. Poloha (--x, --y), natočenie (--r) a posun
              animácie (--d) sú tu, vzhľad a pohupovanie sú spoločné v CSS. -->
-        <i class="confetti gold"  style="--x:150px; --y:60px;  --r:20deg;  --d:-1s"></i>
-        <i class="confetti cream" style="--x:470px; --y:40px;  --r:70deg;  --d:-3s"></i>
-        <i class="confetti blush" style="--x:40px;  --y:95px;  --r:130deg; --d:-5s"></i>
-        <i class="confetti gold"  style="--x:490px; --y:300px; --r:110deg; --d:-4s"></i>
-        <i class="confetti cream" style="--x:60px;  --y:470px; --r:40deg;  --d:-2s"></i>
-        <i class="confetti gold"  style="--x:205px; --y:520px; --r:80deg;  --d:-2.5s"></i>
-        <i class="confetti blush" style="--x:480px; --y:500px; --r:15deg;  --d:-6s"></i>
-        <i class="confetti cream" style="--x:190px; --y:20px;  --r:150deg; --d:-3.5s"></i>
+        <i class="confetti gold"  style="--x:150px; --y:60px;  --r:20deg;  --d:-1s" aria-hidden="true"></i>
+        <i class="confetti cream" style="--x:470px; --y:40px;  --r:70deg;  --d:-3s" aria-hidden="true"></i>
+        <i class="confetti blush" style="--x:40px;  --y:95px;  --r:130deg; --d:-5s" aria-hidden="true"></i>
+        <i class="confetti gold"  style="--x:490px; --y:300px; --r:110deg; --d:-4s" aria-hidden="true"></i>
+        <i class="confetti cream" style="--x:60px;  --y:470px; --r:40deg;  --d:-2s" aria-hidden="true"></i>
+        <i class="confetti gold"  style="--x:205px; --y:520px; --r:80deg;  --d:-2.5s" aria-hidden="true"></i>
+        <i class="confetti blush" style="--x:480px; --y:500px; --r:15deg;  --d:-6s" aria-hidden="true"></i>
+        <i class="confetti cream" style="--x:190px; --y:20px;  --r:150deg; --d:-3.5s" aria-hidden="true"></i>
 
         <!-- Kartička na stôl - zjednodušená kópia tej, ktorú si organizátor
              vytlačí v správe akcie. QR kód je skutočný (vedie na túto stránku). -->
-        <div class="table-card">
+        <div class="table-card" aria-hidden="true">
           <p class="table-card-top">Naskenuj a&nbsp;pridaj fotky</p>
           <img class="table-card-qr" id="heroQr" alt="" width="132" height="132" />
           <p class="table-card-name" data-demo-name>Stužková 4.A</p>
           <p class="table-card-url">napamiatku.com</p>
         </div>
 
+        <!-- Rukou písaná poznámka so šípkou - bez nej by nikto netušil, že
+             sa dá do telefónu klikať. Po prvom kliknutí zmizne. -->
+        <p class="phone-hint" id="phoneHint" aria-hidden="true">
+          Vyskúšajte si to,<br />mobil naozaj funguje
+          <svg viewBox="0 0 60 44" width="60" height="44"><path d="M4 38c14 2 30-4 40-18 3-4 5-9 6-14"/><path d="m43 11 7-6 3 9"/></svg>
+        </p>
+
         <!-- iPhone: rám a bočné tlačidlá sú len CSS, v obrazovke je zjednodušená
-             stránka hosťa - hlavička akcie, tlačidlo na fotky, galéria a spodný
-             panel so záložkami, presne ako to hosť uvidí v mobile. -->
-        <div class="phone">
-          <span class="phone-button action"></span>
-          <span class="phone-button volume-up"></span>
-          <span class="phone-button volume-down"></span>
-          <span class="phone-button power"></span>
+             stránka hosťa - hlavička akcie, galéria, kniha hostí, dary a spodný
+             panel so záložkami, presne ako to hosť uvidí v mobile. Dá sa v ňom
+             klikať: fotky sa otvoria, "Pridať fotky" nahrá ukážkovú fotku a do
+             knihy hostí sa dá napísať odkaz. Nič z toho sa nikam neodosiela,
+             všetko sa deje len v tomto okne. Rieši to skript na konci stránky. -->
+        <div class="phone" id="phone" role="group" aria-label="Ukážka stránky pre hostí, môžete si ju vyskúšať">
+          <span class="phone-button action" aria-hidden="true"></span>
+          <span class="phone-button volume-up" aria-hidden="true"></span>
+          <span class="phone-button volume-down" aria-hidden="true"></span>
+          <span class="phone-button power" aria-hidden="true"></span>
           <div class="phone-screen">
-            <div class="phone-status">
+            <div class="phone-status" aria-hidden="true">
               <span>20:41</span>
               <span class="phone-island"></span>
               <span class="phone-icons">
@@ -130,26 +143,79 @@
                 <svg viewBox="0 0 27 12" width="22" height="10"><rect x="0.6" y="0.6" width="22.8" height="10.8" rx="3.3" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.4"/><rect x="2.2" y="2.2" width="16" height="7.6" rx="1.9"/><path d="M24.8 4.2v3.6a1.9 1.9 0 0 0 0-3.6Z" opacity="0.45"/></svg>
               </span>
             </div>
-            <div class="phone-head">
-              <p class="phone-name" data-demo-name>Stužková 4.A</p>
-              <p class="phone-meta"><span id="demoCount">312</span> fotiek · <span id="demoGuests">58</span> hostí</p>
-              <p class="phone-add"><span data-icon="image"></span>Pridať fotky</p>
+            <!-- Záložka Fotky -->
+            <div class="phone-panel" id="phonePanelFotky" role="tabpanel" aria-labelledby="phoneTabFotky">
+              <div class="phone-head">
+                <p class="phone-name" data-demo-name>Stužková 4.A</p>
+                <p class="phone-meta"><span id="demoCount">312</span> fotiek · <span id="demoGuests">58</span> hostí</p>
+                <button type="button" class="phone-add" id="demoAdd"><span data-icon="image"></span>Pridať fotky</button>
+              </div>
+              <!-- Každá fotka je tlačidlo - po kliknutí sa otvorí na celú obrazovku.
+                   data-by a data-at sú meno hosťa a čas, ktoré sa ukážu pri fotke. -->
+              <div class="phone-grid" id="demoGrid">
+                <button type="button" data-by="Klára" data-at="21:47"><img src="img/dav-svetla-sm.webp" alt="" /></button>
+                <button type="button" data-by="Tomáš" data-at="21:32"><img src="img/pripitok-svetielka-sm.webp" alt="" /></button>
+                <button type="button" data-by="Peťo" data-at="21:05"><img src="img/dav-vecer-sm.webp" alt="" /></button>
+                <button type="button" data-by="Ivana" data-at="20:58"><img src="img/pripitok-poharmi-sm.webp" alt="" /></button>
+                <button type="button" data-by="Lucka" data-at="20:41"><img src="img/konfety-radost-sm.webp" alt="" /></button>
+                <button type="button" data-by="Marek" data-at="20:12"><img src="img/slavnostny-stol-sm.webp" alt="" /></button>
+              </div>
+              <p class="phone-toast" id="demoToast" aria-live="polite"><b>Klára</b> pridala 3 fotky</p>
             </div>
-            <div class="phone-grid" id="demoGrid">
-              <img src="img/dav-svetla-sm.webp" alt="" />
-              <img src="img/pripitok-svetielka-sm.webp" alt="" />
-              <img src="img/dav-vecer-sm.webp" alt="" />
-              <img src="img/pripitok-poharmi-sm.webp" alt="" />
-              <img src="img/konfety-radost-sm.webp" alt="" />
-              <img src="img/slavnostny-stol-sm.webp" alt="" />
+
+            <!-- Záložka Kniha hostí. Odkaz sa pridá len do tejto ukážky. -->
+            <div class="phone-panel" id="phonePanelKniha" role="tabpanel" aria-labelledby="phoneTabKniha" hidden>
+              <div class="phone-head">
+                <p class="phone-name">Kniha hostí</p>
+                <p class="phone-meta"><span id="demoWishCount">23</span> odkazov</p>
+              </div>
+              <form class="phone-wish-form" id="demoWishForm">
+                <input type="text" id="demoWishText" maxlength="90" placeholder="Napíš odkaz…" aria-label="Odkaz do knihy hostí (len ukážka, nikam sa neodošle)" autocomplete="off" />
+                <button type="submit" aria-label="Pridať odkaz"><span data-icon="chat"></span></button>
+              </form>
+              <ul class="phone-wishes" id="demoWishes">
+                <li><p>Tancovali sme do rána a ešte teraz nás bolia nohy. Vďaka!</p><cite>partia zo 4.A</cite></li>
+                <li><p>Najlepší večer roka, fotky sú úžasné.</p><cite>Ivana a Peťo</cite></li>
+                <li><p>Ďakujeme, že sme mohli byť pri tom!</p><cite>babka Anka</cite></li>
+              </ul>
             </div>
-            <p class="phone-toast" id="demoToast"><b>Klára</b> pridala 3 fotky</p>
-            <div class="phone-dock">
-              <span class="on"><span data-icon="camera"></span>Fotky</span>
-              <span><span data-icon="chat"></span>Kniha hostí</span>
-              <span><span data-icon="gift"></span>Dary</span>
+
+            <!-- Záložka Dary. QR kód v ukážke vedie na túto stránku, nie na účet. -->
+            <div class="phone-panel phone-gift" id="phonePanelDary" role="tabpanel" aria-labelledby="phoneTabDary" hidden>
+              <span class="phone-gift-icon"><span data-icon="gift"></span></span>
+              <p class="phone-name">Darovať</p>
+              <p class="phone-meta">Suma je na tebe, peniaze idú priamo organizátorom.</p>
+              <div class="phone-amounts" id="demoAmounts">
+                <button type="button" aria-pressed="false">10 €</button>
+                <button type="button" aria-pressed="true">20 €</button>
+                <button type="button" aria-pressed="false">50 €</button>
+              </div>
+              <button type="button" class="phone-add" id="demoGiftButton"><span data-icon="qr"></span>Vytvoriť platobný QR kód</button>
+              <div class="phone-gift-qr" id="demoGiftQr" hidden>
+                <img id="demoGiftQrImage" alt="" width="112" height="112" />
+                <p>Naskenuj v aplikácii svojej banky</p>
+              </div>
             </div>
-            <span class="phone-home"></span>
+
+            <div class="phone-dock" role="tablist" aria-label="Záložky">
+              <button type="button" role="tab" id="phoneTabFotky" aria-controls="phonePanelFotky" aria-selected="true"><span data-icon="camera"></span>Fotky</button>
+              <button type="button" role="tab" id="phoneTabKniha" aria-controls="phonePanelKniha" aria-selected="false" tabindex="-1"><span data-icon="chat"></span>Kniha hostí</button>
+              <button type="button" role="tab" id="phoneTabDary" aria-controls="phonePanelDary" aria-selected="false" tabindex="-1"><span data-icon="gift"></span>Dary</button>
+            </div>
+
+            <!-- Prehliadač fotky cez celú obrazovku telefónu. -->
+            <div class="phone-viewer" id="demoViewer" hidden>
+              <div class="phone-viewer-top">
+                <span><b id="demoViewerBy">Klára</b> · <span id="demoViewerAt">21:47</span></span>
+                <button type="button" id="demoViewerClose" aria-label="Zavrieť fotku"><span data-icon="x"></span></button>
+              </div>
+              <img id="demoViewerImg" alt="" />
+              <div class="phone-viewer-nav">
+                <button type="button" id="demoViewerPrev" aria-label="Predošlá fotka"><span data-icon="arrowLeft"></span></button>
+                <button type="button" id="demoViewerNext" aria-label="Ďalšia fotka"><span data-icon="arrowLeft"></span></button>
+              </div>
+            </div>
+            <span class="phone-home" aria-hidden="true"></span>
           </div>
         </div>
       </div>
@@ -243,13 +309,19 @@
 
         <ol class="steps">
           <li class="step reveal">
+            <!-- Ukážka formulára sa sama "vyplní" a kurzor klikne na tlačidlo,
+                 akoby to bolo video. Bez toho tlačidlo pôsobilo, že sa naň dá
+                 kliknúť, no nič sa nestalo. Bez animácie (alebo bez JS) zostane
+                 kurzor stáť na tlačidle - aj tak je jasné, že je to obrázok. -->
             <div class="step-demo" aria-hidden="true">
-              <div class="mini-form">
+              <div class="mini-form" id="miniForm">
                 <span class="mini-label">Názov akcie</span>
-                <span class="mini-input">Svadba Lucie a&nbsp;Mareka</span>
+                <span class="mini-input" data-text="Svadba Lucie a Mareka">Svadba Lucie a&nbsp;Mareka</span>
                 <span class="mini-label">Dátum</span>
-                <span class="mini-input">13. 6. 2026</span>
+                <span class="mini-input" data-text="13. 6. 2026">13. 6. 2026</span>
                 <span class="mini-button">Vytvoriť akciu</span>
+                <svg class="mini-cursor" viewBox="0 0 16 22" width="16" height="22"><path d="M1.5 1.5v16.2l4.1-3.9 2.8 6.5 3-1.3-2.8-6.4h5.6Z"/></svg>
+                <span class="mini-done"><span data-icon="check"></span>Akcia je vytvorená<small>QR kód a&nbsp;odkaz sú pripravené</small></span>
               </div>
             </div>
             <span class="step-number">1</span>
@@ -292,13 +364,15 @@
 
     <!-- ---------- Jeden večer ----------
          Časová os jedného večera. Keď sa sekcia objaví, čiara sa vyplní zľava
-         doprava a počítadlo nabehne na konečné číslo - vidno tak, ako galéria
-         počas akcie rastie. Čísla sú ilustračné. -->
+         doprava a pri každej zastávke nabehne počet fotiek - vidno tak, ako
+         galéria počas akcie rastie. Číslo zámerne nie je v nadpise: "Jeden
+         večer, 248 fotiek" pôsobilo ako limit. Posledná zastávka nemá číslo
+         a čiara za ňou pokračuje, lebo fotky pribúdajú aj po akcii. -->
     <section class="section" id="vecer">
       <div class="section-intro reveal">
         <p class="eyebrow">Ukážkový večer</p>
-        <h2>Jeden večer, <span class="count-up" data-to="248">248</span>&nbsp;fotiek</h2>
-        <p>Fotograf má svoj uhol pohľadu, hostia sú však všade naraz. A&nbsp;ich fotky máte ešte v&nbsp;ten istý večer, nie až o&nbsp;mesiac.</p>
+        <h2>Fotky pribúdajú celý večer aj&nbsp;po ňom</h2>
+        <p>Fotograf má svoj uhol pohľadu, hostia sú však všade naraz. A&nbsp;ich fotky máte ešte v&nbsp;ten istý večer, nie až o&nbsp;mesiac. Čísla nižšie sú len príklad, počet fotiek nie je obmedzený.</p>
       </div>
 
       <ol class="timeline">
@@ -306,37 +380,37 @@
           <time>16:00</time>
           <figure class="tl-photo"><img src="img/slavnostny-stol-sm.webp" alt="Slávnostne prestretý stôl" loading="lazy" /></figure>
           <p class="tl-label">Príchod hostí</p>
-          <p class="tl-count">14 fotiek</p>
+          <p class="tl-count"><span class="tl-num">14</span> fotiek</p>
         </li>
         <li style="--i:1">
           <time>17:30</time>
           <figure class="tl-photo"><img src="img/pripitok-poharmi-sm.webp" alt="Prípitok pohármi" loading="lazy" /></figure>
           <p class="tl-label">Prípitok</p>
-          <p class="tl-count">57 fotiek</p>
+          <p class="tl-count"><span class="tl-num">57</span> fotiek</p>
         </li>
         <li style="--i:2">
           <time>19:00</time>
           <figure class="tl-photo"><img src="img/torta-sviecky-sm.webp" alt="Torta so sviečkami" loading="lazy" /></figure>
           <p class="tl-label">Torta</p>
-          <p class="tl-count">103 fotiek</p>
+          <p class="tl-count"><span class="tl-num">103</span> fotiek</p>
         </li>
         <li style="--i:3">
-          <time>21:00</time>
+          <time>21:30</time>
           <figure class="tl-photo"><img src="img/tanec-dvojica-sm.webp" alt="Tanec" loading="lazy" /></figure>
           <p class="tl-label">Tanec</p>
-          <p class="tl-count">161 fotiek</p>
+          <p class="tl-count"><span class="tl-num">172</span> fotiek</p>
         </li>
         <li style="--i:4">
-          <time>23:30</time>
-          <figure class="tl-photo"><img src="img/dav-vecer-sm.webp" alt="Plný parket" loading="lazy" /></figure>
-          <p class="tl-label">Parket</p>
-          <p class="tl-count">219 fotiek</p>
-        </li>
-        <li style="--i:5">
           <time>01:40</time>
           <figure class="tl-photo"><img src="img/prskavky-sm.webp" alt="Prskavky na rozlúčku" loading="lazy" /></figure>
           <p class="tl-label">Rozlúčka</p>
-          <p class="tl-count">248 fotiek</p>
+          <p class="tl-count"><span class="tl-num">236</span> fotiek</p>
+        </li>
+        <li style="--i:5" class="tl-more">
+          <time>Na druhý deň</time>
+          <figure class="tl-photo"><span data-icon="upload"></span><span>Hostia pridávajú aj z&nbsp;domu</span></figure>
+          <p class="tl-label">A&nbsp;ďalšie</p>
+          <p class="tl-count">fotky stále pribúdajú</p>
         </li>
       </ol>
     </section>
@@ -590,9 +664,11 @@
   <script src="js/supabaseClient.js"></script>
   <script src="js/app.js"></script>
   <script>
-    // Ukážkové QR kódy (hero a 2. krok) vedú na túto istú stránku - kto ich
-    // skúsi naskenovať, nedostane sa nikam, kam nemá.
-    makeQrDataUrl(window.location.origin, 300).then((dataUrl) => {
+    // Ukážkové QR kódy (hero, 2. krok aj "platobný" kód v telefóne) vedú na
+    // túto istú stránku - kto ich skúsi naskenovať, nedostane sa nikam, kam
+    // nemá, a hlavne nikomu nepošle peniaze.
+    const demoQr = makeQrDataUrl(window.location.origin, 300);
+    demoQr.then((dataUrl) => {
       document.getElementById("heroQr").src = dataUrl;
       document.getElementById("stepQr").src = dataUrl;
     });
@@ -616,6 +692,21 @@
         el.textContent = "0";
         animateNumber(el, Number(el.dataset.to), 2000);
       }
+      if (el.classList.contains("timeline")) countTimeline(el);
+    }
+
+    // Časová os: počet fotiek pri každej zastávke nabehne od čísla
+    // predošlej zastávky - vidno tak, ako galéria počas večera rastie.
+    // Oneskorenie je rovnaké ako v CSS (--i × 0,4 s), takže číslo sa
+    // rozbehne presne vtedy, keď k zastávke dorazí čiara.
+    function countTimeline(timeline) {
+      let previous = 0;
+      timeline.querySelectorAll(".tl-num").forEach((num, i) => {
+        const target = Number(num.textContent);
+        num.textContent = previous;
+        previous = target;
+        setTimeout(() => animateNumber(num, target, 700), i * 400 + 100);
+      });
     }
 
     if (reducedMotion) {
@@ -651,6 +742,188 @@
       el.classList.add(className);
     }
 
+    /* ---------- Telefón v hero: dá sa v ňom klikať ----------
+       Všetko sa deje len v tomto okne - nič sa neodosiela na server.
+       Beží aj pri "obmedziť pohyb", lebo klikanie nie je animácia. */
+    const phone = document.getElementById("phone");
+    const phoneHint = document.getElementById("phoneHint");
+    const demoGrid = document.getElementById("demoGrid");
+    const demoToast = document.getElementById("demoToast");
+    const demoCount = document.getElementById("demoCount");
+    const viewer = document.getElementById("demoViewer");
+    const tabs = phone.querySelectorAll('[role="tab"]');
+    let activeTab = tabs[0];
+
+    // Kým sa s telefónom niekto hrá (a ešte 10 s potom), ukážka sa
+    // neprepne na inú akciu - fotky by sa mu menili pod prstom.
+    let pointerInside = false;
+    let lastTouch = 0;
+    phone.addEventListener("pointerenter", () => { pointerInside = true; });
+    phone.addEventListener("pointerleave", () => { pointerInside = false; });
+    ["pointerdown", "keydown", "focusin"].forEach((type) => {
+      phone.addEventListener(type, () => {
+        lastTouch = Date.now();
+        phoneHint.classList.add("gone"); // poznámka "Vyskúšajte si to" splnila účel
+      });
+    });
+
+    function phoneBusy() {
+      return pointerInside || Date.now() - lastTouch < 10000 ||
+        activeTab !== tabs[0] || !viewer.hidden;
+    }
+
+    // Vyskočí upozornenie nad spodným panelom (to isté ako "Klára pridala…").
+    function phoneToast(text) {
+      demoToast.textContent = text;
+      replay(demoToast, "pop");
+    }
+
+    /* Záložky Fotky / Kniha hostí / Dary. role="tab" a aria-selected
+       povedia čítačke pre nevidiacich, ktorá záložka je otvorená. */
+    function selectTab(tab) {
+      tabs.forEach((other) => {
+        const selected = other === tab;
+        other.setAttribute("aria-selected", selected);
+        other.tabIndex = selected ? 0 : -1; // Tab skočí len na otvorenú záložku
+        document.getElementById(other.getAttribute("aria-controls")).hidden = !selected;
+      });
+      activeTab = tab;
+    }
+
+    tabs.forEach((tab) => tab.addEventListener("click", () => selectTab(tab)));
+
+    // Medzi záložkami sa prechádza šípkami - tak to pri role="tab" čaká
+    // každý, kto ovláda stránku klávesnicou.
+    phone.querySelector('[role="tablist"]').addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+      const list = [...tabs];
+      const step = event.key === "ArrowRight" ? 1 : list.length - 1;
+      const next = list[(list.indexOf(activeTab) + step) % list.length];
+      selectTab(next);
+      next.focus();
+    });
+
+    /* Fotka cez celú obrazovku. Šípky listujú, Escape zatvorí. */
+    const viewerImg = document.getElementById("demoViewerImg");
+    let viewerIndex = 0;
+
+    function showPhoto(index) {
+      const tiles = demoGrid.children;
+      viewerIndex = (index + tiles.length) % tiles.length;
+      const tile = tiles[viewerIndex];
+      viewerImg.src = tile.querySelector("img").src;
+      document.getElementById("demoViewerBy").textContent = tile.dataset.by;
+      document.getElementById("demoViewerAt").textContent = tile.dataset.at;
+    }
+
+    function closeViewer() {
+      viewer.hidden = true;
+      // Fokus sa vráti na fotku, z ktorej sa prehliadač otvoril.
+      demoGrid.children[viewerIndex].focus({ preventScroll: true });
+    }
+
+    demoGrid.addEventListener("click", (event) => {
+      const tile = event.target.closest("button");
+      if (!tile || tile.classList.contains("uploading")) return;
+      showPhoto([...demoGrid.children].indexOf(tile));
+      viewer.hidden = false;
+      document.getElementById("demoViewerClose").focus({ preventScroll: true });
+    });
+
+    document.getElementById("demoViewerClose").addEventListener("click", closeViewer);
+    document.getElementById("demoViewerPrev").addEventListener("click", () => showPhoto(viewerIndex - 1));
+    document.getElementById("demoViewerNext").addEventListener("click", () => showPhoto(viewerIndex + 1));
+    viewerImg.addEventListener("click", () => showPhoto(viewerIndex + 1));
+    viewer.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeViewer();
+      if (event.key === "ArrowLeft") showPhoto(viewerIndex - 1);
+      if (event.key === "ArrowRight") showPhoto(viewerIndex + 1);
+    });
+
+    /* "Pridať fotky": na začiatok galérie pribudne ukážková fotka, chvíľu
+       sa "nahráva" a potom sa k nej pripočíta počítadlo. V mriežke je
+       stále 6 fotiek - najstaršia na konci vypadne. */
+    const extraPhotos = [
+      "prskavky", "torta-sviecky", "tanec-dvojica", "odchod-konfety", "par-tanec",
+      "prvy-tanec", "kvety-na-stole", "drevene-srdcia", "cervene-kvety", "hostia-mobilmi",
+    ];
+    let extraIndex = 0;
+
+    document.getElementById("demoAdd").addEventListener("click", () => {
+      // Vyberieme fotku, ktorá v mriežke práve nie je.
+      const shown = [...demoGrid.querySelectorAll("img")].map((img) => img.getAttribute("src"));
+      let src;
+      for (let tries = 0; tries < extraPhotos.length; tries++) {
+        src = "img/" + extraPhotos[extraIndex++ % extraPhotos.length] + "-sm.webp";
+        if (!shown.includes(src)) break;
+      }
+
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "new uploading";
+      tile.dataset.by = "Ty";
+      tile.dataset.at = "práve teraz";
+      tile.innerHTML = '<img alt="" />';
+      tile.querySelector("img").src = src;
+      demoGrid.prepend(tile);
+      while (demoGrid.children.length > 6) demoGrid.lastElementChild.remove();
+
+      setTimeout(() => {
+        tile.classList.remove("uploading");
+        animateNumber(demoCount, Number(demoCount.textContent) + 1);
+        phoneToast("Hotovo, fotku už vidia všetci hostia");
+      }, 1100);
+    });
+
+    /* Kniha hostí: napísaný odkaz sa objaví navrchu zoznamu. Text vkladáme
+       cez textContent, nie innerHTML - aj v ukážke platí, že text od
+       používateľa sa nikdy nesmie vykonať ako HTML (ochrana pred XSS). */
+    const wishList = document.getElementById("demoWishes");
+    const wishInput = document.getElementById("demoWishText");
+    const wishCount = document.getElementById("demoWishCount");
+    const sampleWishes = [
+      "Všetko najlepšie a veľa lásky!",
+      "Bolo to super, nech sa to čoskoro zopakuje!",
+      "Ďakujeme za pozvanie, bavili sme sa výborne.",
+    ];
+    let sampleIndex = 0;
+
+    document.getElementById("demoWishForm").addEventListener("submit", (event) => {
+      event.preventDefault(); // formulár by inak znova načítal stránku
+      // Kto nič nenapíše a len ťukne na tlačidlo, dostane ukážkový odkaz.
+      const text = wishInput.value.trim() || sampleWishes[sampleIndex++ % sampleWishes.length];
+      const item = document.createElement("li");
+      item.className = "new";
+      item.innerHTML = "<p></p><cite>Ty</cite>";
+      item.querySelector("p").textContent = text;
+      wishList.prepend(item);
+      while (wishList.children.length > 4) wishList.lastElementChild.remove();
+      wishInput.value = "";
+      animateNumber(wishCount, Number(wishCount.textContent) + 1);
+    });
+
+    /* Dary: výber sumy a "platobný" QR kód (v ukážke vedie na túto stránku). */
+    const amountButtons = document.querySelectorAll("#demoAmounts button");
+    const giftButton = document.getElementById("demoGiftButton");
+    const giftQr = document.getElementById("demoGiftQr");
+
+    amountButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        amountButtons.forEach((other) => other.setAttribute("aria-pressed", other === button));
+        // Iná suma = iný kód, takže starý schováme a tlačidlo vrátime.
+        giftQr.hidden = true;
+        giftButton.hidden = false;
+      });
+    });
+
+    giftButton.addEventListener("click", () => {
+      demoQr.then((dataUrl) => {
+        document.getElementById("demoGiftQrImage").src = dataUrl;
+        giftButton.hidden = true;
+        giftQr.hidden = false;
+      });
+    });
+
     if (!reducedMotion) {
       /* ---------- 1) Hero: ukážka sa prepína medzi akciami ---------- */
       const demos = [
@@ -664,9 +937,9 @@
           photos: ["slavnostny-stol", "pripitok-svetielka", "pripitok-poharmi", "dav-svetla", "prestrety-stol", "kvety-na-stole"] },
       ];
       const demoNames = document.querySelectorAll("[data-demo-name]");
-      const demoGrid = document.getElementById("demoGrid");
-      const demoImgs = demoGrid.querySelectorAll("img");
-      const demoToast = document.getElementById("demoToast");
+      // Kto pridal ktorú fotku a kedy - ukáže sa po otvorení fotky.
+      const demoAuthors = [["Klára", "21:47"], ["Tomáš", "21:32"], ["Peťo", "21:05"],
+                           ["Ivana", "20:58"], ["Lucka", "20:41"], ["Marek", "20:12"]];
       let demoIndex = 0;
 
       // Fotky ďalšej ukážky stiahneme vopred, aby sa pri prepnutí
@@ -674,15 +947,22 @@
       demos.forEach((demo) => demo.photos.forEach((name) => { new Image().src = "img/" + name + "-sm.webp"; }));
 
       whileVisible(demoGrid, 4600, () => {
+        if (phoneBusy()) return; // niekto sa práve s telefónom hrá
         demoIndex = (demoIndex + 1) % demos.length;
         const demo = demos[demoIndex];
 
         demoGrid.classList.add("swap");
         // Obsah vymeníme v polovici prelínania, keď sú fotky neviditeľné.
+        // Dlaždice berieme vždy nanovo - "Pridať fotky" ich medzitým mohlo
+        // vymeniť za iné.
         setTimeout(() => {
           demoNames.forEach((el) => { el.textContent = demo.name; });
-          demoImgs.forEach((img, i) => { img.src = "img/" + demo.photos[i] + "-sm.webp"; });
-          document.getElementById("demoCount").textContent = demo.count;
+          [...demoGrid.children].forEach((tile, i) => {
+            tile.className = "";
+            tile.querySelector("img").src = "img/" + demo.photos[i] + "-sm.webp";
+            [tile.dataset.by, tile.dataset.at] = demoAuthors[i];
+          });
+          demoCount.textContent = demo.count;
           document.getElementById("demoGuests").textContent = demo.guests;
           // Meno vkladáme cez textContent, nie do innerHTML - zvyk, ktorý
           // chráni pred XSS, keby text raz prišiel od používateľov.
@@ -769,6 +1049,63 @@
           occasionWord.classList.remove("out");
         }, 380);
       });
+
+      /* ---------- 5) Krok 1: formulár sa sám vyplní ----------
+         Ako krátke video: polia sa vypíšu písmeno po písmene, kurzor príde
+         na tlačidlo, "klikne" a ukáže sa potvrdenie. Opakuje sa, kým je
+         krok na obrazovke. Je to async funkcia s await, takže sa jednotlivé
+         kroky čítajú zhora nadol namiesto vnorených setTimeout. */
+      const miniForm = document.getElementById("miniForm");
+      const miniInputs = miniForm.querySelectorAll(".mini-input");
+      const miniButton = miniForm.querySelector(".mini-button");
+      const miniCursor = miniForm.querySelector(".mini-cursor");
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      let miniVisible = false;
+      let miniPlaying = false;
+
+      function moveCursor(x, y, instant) {
+        // Bez prechodu (instant) kurzor preskočí mimo okienka neviditeľne.
+        miniCursor.style.transition = instant ? "none" : "";
+        miniCursor.style.setProperty("--cx", x + "px");
+        miniCursor.style.setProperty("--cy", y + "px");
+        void miniCursor.offsetWidth; // prehliadač musí skok vykonať hneď
+      }
+
+      async function typeInto(el, text) {
+        el.classList.add("typing");
+        for (let i = 1; i <= text.length; i++) {
+          el.textContent = text.slice(0, i);
+          await wait(50 + Math.random() * 60); // nerovnomerne, ako človek
+        }
+        el.classList.remove("typing");
+      }
+
+      async function playMiniForm() {
+        miniForm.classList.remove("done");
+        miniInputs.forEach((el) => { el.textContent = ""; });
+        moveCursor(170, 90, true); // mimo okienka vpravo dole
+        await wait(700);
+        for (const el of miniInputs) {
+          await typeInto(el, el.dataset.text);
+          await wait(250);
+        }
+        moveCursor(0, 0); // späť na tlačidlo
+        await wait(950);
+        miniButton.classList.add("pressed");
+        await wait(160);
+        miniButton.classList.remove("pressed");
+        await wait(200);
+        miniForm.classList.add("done");
+        await wait(2800);
+      }
+
+      new IntersectionObserver(async ([entry]) => {
+        miniVisible = entry.isIntersecting;
+        if (!miniVisible || miniPlaying) return;
+        miniPlaying = true;
+        while (miniVisible) await playMiniForm(); // dohrá kolo a zastaví sa
+        miniPlaying = false;
+      }).observe(miniForm);
     }
   </script>
 </body>
