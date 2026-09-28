@@ -51,6 +51,9 @@
           </div>
           <button type="submit" id="submitButton"><span data-icon="check"></span>Prihlásiť sa</button>
           <p id="message" class="message"></p>
+          <!-- Ukáže sa len vtedy, keď sa niekto prihlasuje s ešte nepotvrdeným
+               emailom - najčastejšia chyba hneď po registrácii. -->
+          <button type="button" class="secondary small hidden" id="resendButton"><span data-icon="mail"></span>Poslať potvrdzovací email znova</button>
         </form>
 
         <p class="muted" style="margin:1rem 0 0">
@@ -78,10 +81,12 @@
 
     const messageEl = document.getElementById("message");
     const submitButton = document.getElementById("submitButton");
+    const resendButton = document.getElementById("resendButton");
 
     document.getElementById("loginForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       showMessage(messageEl, "");
+      resendButton.classList.add("hidden");
       submitButton.disabled = true;
 
       const { error } = await supabaseClient.auth.signInWithPassword({
@@ -92,10 +97,27 @@
       submitButton.disabled = false;
 
       if (error) {
-        showMessage(messageEl, "Nesprávny email alebo heslo.", "error");
+        // Predtým tu bolo vždy "Nesprávny email alebo heslo" - aj keď mal
+        // človek heslo dobre a len ešte neklikol na odkaz v emaili, alebo
+        // keď neodpovedal server. friendlyError rozlíši, čo sa naozaj stalo.
+        showMessage(messageEl, friendlyError(error), "error");
+        if (error.code === "email_not_confirmed") resendButton.classList.remove("hidden");
         return;
       }
       window.location.href = "/dashboard";
+    });
+
+    resendButton.addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      resendButton.disabled = true;
+      const error = await resendConfirmation(email);
+      resendButton.disabled = false;
+      if (error) {
+        showMessage(messageEl, friendlyError(error), "error");
+        return;
+      }
+      resendButton.classList.add("hidden");
+      showMessage(messageEl, "Poslali sme nový potvrdzovací email na " + email + ". Ak ho nevidíš, pozri sa aj do priečinka Spam.", "ok");
     });
 
     // Ak už má email napísaný tu, posunieme ho na stránku obnovy so sebou,

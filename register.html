@@ -23,7 +23,7 @@
         <a class="logo" href="/">Na<span>Pamiatku</span></a>
         <p class="auth-quote">
           Za pár minút máte QR kód na stoloch.
-          <span>Vytvorte si účet, vytvorte event a všetko je pripravené.</span>
+          <span>Vytvorte si účet, založte akciu a všetko je pripravené.</span>
         </p>
       </div>
     </aside>
@@ -35,9 +35,9 @@
           <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
         </div>
 
-        <h1>Ešte pár sekúnd a máš účet.</h1>
-        <p class="auth-intro">
-          Potom stačí vytvoriť event — hneď dostaneš QR kód pre svojich hostí.
+        <h1 id="heading">Ešte pár sekúnd a máš účet.</h1>
+        <p class="auth-intro" id="registerIntro">
+          Potom stačí založiť akciu — hneď dostaneš QR kód pre svojich hostí.
         </p>
 
         <form id="registerForm">
@@ -69,6 +69,21 @@
           <p id="message" class="message"></p>
         </form>
 
+        <!-- Po registrácii schováme formulár a necháme na obrazovke len
+             jasný ďalší krok. Predtým sa pod tlačidlom objavila jedna veta,
+             ktorú na mobile ľahko prehliadneš - a potom sa človek skúšal
+             prihlásiť s nepotvrdeným emailom. -->
+        <div class="auth-extra hidden" id="sentBox">
+          <p><strong>Ešte jeden krok: potvrď svoj email.</strong></p>
+          <p class="muted" id="sentInfo"></p>
+          <p class="muted">Email príde od <strong>NaPamiatku</strong> zvyčajne do minúty. Ak ho nevidíš, pozri sa aj do priečinka Spam alebo Reklamy.</p>
+          <div class="button-row">
+            <button type="button" class="secondary small" id="resendButton"><span data-icon="refresh"></span>Poslať email znova</button>
+            <button type="button" class="secondary small" id="wrongEmailButton"><span data-icon="pencil"></span>Zadal som zlý email</button>
+          </div>
+          <p id="sentMessage" class="message"></p>
+        </div>
+
         <div class="auth-foot">
           <p>Už máš účet? <a href="/login">Prihlás sa</a></p>
           <p><a href="/">← Späť na úvod</a></p>
@@ -90,6 +105,9 @@
 
     const messageEl = document.getElementById("message");
     const submitButton = document.getElementById("submitButton");
+    const sentMessageEl = document.getElementById("sentMessage");
+    // Email, na ktorý sme práve poslali potvrdenie - pre tlačidlo "Poslať znova".
+    let registeredEmail = "";
 
     document.getElementById("registerForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -115,13 +133,16 @@
         password: password,
         options: {
           data: fullName ? { full_name: fullName } : undefined,
+          // Bez tohto viedol odkaz z emailu na úvodnú stránku - človek bol
+          // síce prihlásený, ale nič mu to nepovedalo.
+          emailRedirectTo: confirmRedirectUrl(),
         },
       });
 
       submitButton.disabled = false;
 
       if (error) {
-        showMessage(messageEl, error.message, "error");
+        showMessage(messageEl, friendlyError(error), "error");
         return;
       }
 
@@ -140,7 +161,35 @@
         return;
       }
 
-      showMessage(messageEl, "Účet vytvorený. Skontroluj email a potvrď registráciu, potom sa môžeš prihlásiť.", "ok");
+      registeredEmail = email;
+      document.getElementById("registerForm").classList.add("hidden");
+      document.getElementById("registerIntro").classList.add("hidden");
+      document.getElementById("heading").textContent = "Skontroluj si email.";
+      document.getElementById("sentInfo").textContent =
+        "Poslali sme ti odkaz na " + email + ". Klikni v emaili na „Potvrdiť email“ a dostaneš sa rovno do svojho účtu.";
+      document.getElementById("sentBox").classList.remove("hidden");
+    });
+
+    document.getElementById("resendButton").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      const error = await resendConfirmation(registeredEmail);
+      button.disabled = false;
+      showMessage(
+        sentMessageEl,
+        error ? friendlyError(error) : "Poslali sme ďalší email. Otvor ten najnovší.",
+        error ? "error" : "ok"
+      );
+    });
+
+    // Preklep v emaili: vrátime formulár, nech sa dá zaregistrovať nanovo.
+    document.getElementById("wrongEmailButton").addEventListener("click", () => {
+      document.getElementById("sentBox").classList.add("hidden");
+      document.getElementById("registerForm").classList.remove("hidden");
+      document.getElementById("registerIntro").classList.remove("hidden");
+      document.getElementById("heading").textContent = "Ešte pár sekúnd a máš účet.";
+      showMessage(sentMessageEl, "");
+      document.getElementById("email").focus();
     });
   </script>
 </body>

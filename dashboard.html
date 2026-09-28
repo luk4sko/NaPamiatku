@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NaPamiatku — Moje eventy</title>
+  <title>NaPamiatku — Moje akcie</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
   <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
@@ -24,7 +24,7 @@
               <span data-identity-email></span>
               <span class="badge" data-identity-role></span>
             </div>
-            <a href="/dashboard" role="menuitem"><span data-icon="grid"></span>Moje eventy</a>
+            <a href="/dashboard" role="menuitem"><span data-icon="grid"></span>Moje akcie</a>
             <button type="button" data-logout role="menuitem"><span data-icon="logout"></span>Odhlásiť sa</button>
           </div>
         </div>
@@ -40,7 +40,7 @@
           <p class="app-hero-sub" id="summary"></p>
         </div>
         <div class="app-hero-actions">
-          <button type="button" id="newEventButton"><span data-icon="plus"></span>Nový event</button>
+          <button type="button" id="newEventButton"><span data-icon="plus"></span>Nová akcia</button>
         </div>
       </div>
     </div>
@@ -50,23 +50,25 @@
     <!-- Záložky vidí len majiteľ - klient má iba svoje eventy. Majiteľ v
          "Eventy" vidí všetky eventy všetkých klientov (moderovanie). -->
     <div class="tabs hidden" id="ownerTabs">
-      <button class="tab active" data-tab="events"><span data-icon="grid"></span>Eventy</button>
+      <button class="tab active" data-tab="events"><span data-icon="grid"></span>Akcie</button>
       <button class="tab" data-tab="accounts"><span data-icon="users"></span>Účty</button>
     </div>
 
     <!-- ---------- Eventy ---------- -->
     <section data-panel="events">
 
-      <div class="toolbar">
+      <!-- Kým nemá človek žiadnu akciu, hľadanie a filtre sú zbytočné a len
+           by zakrývali to hlavné tlačidlo "Nová akcia" - skryje ich renderEvents. -->
+      <div class="toolbar" id="eventToolbar">
         <label class="search-field">
           <span data-icon="search"></span>
-          <input type="search" id="searchInput" placeholder="Hľadať podľa názvu alebo klienta..." aria-label="Hľadať event" />
+          <input type="search" id="searchInput" placeholder="Hľadať podľa názvu..." aria-label="Hľadať akciu" />
         </label>
         <label class="select-field" title="Zoradiť">
           <span data-icon="sort"></span>
           <select id="sortSelect" aria-label="Zoradiť">
             <option value="newest">Naposledy pridané</option>
-            <option value="date">Podľa dátumu eventu</option>
+            <option value="date">Podľa dátumu akcie</option>
             <option value="name">Podľa názvu</option>
             <option value="photos">Najviac fotiek</option>
           </select>
@@ -78,7 +80,7 @@
         </div>
       </div>
 
-      <div class="toolbar toolbar-filters">
+      <div class="toolbar toolbar-filters" id="eventFilters">
         <div class="chips" id="eventFilter">
           <button type="button" class="chip active" data-filter="all">Všetky</button>
           <button type="button" class="chip" data-filter="upcoming">Nadchádzajúce</button>
@@ -120,14 +122,14 @@
     <div class="dialog-form">
       <div class="dialog-head">
         <div>
-          <h3>Nový event</h3>
-          <p class="muted">Event je aktívny hneď po vytvorení. Hneď dostaneš QR kód a odkaz — kto ho má, je vnútri, žiadne heslo hostia nezadávajú.</p>
+          <h3>Nová akcia</h3>
+          <p class="muted">Po vytvorení hneď dostaneš QR kód a odkaz pre hostí. Hostia nič neinštalujú, nemusia sa registrovať ani zadávať heslo.</p>
         </div>
         <button type="button" class="secondary small icon-button" data-dialog-close aria-label="Zavrieť"><span data-icon="x"></span></button>
       </div>
       <form id="requestForm">
         <div class="field">
-          <label for="eventName">Názov eventu</label>
+          <label for="eventName">Názov akcie</label>
           <input type="text" id="eventName" required maxlength="80" placeholder="napr. Svadba Lucie a Mareka alebo Stužková 4.A" />
         </div>
         <div class="field">
@@ -136,7 +138,7 @@
         </div>
         <div class="dialog-actions">
           <button type="button" class="secondary" data-dialog-close>Zrušiť</button>
-          <button type="submit" id="requestButton"><span data-icon="check"></span>Vytvoriť event</button>
+          <button type="submit" id="requestButton"><span data-icon="check"></span>Vytvoriť akciu</button>
         </div>
         <p id="requestMessage" class="message"></p>
       </form>
@@ -202,8 +204,18 @@
       document.getElementById("sortSelect").value = sortBy;
       applyViewMode();
 
+      // Sem vedie odkaz z potvrdzovacieho emailu (?vitaj=1). Povieme, že to
+      // prešlo, a parameter z adresy zmažeme, nech sa hláška neukáže znova
+      // po obnovení stránky.
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("vitaj")) {
+        showToast("Email je potvrdený. Vitaj v NaPamiatku!", "ok");
+        history.replaceState(null, "", "/dashboard");
+      }
+
       isOwner = !!(profile && profile.role === "majitel");
       if (isOwner) {
+        document.getElementById("searchInput").placeholder = "Hľadať podľa názvu alebo klienta...";
         document.getElementById("ownerTabs").classList.remove("hidden");
         document.getElementById("rejectedChip").classList.remove("hidden");
         setupTabs();
@@ -231,7 +243,7 @@
       // po vložení do stránky napočítať od 0 - samotný text okolo (ikona,
       // slovo v správnom tvare) sa nemení.
       const parts = [];
-      parts.push([icon("calendar"), approved.length, plural(approved.length, "event", "eventy", "eventov")]);
+      parts.push([icon("calendar"), approved.length, plural(approved.length, "akcia", "akcie", "akcií")]);
       parts.push([icon("camera"), photos, plural(photos, "fotka", "fotky", "fotiek")]);
       parts.push([icon("chat"), messages, plural(messages, "odkaz", "odkazy", "odkazov")]);
       document.getElementById("summary").innerHTML = parts
@@ -254,7 +266,7 @@
       ]);
 
       if (eventsResult.error) {
-        listEl.innerHTML = emptyState({ iconName: "alert", title: "Eventy sa nepodarilo načítať", text: eventsResult.error.message });
+        listEl.innerHTML = emptyState({ iconName: "alert", title: "Akcie sa nepodarilo načítať", text: friendlyError(eventsResult.error) });
         return;
       }
 
@@ -345,12 +357,15 @@
       const visible = sortEvents(allEvents.filter(eventMatchesFilter));
       countEl.textContent = "";
 
-      if (allEvents.length === 0) {
+      const noEvents = allEvents.length === 0;
+      document.getElementById("eventToolbar").classList.toggle("hidden", noEvents);
+      document.getElementById("eventFilters").classList.toggle("hidden", noEvents);
+      if (noEvents) {
         listEl.innerHTML = emptyState({
           iconName: "sparkles",
-          title: "Zatiaľ tu nie je žiadny event",
-          text: "Vytvor prvý event a máš QR kód pre hostí za minútu.",
-          action: `<button type="button" onclick="openNewEvent()">${icon("plus")}Nový event</button>`,
+          title: "Zatiaľ tu nemáš žiadnu akciu",
+          text: "Založ prvú akciu a o minútu máš QR kód pre hostí.",
+          action: `<button type="button" onclick="openNewEvent()">${icon("plus")}Nová akcia</button>`,
         });
         return;
       }
@@ -361,8 +376,8 @@
 
       const total = allEvents.length;
       countEl.textContent = visible.length === total
-        ? `${total} ${plural(total, "event", "eventy", "eventov")}`
-        : `${visible.length} z ${total} ${plural(total, "eventu", "eventov", "eventov")}`;
+        ? `${total} ${plural(total, "akcia", "akcie", "akcií")}`
+        : `${visible.length} z ${total} ${plural(total, "akcie", "akcií", "akcií")}`;
 
       listEl.innerHTML = "";
       let cardIndex = 0;
@@ -376,7 +391,7 @@
         const cover = event.cover ? ` style="background-image:url('${escapeHtml(event.cover)}')"` : "";
         const dateText = event.event_date ? formatDateLong(event.event_date) : "Dátum nezadaný";
         const relative = event.event_date ? relativeDate(event.event_date) : "";
-        const badge = event.status === "rejected" ? '<span class="badge rejected">pozastavený</span>' : "";
+        const badge = event.status === "rejected" ? '<span class="badge rejected">pozastavená</span>' : "";
         const client = isOwner && event.clientLabel
           ? `<div class="event-card-meta event-card-client">${icon("user")}<span>${escapeHtml(event.clientLabel)}</span></div>` : "";
         li.innerHTML = `
@@ -463,16 +478,14 @@
 
       if (error) {
         button.disabled = false;
-        showMessage(messageEl, error.message, "error");
+        showMessage(messageEl, friendlyError(error), "error");
         return;
       }
 
-      button.disabled = false;
-      document.getElementById("requestForm").reset();
-      newEventDialog.close();
-      showToast("Event je vytvorený.", "ok");
-
-      await loadEvents();
+      // Rovno na QR kód novej akcie - to je presne to, čo človek po vytvorení
+      // potrebuje (a dialóg mu to aj sľúbil). Predtým ostal v zozname a QR
+      // kód musel hľadať v karte akcie pod záložkou.
+      window.location.href = "/event?id=" + encodeURIComponent(newEventId) + "&nova=1#qr";
     });
 
 
@@ -500,7 +513,7 @@
       button.disabled = false;
 
       if (error) {
-        showMessage(messageEl, error.message, "error");
+        showMessage(messageEl, friendlyError(error), "error");
         return;
       }
       document.getElementById("inviteForm").reset();
@@ -515,7 +528,7 @@
         .order("created_at", { ascending: true });
 
       if (error) {
-        container.innerHTML = emptyState({ iconName: "alert", title: "Účty sa nepodarilo načítať", text: error.message });
+        container.innerHTML = emptyState({ iconName: "alert", title: "Účty sa nepodarilo načítať", text: friendlyError(error) });
         return;
       }
       profilesById = {};

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Potvrď svoj email – NaPamiatku</title>
+</head>
+<!-- Šablóna emailu po registrácii (aj po pozvaní klienta). Nie je to stránka
+     pre ľudí: server so Supabase Auth si ju stiahne z tejto adresy a dvojité
+     zložené zátvorky nahradí skutočným odkazom a emailom. Nastavenie je
+     v súbore .env na serveri. Štýly sú priamo v tagoch a rozloženie
+     v tabuľkách, lebo emailové programy (hlavne Outlook) iné nepoznajú. -->
+<body style="margin:0;padding:0;background:#faf7f2;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf7f2;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #eadfd2;border-radius:16px;">
+        <tr><td style="padding:32px 32px 0;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:bold;color:#1d1a16;">Na<span style="color:#8b5a2b;">Pamiatku</span></td></tr>
+        <tr><td style="padding:24px 32px 0;font-size:22px;font-weight:bold;color:#1d1a16;">Potvrď svoj email</td></tr>
+        <tr><td style="padding:12px 32px 0;font-size:16px;line-height:1.5;color:#4a433b;">Ahoj, už len jeden klik. Potvrď, že adresa <strong>{{ .Email }}</strong> patrí tebe, a dostaneš sa rovno do svojho účtu.</td></tr>
+        <tr><td style="padding:24px 32px;"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#8b5a2b;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:999px;">Potvrdiť email</a></td></tr>
+        <tr><td style="padding:0 32px 24px;font-size:13px;line-height:1.5;color:#6b6258;">Tlačidlo nefunguje? Skopíruj tento odkaz do prehliadača:<br><a href="{{ .ConfirmationURL }}" style="color:#8b5a2b;word-break:break-all;">{{ .ConfirmationURL }}</a></td></tr>
+        <tr><td style="padding:16px 32px 28px;border-top:1px solid #eadfd2;font-size:13px;line-height:1.5;color:#6b6258;">Ak nevieš, o čo ide, tento email pokojne ignoruj – bez potvrdenia sa účet nedá použiť.</td></tr>
+      </table>
+      <p style="font-size:12px;color:#8a8076;margin:16px 0 0;">NaPamiatku · fotky od všetkých hostí v jednej galérii · <a href="https://www.napamiatku.com" style="color:#8a8076;">napamiatku.com</a></p>
+    </td></tr>
+  </table>
+</body>
+</html>

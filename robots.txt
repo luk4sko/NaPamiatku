@@ -4,4 +4,5 @@ Disallow: /dashboard
 Disallow: /event
 Disallow: /guest
 Disallow: /set-password
+Disallow: /email/
 Sitemap: https://www.napamiatku.com/sitemap.xml

@@ -201,6 +201,23 @@ function setupIdentityMenus() {
   });
 }
 
+// Kam vedie odkaz z potvrdzovacieho emailu: rovno do prehľadu akcií.
+// ?vitaj=1 = dashboard ukáže "Email je potvrdený", nech človek vie, že to prešlo.
+function confirmRedirectUrl() {
+  return window.location.origin + "/dashboard?vitaj=1";
+}
+
+// Pošle potvrdzovací email znova - keď prvý zapadol v spame alebo ho
+// človek omylom zmazal. Vracia chybu alebo null.
+async function resendConfirmation(email) {
+  const { error } = await supabaseClient.auth.resend({
+    type: "signup",
+    email: email,
+    options: { emailRedirectTo: confirmRedirectUrl() },
+  });
+  return error;
+}
+
 async function logout() {
   await supabaseClient.auth.signOut();
   window.location.href = "/login";
@@ -339,12 +356,55 @@ async function runInParallel(files, limit, worker) {
   await Promise.all(Array.from({ length: Math.min(limit, files.length) }, lane));
 }
 
-// Chybové hlásenia z knižníc sú po anglicky a technické ("Failed to fetch").
-// Pri výpadku siete/servera hosťovi povieme, čo sa deje, po slovensky.
+// Chybové hlásenia z knižníc sú po anglicky a technické ("Failed to fetch",
+// "Email not confirmed"). Človeku povieme po slovensky, čo sa stalo a čo
+// má urobiť. Supabase Auth ku chybe posiela aj krátky kód (error.code),
+// podľa neho vyberáme text - je spoľahlivejší než anglická veta.
+const AUTH_ERROR_TEXTS = {
+  email_not_confirmed: "Email ešte nie je potvrdený. Otvor odkaz, ktorý sme ti poslali po registrácii.",
+  invalid_credentials: "Nesprávny email alebo heslo.",
+  user_already_exists: "Tento email je už zaregistrovaný. Prihlás sa.",
+  email_exists: "Tento email je už zaregistrovaný. Prihlás sa.",
+  weak_password: "Heslo je príliš slabé. Použi aspoň 8 znakov.",
+  same_password: "Toto heslo už na účte máš. Zvoľ si iné.",
+  email_address_invalid: "Na tento email nevieme poslať správu. Skontroluj, či je napísaný správne.",
+  validation_failed: "Skontroluj, či je email napísaný správne.",
+  over_email_send_rate_limit: "Email sme posielali len pred chvíľou. Skús to o minútu znova.",
+  over_request_rate_limit: "Priveľa pokusov za krátky čas. Počkaj chvíľu a skús to znova.",
+  signup_disabled: "Registrácia je momentálne vypnutá.",
+  session_expired: "Prihlásenie vypršalo. Prihlás sa znova.",
+  refresh_token_not_found: "Prihlásenie vypršalo. Prihlás sa znova.",
+};
+
+// Hlášky z našich databázových funkcií sú po slovensky, ale ešte so slovom
+// "event". Na stránke všade píšeme "akcia", tak tie, na ktoré človek reálne
+// narazí, prepíšeme sem, nech sa slová nemiešajú.
+const DB_ERROR_TEXTS = {
+  "Máš už 20 aktívnych eventov. Staré eventy najprv zmaž.": "Máš už 20 aktívnych akcií. Staré akcie najprv zmaž.",
+  "Názov eventu nesmie byť prázdny": "Napíš názov akcie.",
+  "Event sa nenašiel": "Akcia sa nenašla. Odkaz je možno neplatný.",
+};
+
 function friendlyError(error) {
   const message = (error && error.message) || String(error || "");
   if (/failed to fetch|networkerror|load failed|fetch failed|network request failed/i.test(message) || !navigator.onLine) {
     return "Server je práve nedostupný. Skús to o chvíľu znova.";
+  }
+  const code = error && error.code;
+  if (code && AUTH_ERROR_TEXTS[code]) return AUTH_ERROR_TEXTS[code];
+  if (DB_ERROR_TEXTS[message]) return DB_ERROR_TEXTS[message];
+  if ((error && error.status === 429) || /rate limit|only request this after/i.test(message)) {
+    return AUTH_ERROR_TEXTS.over_request_rate_limit;
+  }
+  if (/jwt expired|session.*(missing|expired)/i.test(message)) return AUTH_ERROR_TEXTS.session_expired;
+  if (/row-level security|permission denied/i.test(message)) return "Na toto nemáš oprávnenie.";
+  if (/exceeded the maximum allowed size|too large/i.test(message)) return "Súbor je príliš veľký.";
+  if (/mime type .* is not supported/i.test(message)) return "Tento typ súboru sa nedá nahrať.";
+  // Neznámu anglickú hlášku (bez diakritiky) človeku neukážeme - nič by mu
+  // nepovedala. Pôvodný text ostane v konzole pre nás, keby sme to riešili.
+  if (/^[\x00-\x7F]*$/.test(message)) {
+    console.warn("Nepreložená chyba:", error);
+    return "Niečo sa pokazilo. Skús to prosím znova.";
   }
   return message;
 }

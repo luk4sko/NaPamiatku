@@ -672,6 +672,20 @@
     // Ukážkové QR kódy (hero, 2. krok aj "platobný" kód v telefóne) vedú na
     // túto istú stránku - kto ich skúsi naskenovať, nedostane sa nikam, kam
     // nemá, a hlavne nikomu nepošle peniaze.
+    // Odkazy z emailov poslaných pred opravou registrácie viedli sem, na
+    // úvodnú stránku, s prihlásením v adrese (#access_token=...). Supabase
+    // si ho prevezme sám - my človeka pošleme tam, kam chcel ísť, inak by
+    // videl reklamnú stránku a nevedel by, či potvrdenie prešlo. Hash si
+    // čítame hneď, kým ho Supabase z adresy nezmaže.
+    const authHash = window.location.hash;
+    if (authHash.includes("access_token")) {
+      supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        if (!session) return;
+        if (authHash.includes("type=recovery")) window.location.replace("/set-password#type=recovery");
+        else window.location.replace(authHash.includes("type=signup") ? "/dashboard?vitaj=1" : "/dashboard");
+      });
+    }
+
     const demoQr = makeQrDataUrl(window.location.origin, 300);
     demoQr.then((dataUrl) => {
       document.getElementById("heroQr").src = dataUrl;

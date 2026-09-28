@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NaPamiatku — Event</title>
+  <title>NaPamiatku — Akcia</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
   <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
@@ -24,7 +24,7 @@
               <span data-identity-email></span>
               <span class="badge" data-identity-role></span>
             </div>
-            <a href="/dashboard" role="menuitem"><span data-icon="grid"></span>Moje eventy</a>
+            <a href="/dashboard" role="menuitem"><span data-icon="grid"></span>Moje akcie</a>
             <button type="button" data-logout role="menuitem"><span data-icon="logout"></span>Odhlásiť sa</button>
           </div>
         </div>
@@ -35,7 +35,7 @@
   <header class="app-hero">
     <div class="app-hero-bg" id="heroBg"></div>
     <div class="page">
-      <a class="back-link" href="/dashboard"><span data-icon="arrowLeft"></span>Moje eventy</a>
+      <a class="back-link" href="/dashboard"><span data-icon="arrowLeft"></span>Moje akcie</a>
       <div class="app-hero-top">
         <div>
           <h1 id="eventName">Načítavam...</h1>
@@ -123,7 +123,7 @@
       <section data-panel="qr" class="hidden">
         <div class="card settings-card share-card">
           <div class="qr-card">
-            <img id="qrImage" alt="QR kód eventu" />
+            <img id="qrImage" alt="QR kód akcie" />
             <button type="button" id="downloadQrButton" class="secondary small"><span data-icon="download"></span>Stiahnuť PNG</button>
           </div>
           <div class="share-body">
@@ -188,11 +188,11 @@
       <section data-panel="nastavenia" class="hidden">
         <div class="card settings-card">
           <h3><span data-icon="pencil"></span>Základné údaje</h3>
-          <p class="muted">Názov a dátum vidia hostia po vstupe na stránku eventu.</p>
+          <p class="muted">Názov a dátum vidia hostia po vstupe na stránku akcie.</p>
           <form id="detailsForm">
             <div class="field-row">
               <div class="field">
-                <label for="detailsName">Názov eventu</label>
+                <label for="detailsName">Názov akcie</label>
                 <input type="text" id="detailsName" required maxlength="80" />
               </div>
               <div class="field">
@@ -234,14 +234,14 @@
 
         <div class="card settings-card danger-zone hidden" id="suspendEventCard">
           <h3><span data-icon="alert"></span>Pozastaviť pre hostí</h3>
-          <p class="muted">Moderovanie: pozastavený event je pre hostí nedostupný (odkaz prestane fungovať), organizátor ho stále vidí. Fotky ostávajú.</p>
+          <p class="muted">Moderovanie: pozastavená akcia je pre hostí nedostupná (odkaz prestane fungovať), organizátor ju stále vidí. Fotky ostávajú.</p>
           <button type="button" class="danger" id="suspendEventButton"></button>
         </div>
 
         <div class="card settings-card danger-zone hidden" id="deleteEventCard">
-          <h3><span data-icon="trash"></span>Zmazať event</h3>
-          <p class="muted">Nenávratne zmaže event aj so všetkými fotkami, videami, odkazmi a nahláseniami. Odkaz a QR kód prestanú fungovať. Pred zmazaním si obsah stiahni ako ZIP.</p>
-          <button type="button" class="danger" id="deleteEventButton"><span data-icon="trash"></span>Zmazať celý event</button>
+          <h3><span data-icon="trash"></span>Zmazať akciu</h3>
+          <p class="muted">Nenávratne zmaže akciu aj so všetkými fotkami, videami, odkazmi a nahláseniami. Odkaz a QR kód prestanú fungovať. Pred zmazaním si obsah stiahni ako ZIP.</p>
+          <button type="button" class="danger" id="deleteEventButton"><span data-icon="trash"></span>Zmazať celú akciu</button>
           <p id="deleteEventMessage" class="message"></p>
         </div>
       </section>
@@ -331,6 +331,13 @@
         renderSuspendButton();
       }
       setupTabs();
+      // Sem pošle dashboard hneď po vytvorení akcie (&nova=1#qr) - otvorí sa
+      // záložka s QR kódom a povieme, čo s ním. Parameter z adresy zmažeme,
+      // nech sa hláška neukáže znova po obnovení stránky.
+      if (new URLSearchParams(window.location.search).has("nova")) {
+        showToast("Akcia je vytvorená. Tu máš QR kód a odkaz pre hostí.", "ok");
+        history.replaceState(null, "", "/event?id=" + encodeURIComponent(eventId) + "#qr");
+      }
       // Náhľad kartičky sa dá zmerať až keď je záložka viditeľná.
       document.addEventListener("tabchange", (event) => {
         if (event.detail === "qr") renderTentPreview();
@@ -340,13 +347,13 @@
     }
 
     function showAccessDenied() {
-      document.getElementById("eventName").textContent = "Event";
+      document.getElementById("eventName").textContent = "Akcia";
       document.getElementById("accessDenied").classList.remove("hidden");
       document.getElementById("accessDenied").innerHTML = emptyState({
         iconName: "lock",
-        title: "Tento event neexistuje alebo k nemu nemáš prístup",
-        text: "Skontroluj odkaz alebo sa vráť na zoznam svojich eventov.",
-        action: '<a class="button" href="/dashboard">' + icon("arrowLeft") + "Moje eventy</a>",
+        title: "Táto akcia neexistuje alebo k nej nemáš prístup",
+        text: "Skontroluj odkaz alebo sa vráť na zoznam svojich akcií.",
+        action: '<a class="button" href="/dashboard">' + icon("arrowLeft") + "Moje akcie</a>",
       });
     }
 
@@ -359,7 +366,7 @@
       }
       // Každý event je od vytvorenia aktívny - odznak má zmysel len keď ho
       // prevádzkovateľ pozastavil (hostia sa k nemu nedostanú).
-      if (currentEvent.status === "rejected") parts.push('<span class="badge rejected">pozastavený</span>');
+      if (currentEvent.status === "rejected") parts.push('<span class="badge rejected">pozastavená</span>');
       document.getElementById("eventMeta").innerHTML = parts.map((part) => "<span>" + part + "</span>").join("");
       document.getElementById("heroActions").hidden = false;
       document.getElementById("stats").hidden = false;
@@ -370,7 +377,7 @@
     function renderSuspendButton() {
       const button = document.getElementById("suspendEventButton");
       const suspended = currentEvent.status === "rejected";
-      button.innerHTML = suspended ? icon("check") + "Obnoviť pre hostí" : icon("alert") + "Pozastaviť event";
+      button.innerHTML = suspended ? icon("check") + "Obnoviť pre hostí" : icon("alert") + "Pozastaviť akciu";
       button.classList.toggle("danger", !suspended);
       button.classList.toggle("secondary", suspended);
     }
@@ -379,8 +386,8 @@
       const suspended = currentEvent.status === "rejected";
       if (!suspended) {
         const ok = await confirmDialog({
-          title: "Pozastaviť event?",
-          text: "Hostia sa k nemu nedostanú, kým ho neobnovíš. Organizátor event naďalej vidí.",
+          title: "Pozastaviť akciu?",
+          text: "Hostia sa k nej nedostanú, kým ju neobnovíš. Organizátor akciu naďalej vidí.",
           confirmLabel: "Pozastaviť",
           danger: true,
         });
@@ -389,11 +396,11 @@
       const { error } = await supabaseClient.rpc("set_event_status", {
         p_event_id: currentEvent.id, p_status: suspended ? "approved" : "rejected",
       });
-      if (error) return showToast("Chyba: " + error.message, "error");
+      if (error) return showToast(friendlyError(error), "error");
       currentEvent.status = suspended ? "approved" : "rejected";
       renderSuspendButton();
       renderHeader();
-      showToast(suspended ? "Event je znova dostupný pre hostí." : "Event je pozastavený.", "ok");
+      showToast(suspended ? "Akcia je znova dostupná pre hostí." : "Akcia je pozastavená.", "ok");
     });
 
     // Štatistiky v hlavičke: fotky, videá, odkazy a koľko rôznych ľudí prispelo.
@@ -564,7 +571,7 @@
       });
       if (!ok) return;
       const { data, error } = await supabaseClient.rpc("regenerate_event_slug", { p_event_id: currentEvent.id });
-      if (error) return showToast("Chyba: " + error.message, "error");
+      if (error) return showToast(friendlyError(error), "error");
       currentEvent.slug = data;
       tentQrDataUrl = "";
       await renderShare();
@@ -671,7 +678,7 @@
         button.addEventListener("click", async () => {
           const { error } = await supabaseClient.from("photo_reports")
             .update({ resolved_at: new Date().toISOString() }).eq("id", button.dataset.reportKeep);
-          if (error) return showToast("Chyba: " + error.message, "error");
+          if (error) return showToast(friendlyError(error), "error");
           showToast("Nahlásenie uzavreté, fotka zostáva.", "ok");
           await loadReports();
         });
@@ -784,7 +791,7 @@
       const { error: storageError } = await supabaseClient.storage.from("photos").remove(paths);
       if (storageError) return showToast("Chyba pri mazaní súboru: " + storageError.message, "error");
       const { error } = await supabaseClient.from("photos").delete().in("id", ids);
-      if (error) return showToast("Chyba: " + error.message, "error");
+      if (error) return showToast(friendlyError(error), "error");
 
       ids.forEach((id) => selectedIds.delete(id));
       showToast(count === 1 ? "Fotka zmazaná." : `Zmazané: ${count}`, "ok");
@@ -894,7 +901,7 @@
         });
         showToast(`ZIP so ${photos.length} ${plural(photos.length, "súborom", "súbormi", "súbormi")} je stiahnutý.`, "ok");
       } catch (error) {
-        showToast("Sťahovanie zlyhalo: " + error.message, "error");
+        showToast("Sťahovanie zlyhalo: " + friendlyError(error), "error");
       } finally {
         button.disabled = false;
         button.innerHTML = original;
@@ -954,7 +961,7 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        list.innerHTML = emptyState({ iconName: "alert", title: "Odkazy sa nepodarilo načítať", text: error.message });
+        list.innerHTML = emptyState({ iconName: "alert", title: "Odkazy sa nepodarilo načítať", text: friendlyError(error) });
         return;
       }
       const signature = data.map((item) => item.id).join(",");
@@ -997,7 +1004,7 @@
           const ok = await confirmDialog({ title: "Zmazať tento odkaz?", text: "Odkaz sa už nedá obnoviť.", confirmLabel: "Zmazať", danger: true });
           if (!ok) return;
           const { error } = await supabaseClient.from("guestbook_messages").delete().eq("id", button.dataset.deleteMessage);
-          if (error) return showToast("Chyba: " + error.message, "error");
+          if (error) return showToast(friendlyError(error), "error");
           showToast("Odkaz zmazaný.", "ok");
           await loadMessages();
         });
@@ -1051,13 +1058,13 @@
       if (!updates.name) return showMessage(messageEl, "Názov nemôže byť prázdny.", "error");
 
       const { error } = await supabaseClient.from("events").update(updates).eq("id", currentEvent.id);
-      if (error) return showMessage(messageEl, error.message, "error");
+      if (error) return showMessage(messageEl, friendlyError(error), "error");
 
       Object.assign(currentEvent, updates);
       document.title = "NaPamiatku — " + currentEvent.name;
       renderHeader();
       showMessage(messageEl, "");
-      showToast("Údaje eventu uložené.", "ok");
+      showToast("Údaje akcie sú uložené.", "ok");
     });
 
     /* ---------- Zmazanie eventu (len majiteľ) ---------- */
@@ -1066,8 +1073,8 @@
       const total = allPhotos.length;
       const ok = await confirmDialog({
         title: `Zmazať event „${currentEvent.name}“?`,
-        text: `Zmaže sa ${total} ${plural(total, "súbor", "súbory", "súborov")}, ${allMessages.length} ${plural(allMessages.length, "odkaz", "odkazy", "odkazov")} a celý event. Toto sa nedá vrátiť späť.`,
-        confirmLabel: "Áno, zmazať event",
+        text: `Zmaže sa ${total} ${plural(total, "súbor", "súbory", "súborov")}, ${allMessages.length} ${plural(allMessages.length, "odkaz", "odkazy", "odkazov")} a celá akcia. Toto sa nedá vrátiť späť.`,
+        confirmLabel: "Áno, zmazať akciu",
         danger: true,
       });
       if (!ok) return;
@@ -1092,9 +1099,9 @@
       }
 
       const { error } = await supabaseClient.from("events").delete().eq("id", currentEvent.id);
-      if (error) { button.disabled = false; return showMessage(messageEl, error.message, "error"); }
+      if (error) { button.disabled = false; return showMessage(messageEl, friendlyError(error), "error"); }
 
-      showMessage(messageEl, "Event zmazaný, presmerúvam...", "ok");
+      showMessage(messageEl, "Akcia je zmazaná, presmerúvam...", "ok");
       window.location.href = "/dashboard";
     });
 
@@ -1122,7 +1129,7 @@
         gift_message: document.getElementById("giftMessage").value.trim() || null,
       };
       const { error } = await supabaseClient.from("events").update(updates).eq("id", currentEvent.id);
-      if (error) return showMessage(messageEl, error.message, "error");
+      if (error) return showMessage(messageEl, friendlyError(error), "error");
       Object.assign(currentEvent, updates);
       showMessage(messageEl, "");
       showToast(enabled ? "Dary sú zapnuté." : "Dary sú vypnuté.", "ok");
