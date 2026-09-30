@@ -900,6 +900,7 @@
           button.innerHTML = `<span class="spinner"></span> ${done} / ${total}`;
         });
         showToast(`ZIP so ${photos.length} ${plural(photos.length, "súborom", "súbormi", "súbormi")} je stiahnutý.`, "ok");
+        trackEvent("Stiahnutie ZIP", { pocet: photos.length });
       } catch (error) {
         showToast("Sťahovanie zlyhalo: " + friendlyError(error), "error");
       } finally {

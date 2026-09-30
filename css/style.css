@@ -2743,9 +2743,8 @@ section[id] {
   .landing .founder { grid-template-columns: 220px 1fr; gap: 3.5rem; }
 }
 
-/* Kým tu nie je fotka, sú tu iniciály. Fotku vložíš takto:
-   <div class="founder-photo"><img src="img/lukas.webp" alt="Lukáš Brtko" /></div>
-   a z <div> zmažeš aria-hidden a text "LB". */
+/* Okrúhla fotka autora. Písmo a farby tu ostali pre prípad, že by
+   namiesto <img> v <div> boli len iniciály (napr. "LB"). */
 .founder-photo {
   width: 200px;
   aspect-ratio: 1;
@@ -4090,6 +4089,119 @@ a.button:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
+}
+
+/* ---------- Prehľad (majiteľ) ---------- */
+
+/* Pás s odkazom na Umami: text vľavo, tlačidlo vpravo (na mobile pod ním). */
+.overview-umami {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.overview-umami p {
+  margin: 0.25rem 0 0;
+}
+
+/* 6 dlaždíc: na počítači 3 v riadku (2 riadky), na mobile 2. */
+@media (min-width: 640px) {
+  .overview-tiles { grid-template-columns: repeat(3, 1fr); }
+}
+
+.overview-tiles {
+  margin-top: 0;
+}
+
+.overview-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+}
+
+/* Stĺpcový graf: 12 stĺpcov vedľa seba, každý rastie odspodu. */
+.week-chart {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0.4rem;
+  align-items: end;
+  height: 14rem;
+  padding: 1rem 1rem 0.75rem;
+}
+
+.week-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+/* Dráha stĺpca = všetko miesto nad dátumom. Výška stĺpca v % sa ráta
+   z nej, takže 100 % je presne po vrch a 50 % presne polovica. Horný
+   padding necháva miesto na číslo nad najvyšším stĺpcom. */
+.week-bar-track {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 1.3rem;
+}
+
+.week-bar-fill {
+  position: relative;
+  width: 100%;
+  max-width: 2.25rem;
+  /* Aj nula má tenkú čiaru, aby bolo vidno, že týždeň tam je. */
+  min-height: 2px;
+  border-radius: 6px 6px 2px 2px;
+  background: var(--accent);
+  transition: height 0.35s ease;
+}
+
+/* Číslo "pláva" tesne nad stĺpcom a do jeho výšky sa neráta. */
+.week-bar-value {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.week-bar-label {
+  margin-top: 0.4rem;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Riadky najaktívnejších akcií sú odkazy, ale vyzerajú ako zoznam účtov. */
+a.top-event-row {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+a.top-event-row:hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+
+/* Počty fotiek a odkazov sa radšej zalomia, ako by sa mali odrezať. */
+.top-event-row .account-row-body span {
+  white-space: normal;
+}
+
+.top-event-row .avatar .ui-icon {
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 /* Informačný pás (napr. "Tvoja žiadosť čaká na schválenie"). */
@@ -6218,6 +6330,17 @@ p.consent {
 }
 
 @media (max-width: 640px) {
+  /* Prehľad: 12 dátumov pod grafom sa vedľa seba nezmestí - ukážeme
+     každý druhý, stĺpce ostávajú všetky. */
+  .week-chart {
+    gap: 0.25rem;
+    padding: 0.85rem 0.6rem 0.6rem;
+  }
+
+  .week-bar:nth-child(even) .week-bar-label {
+    visibility: hidden;
+  }
+
   /* Hlavička eventu: menej prázdneho miesta, aby bola galéria skôr na dosah. */
   .app-hero .page {
     padding-top: 1.5rem;

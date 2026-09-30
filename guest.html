@@ -542,6 +542,8 @@
       });
 
       list.finish();
+      // Jedna udalosť na celú dávku (nie na každú fotku) - šetrí limit Umami.
+      if (done > 0) trackEvent("Hosť nahral fotky", { pocet: done });
       if (done === files.length) showToast(`Ďakujeme! Nahraté: ${done} ${plural(done, "súbor", "súbory", "súborov")}.`, "ok");
       else showToast(`Nahraté ${done} z ${files.length}. Niektoré súbory zlyhali - skús ich znova.`, "error");
       await loadPhotos(true);
@@ -641,6 +643,7 @@
       if (error) return showMessage(statusEl, friendlyError(error), "error");
 
       if (messageId) rememberMine(messageId);
+      trackEvent("Odkaz v knihe hostí");
       messageText.value = "";
       document.getElementById("charCount").textContent = "0 / 1000";
       showMessage(statusEl, "");

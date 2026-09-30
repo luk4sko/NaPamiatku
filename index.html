@@ -45,7 +45,7 @@
       <div class="top-bar-actions">
         <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
         <a href="/login" class="nav-login">Prihlásiť sa</a>
-        <a href="/register" class="btn small">Založiť akciu</a>
+        <a href="/register" class="btn small" data-umami-event="Klik: Založiť akciu" data-umami-event-miesto="lišta">Založiť akciu</a>
       </div>
     </div>
   </nav>
@@ -71,7 +71,7 @@
         </p>
         <p class="hero-free">Pre organizátorov aj hostí je to <strong>úplne zadarmo</strong>.</p>
         <div class="hero-actions">
-          <a href="/register" class="btn large">Založiť akciu zadarmo</a>
+          <a href="/register" class="btn large" data-umami-event="Klik: Založiť akciu" data-umami-event-miesto="úvod">Založiť akciu zadarmo</a>
           <a href="#ako-to-funguje" class="text-link">Ako to funguje <span aria-hidden="true">↓</span></a>
         </div>
         <!-- Tri fakty vedľa seba. Číslo hore, vysvetlenie pod ním - oko ich
@@ -541,10 +541,12 @@
 
     <!-- ---------- Kto za tým je ----------
          Skutočný človek je najlepší dôkaz, že stránku niekto naozaj robí a
-         stará sa o ňu. Namiesto iniciál sem patrí fotka (img/lukas.webp,
-         štvorcová, aspoň 400 × 400 px) - pozri komentár pri .founder-photo. -->
+         stará sa o ňu. Fotka je štvorcová 400 × 400 px, teda 2× väčšia ako
+         200 px kruh, aby bola ostrá aj na Retina displejoch. -->
     <section class="section founder" id="kto-za-tym-je">
-      <div class="founder-photo reveal" aria-hidden="true">LB</div>
+      <div class="founder-photo reveal">
+        <img src="img/lukas.webp" alt="Lukáš Brtko" width="400" height="400" loading="lazy" />
+      </div>
       <div class="founder-copy reveal" style="--d: 0.08s">
         <p class="eyebrow">Kto za tým je</p>
         <h2>Ahoj, som Lukáš</h2>
@@ -632,7 +634,7 @@
           <h2>Máte <em class="occasion-word" id="occasionWord" aria-hidden="true">svadbu</em>?<br />Založte si akciu za dve minúty.</h2>
           <p class="sr-only">Hodí sa na svadby, stužkové, oslavy, krstiny, firemné večierky aj stretávky.</p>
           <p>Stačí e-mail a&nbsp;heslo. Platobnú kartu od vás nechceme.</p>
-          <a href="/register" class="btn large">Založiť akciu zadarmo</a>
+          <a href="/register" class="btn large" data-umami-event="Klik: Založiť akciu" data-umami-event-miesto="koniec stránky">Založiť akciu zadarmo</a>
         </div>
       </div>
     </section>

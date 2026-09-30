@@ -27,6 +27,7 @@
      Hromadné stiahnutie .......... downloadAsZip
      QR kódy ...................... makeQrDataUrl, makePaymentQrDataUrl
      Animácie ...................... animateNumber
+     Návštevnosť (Umami) .......... loadUmami, trackEvent
      Spustenie na každej stránke .. čo sa pustí samo po načítaní
 
    Štýly k týmto prvkom sú v css/style.css - ten má na začiatku vlastný
@@ -886,6 +887,7 @@ const ICONS = {
   list: '<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
   sort: '<path d="M4 6h16M7 12h10M10 18h4"/>',
   flag: '<path d="M5 21V4M5 4h11l-1.5 3.5L16 11H5"/>',
+  chart: '<path d="M4 20h16M6.5 16.5V12M12 16.5V6.5M17.5 16.5v-6"/>',
 };
 
 function icon(name, className) {
@@ -1304,9 +1306,56 @@ function animateNumber(el, value, duration = 600) {
   requestAnimationFrame(tick);
 }
 
+/* ---------- Návštevnosť (Umami) ---------- */
+
+// Koľko ľudí príde na web, odkiaľ a z akého zariadenia, meria Umami
+// (umami.is). Nepoužíva cookies ani nič neukladá do prehliadača, preto
+// nepotrebuje súhlas v lište Cookiebotu. Výsledky sú na cloud.umami.is.
+// Vkladá sa odtiaľto, lebo app.js načítava každá stránka - ID webu je
+// tak na jednom mieste namiesto štrnástich.
+const UMAMI_WEBSITE_ID = "cdee3ad1-8b4c-4016-8833-b9cb80fd07b8";
+
+function loadUmami() {
+  if (!UMAMI_WEBSITE_ID) return;
+  const script = document.createElement("script");
+  script.src = "https://cloud.umami.is/script.js";
+  script.defer = true;
+  script.dataset.websiteId = UMAMI_WEBSITE_ID;
+  // Meria sa len na ostrom webe - náhľady na localhoste čísla nekazia.
+  script.dataset.domains = "www.napamiatku.com";
+  // BEZPEČNOSŤ: adresa sa pošle bez ?slug=... a bez #access_token=...
+  // Slug je jediný kľúč k fotkám akcie a token je prihlásenie - ani jedno
+  // nesmie odísť k cudzej službe. Platí aj pre predchádzajúcu stránku.
+  script.dataset.excludeSearch = "true";
+  script.dataset.excludeHash = "true";
+  // Kto si v prehliadači zapol "Do Not Track", toho nemeriame vôbec
+  // (sľubujeme to aj v zásadách ochrany údajov).
+  script.dataset.doNotTrack = "true";
+  script.dataset.beforeSend = "umamiBeforeSend";
+  document.head.appendChild(script);
+}
+
+// Umami túto funkciu zavolá pred odoslaním každého záznamu. Titulok stránky
+// zahodíme: na stránkach akcie obsahuje jej názov (napr. "Svadba Lucie
+// a Mareka"), teda mená ľudí. Ktorá stránka to bola, je vidno z adresy.
+function umamiBeforeSend(type, payload) {
+  payload.title = "";
+  return payload;
+}
+
+// Vlastná udalosť v štatistikách, napr. trackEvent("Registrácia").
+// Do data dávame len čísla a všeobecné slová - nikdy meno, email ani slug.
+// Keď Umami zablokuje ad-blocker, window.umami neexistuje a nič sa nestane.
+function trackEvent(name, data) {
+  if (window.umami && typeof window.umami.track === "function") {
+    window.umami.track(name, data);
+  }
+}
+
 /* ---------- Spustenie na každej stránke ---------- */
 
 initTheme();
+loadUmami();
 
 document.addEventListener("DOMContentLoaded", () => {
   updateThemeButtons();

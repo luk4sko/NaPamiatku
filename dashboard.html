@@ -51,6 +51,7 @@
          "Eventy" vidí všetky eventy všetkých klientov (moderovanie). -->
     <div class="tabs hidden" id="ownerTabs">
       <button class="tab active" data-tab="events"><span data-icon="grid"></span>Akcie</button>
+      <button class="tab" data-tab="overview"><span data-icon="chart"></span>Prehľad</button>
       <button class="tab" data-tab="accounts"><span data-icon="users"></span>Účty</button>
     </div>
 
@@ -83,7 +84,7 @@
       <div class="toolbar toolbar-filters" id="eventFilters">
         <div class="chips" id="eventFilter">
           <button type="button" class="chip active" data-filter="all">Všetky</button>
-          <button type="button" class="chip" data-filter="upcoming">Nadchádzajúce</button>
+          <button type="button" class="chip" data-filter="current">Aktuálne</button>
           <button type="button" class="chip" data-filter="past">Prebehnuté</button>
           <button type="button" class="chip hidden" data-filter="rejected" id="rejectedChip">Pozastavené</button>
         </div>
@@ -91,6 +92,41 @@
         <p class="muted result-count" id="resultCount"></p>
       </div>
       <ul id="eventList" class="event-grid"></ul>
+    </section>
+
+    <!-- ---------- Prehľad (len majiteľ) ----------
+         Čísla z databázy (funkcia owner_overview). Návštevnosť webu
+         (koľko ľudí prišlo na stránku) je v Umami, sem na ňu vedie odkaz. -->
+    <section data-panel="overview" class="hidden">
+      <div class="card overview-umami">
+        <div>
+          <strong>Návštevnosť webu</strong>
+          <p class="muted">Koľko ľudí prišlo na stránku, odkiaľ, z akého zariadenia a na čo klikali.</p>
+        </div>
+        <a class="button" href="https://cloud.umami.is/" target="_blank" rel="noopener noreferrer"><span data-icon="link"></span>Otvoriť Umami</a>
+      </div>
+
+      <div class="app-section-head">
+        <h2><span data-icon="chart"></span>NaPamiatku v číslach</h2>
+      </div>
+      <div class="stat-tiles overview-tiles" id="overviewTiles"></div>
+      <p class="muted overview-note" id="overviewNote"></p>
+
+      <div class="app-section-head">
+        <h2><span data-icon="calendar"></span>Posledných 12 týždňov</h2>
+        <div class="chips" id="overviewMetric">
+          <button type="button" class="chip active" data-metric="uploads">Fotky a videá</button>
+          <button type="button" class="chip" data-metric="events">Akcie</button>
+          <button type="button" class="chip" data-metric="clients">Klienti</button>
+          <button type="button" class="chip" data-metric="messages">Odkazy</button>
+        </div>
+      </div>
+      <div class="card week-chart" id="weekChart"></div>
+
+      <div class="app-section-head">
+        <h2><span data-icon="sparkles"></span>Najaktívnejšie akcie</h2>
+      </div>
+      <div id="topEvents"></div>
     </section>
 
     <!-- ---------- Účty (len majiteľ) ---------- -->
@@ -324,7 +360,8 @@
       if (activeFilter === "rejected") return event.status === "rejected";
       if (event.status === "rejected") return activeFilter === "all";
       if (activeFilter === "all") return true;
-      if (!event.event_date) return activeFilter === "upcoming";
+      // "Aktuálne" = dnešné, budúce a akcie bez dátumu; "Prebehnuté" = pred dneškom.
+      if (!event.event_date) return activeFilter === "current";
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const isPast = new Date(event.event_date) < today;
@@ -482,12 +519,121 @@
         return;
       }
 
+      trackEvent("Nová akcia");
+
       // Rovno na QR kód novej akcie - to je presne to, čo človek po vytvorení
       // potrebuje (a dialóg mu to aj sľúbil). Predtým ostal v zozname a QR
       // kód musel hľadať v karte akcie pod záložkou.
       window.location.href = "/event?id=" + encodeURIComponent(newEventId) + "&nova=1#qr";
     });
 
+
+    /* ---------- Prehľad (len Majiteľ) ---------- */
+
+    let overview = null;
+    let overviewMetric = "uploads";
+
+    // Prehľad sa načíta až pri prvom otvorení záložky - kto ide len do
+    // Akcií, nečaká na dopyt, ktorý nepotrebuje. Listener musí existovať
+    // skôr, ako init() zavolá setupTabs (ten hneď oznámi úvodnú záložku).
+    document.addEventListener("tabchange", (event) => {
+      if (event.detail === "overview" && !overview) loadOverview();
+    });
+
+    async function loadOverview() {
+      const tilesEl = document.getElementById("overviewTiles");
+      tilesEl.innerHTML = skeletonCards(3);
+      // O tom, či to smie vidieť, rozhoduje databáza (is_majitel v funkcii),
+      // nie to, že klient túto záložku nevidí.
+      const { data, error } = await supabaseClient.rpc("owner_overview");
+      if (error) {
+        tilesEl.innerHTML = emptyState({ iconName: "alert", title: "Prehľad sa nepodarilo načítať", text: friendlyError(error) });
+        return;
+      }
+      overview = data;
+      renderOverviewTiles();
+      renderWeekChart();
+      renderTopEvents();
+    }
+
+    function formatBytes(bytes) {
+      if (bytes >= 1e9) return (bytes / 1e9).toFixed(1).replace(".", ",") + " GB";
+      return Math.round(bytes / 1e6) + " MB";
+    }
+
+    function renderOverviewTiles() {
+      const o = overview;
+      const uploads = o.photos + o.videos;
+      const tiles = [
+        ["users", o.clients, plural(o.clients, "klient", "klienti", "klientov"), `+${o.clients_30d} za 30 dní`],
+        ["calendar", o.events, plural(o.events, "akcia", "akcie", "akcií"), `${o.events_upcoming} ešte len bude`],
+        ["camera", uploads, plural(uploads, "fotka alebo video", "fotky a videá", "fotiek a videí"), `${o.videos} ${plural(o.videos, "video", "videá", "videí")}`],
+        ["chat", o.messages, plural(o.messages, "odkaz", "odkazy", "odkazov"), "v knihách hostí"],
+        ["heart", o.guests, plural(o.guests, "hosť", "hostia", "hostí"), "niečo pridali"],
+        ["inbox", null, formatBytes(o.storage_bytes), "na disku servera"],
+      ];
+      document.getElementById("overviewTiles").innerHTML = tiles.map(([iconName, value, label, detail]) => `
+        <div class="stat-tile">
+          <div class="stat-tile-icon">${icon(iconName)}</div>
+          <div>
+            ${value === null ? `<strong>${escapeHtml(label)}</strong>` : `<strong class="stat-num" data-value="${value}">0</strong>`}
+            <span>${value === null ? "" : escapeHtml(label) + " · "}${escapeHtml(detail)}</span>
+          </div>
+        </div>`).join("");
+      document.querySelectorAll("#overviewTiles .stat-num").forEach((el) => animateNumber(el, Number(el.dataset.value)));
+
+      // Kde ľudia odpadávajú: zaregistrovali sa, ale akciu nezaložili.
+      const notes = [];
+      if (o.clients_without_event > 0) {
+        notes.push(`Klienti bez akcie: ${o.clients_without_event} (zaregistrovali sa, ale akciu ešte nezaložili).`);
+      }
+      if (o.last_upload_at) notes.push(`Posledná fotka pribudla ${formatDateTime(o.last_upload_at)}.`);
+      document.getElementById("overviewNote").textContent = notes.join(" ");
+    }
+
+    // Stĺpcový graf z obyčajných <div>-ov: výška stĺpca = hodnota / maximum.
+    // Na 12 stĺpcov netreba knižnicu na grafy.
+    function renderWeekChart() {
+      const weeks = overview.weeks;
+      const max = Math.max(1, ...weeks.map((week) => week[overviewMetric]));
+      const chart = document.getElementById("weekChart");
+      chart.innerHTML = weeks.map((week) => {
+        const value = week[overviewMetric];
+        const day = new Date(week.week + "T12:00:00");
+        const label = `${day.getDate()}. ${day.getMonth() + 1}.`;
+        return `
+          <div class="week-bar" title="Týždeň od ${label}: ${value}">
+            <div class="week-bar-track">
+              <div class="week-bar-fill" style="height:${(value / max) * 100}%"><span class="week-bar-value">${value || ""}</span></div>
+            </div>
+            <span class="week-bar-label">${label}</span>
+          </div>`;
+      }).join("");
+    }
+
+    document.getElementById("overviewMetric").addEventListener("click", (event) => {
+      const chip = event.target.closest(".chip");
+      if (!chip || !overview) return;
+      overviewMetric = chip.dataset.metric;
+      document.querySelectorAll("#overviewMetric .chip").forEach((other) => other.classList.toggle("active", other === chip));
+      renderWeekChart();
+    });
+
+    function renderTopEvents() {
+      const container = document.getElementById("topEvents");
+      if (overview.top_events.length === 0) {
+        container.innerHTML = emptyState({ iconName: "camera", title: "Zatiaľ žiadne akcie" });
+        return;
+      }
+      container.innerHTML = overview.top_events.map((event) => `
+        <a class="account-row top-event-row" href="/event?id=${encodeURIComponent(event.id)}">
+          <span class="avatar">${icon("camera")}</span>
+          <div class="account-row-body">
+            <strong>${escapeHtml(event.name)}</strong>
+            <span>${event.event_date ? escapeHtml(formatDate(event.event_date)) + " · " : ""}${event.uploads} ${plural(event.uploads, "fotka alebo video", "fotky a videá", "fotiek a videí")} · ${event.messages} ${plural(event.messages, "odkaz", "odkazy", "odkazov")}</span>
+          </div>
+        </a>`).join("");
+    }
 
     /* ---------- Účty klientov (len Majiteľ) ---------- */
 

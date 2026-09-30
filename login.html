@@ -104,6 +104,7 @@
         if (error.code === "email_not_confirmed") resendButton.classList.remove("hidden");
         return;
       }
+      trackEvent("Prihlásenie");
       window.location.href = "/dashboard";
     });
 

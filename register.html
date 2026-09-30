@@ -155,6 +155,7 @@
       }
 
       document.getElementById("registerForm").reset();
+      trackEvent("Registrácia");
 
       if (data.session) {
         window.location.href = "/dashboard";
