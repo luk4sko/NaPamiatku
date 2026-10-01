@@ -2734,36 +2734,6 @@ section[id] {
 
 .landing .founder {
   max-width: 920px;
-  display: grid;
-  gap: 2rem;
-  align-items: center;
-}
-
-@media (min-width: 760px) {
-  .landing .founder { grid-template-columns: 220px 1fr; gap: 3.5rem; }
-}
-
-/* Okrúhla fotka autora. Písmo a farby tu ostali pre prípad, že by
-   namiesto <img> v <div> boli len iniciály (napr. "LB"). */
-.founder-photo {
-  width: 200px;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  border: 1px solid var(--border);
-  color: var(--accent);
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 3.4rem;
-  font-weight: 600;
-}
-
-.founder-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .founder-copy h2 {
@@ -6675,16 +6645,6 @@ p.consent {
 
   .free-caption {
     margin-top: 0.4rem;
-  }
-
-  /* Kto za tým je: malá fotka namiesto 200 px kruhu. */
-  .landing .founder {
-    gap: 1rem;
-  }
-
-  .founder-photo {
-    width: 84px;
-    font-size: 1.6rem;
   }
 
   /* Otázky a výzva na konci: menej vzduchu. */
