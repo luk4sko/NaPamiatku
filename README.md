@@ -51,7 +51,7 @@ Klient si účet zakladá sám na `register.html`. Majiteľ ho môže založiť 
 
 Plná história SQL migrácií (presne v poradí, ako boli spustené na Supabase) je v [`sql/migrations`](sql/migrations).
 
-Hosť nemá v databáze žiadny vlastný riadok ani účet — prezývka je len text uložený pri fotke a odkaze, a v prehliadači hosťa v `localStorage`. Pri nahratí fotky sa navyše v prehliadači vytvorí náhodný tajný kľúč; databáza uchová iba jeho hash, takže hosť môže vymazať len fotky nahrané z toho istého prehliadača.
+Hosť nemá v databáze žiadny vlastný riadok ani účet — prezývka je len text uložený pri fotke a odkaze, a v prehliadači hosťa v `localStorage`. Pri nahratí fotky sa navyše v prehliadači vytvorí náhodný tajný kľúč; len s ním možno vymazať fotku nahranú z toho istého prehliadača.
 
 ## Ako je to zabezpečené
 

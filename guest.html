@@ -210,9 +210,10 @@
     const NICKNAME_KEY = "napamiatku-nick-" + slug;
     // ID fotiek a odkazov, ktoré poslal tento prehliadač - pre filter "Moje".
     const MINE_KEY = "napamiatku-mine-" + slug;
-    // Náhodný kľúč je dôkaz, že fotka vznikla z tohto prehliadača. Do databázy
-    // nikdy neposielame ani nevraciame jeho čitateľnú podobu, iba SHA-256 hash.
+    // Náhodný kľúč je dôkaz, že fotka vznikla z tohto prehliadača. Zostáva len
+    // v tomto prehliadači a databáza ho nikdy nevracia do galérie.
     const PHOTO_OWNER_TOKEN_KEY = "napamiatku-photo-owner-" + slug;
+    const DELETABLE_MINE_KEY = "napamiatku-deletable-mine-" + slug;
 
     let eventInfo = null;
     let nickname = null;
@@ -222,6 +223,7 @@
     const GALLERY_PAGE = 48;
     let galleryLimit = GALLERY_PAGE;
     let mine = new Set(JSON.parse(localStorage.getItem(MINE_KEY) || "[]"));
+    let deletableMine = new Set(JSON.parse(localStorage.getItem(DELETABLE_MINE_KEY) || "[]"));
 
     function photoOwnerToken() {
       let token = localStorage.getItem(PHOTO_OWNER_TOKEN_KEY);
@@ -238,9 +240,13 @@
       return error && (error.code === "PGRST202" || /Could not find the function/i.test(error.message || ""));
     }
 
-    function rememberMine(id) {
+    function rememberMine(id, canDelete = false) {
       mine.add(id);
       localStorage.setItem(MINE_KEY, JSON.stringify(Array.from(mine)));
+      if (canDelete) {
+        deletableMine.add(id);
+        localStorage.setItem(DELETABLE_MINE_KEY, JSON.stringify(Array.from(deletableMine)));
+      }
     }
 
     async function init() {
@@ -393,14 +399,7 @@
       const gallery = document.getElementById("gallery");
       if (!silent) gallery.innerHTML = skeletonCards(4);
 
-      let { data, error } = await supabaseClient.rpc("guest_list_photos", {
-        p_slug: slug,
-        p_owner_token: localStorage.getItem(PHOTO_OWNER_TOKEN_KEY),
-      });
-
-      if (isMissingGuestRpc(error)) {
-        ({ data, error } = await supabaseClient.rpc("guest_list_photos", { p_slug: slug }));
-      }
+      const { data, error } = await supabaseClient.rpc("guest_list_photos", { p_slug: slug });
 
       if (error) {
         if (silent) return; // pri tichom obnovení nechaj starú galériu, nie chybu
@@ -422,7 +421,7 @@
 
     function renderGallery() {
       const gallery = document.getElementById("gallery");
-      const photos = photoFilter === "mine" ? allPhotos.filter((photo) => photo.is_mine || mine.has(photo.id)) : allPhotos;
+      const photos = photoFilter === "mine" ? allPhotos.filter((photo) => mine.has(photo.id)) : allPhotos;
 
       if (allPhotos.length === 0) {
         gallery.innerHTML = emptyState({ iconName: "camera", title: "Zatiaľ tu nie sú žiadne fotky", text: "Buď prvý - pridaj fotku a ostatní ju uvidia hneď." });
@@ -454,7 +453,7 @@
             <span class="photo-overlay-name">${icon("user")}${escapeHtml(photo.nickname)}</span>
             <div class="photo-overlay-actions">
               <button type="button" data-download="${url}" data-filename="${isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg"}" title="Stiahnuť" aria-label="Stiahnuť">${icon("download")}</button>
-              ${photo.is_mine ? `<button type="button" class="delete" data-delete-own="${photo.id}" title="Zmazať moju fotku" aria-label="Zmazať moju fotku">${icon("trash")}</button>` : ""}
+              ${deletableMine.has(photo.id) ? `<button type="button" class="delete" data-delete-own="${photo.id}" title="Zmazať moju fotku" aria-label="Zmazať moju fotku">${icon("trash")}</button>` : ""}
               <button type="button" class="delete" data-report="${photo.id}" title="Nahlásiť nevhodný obsah" aria-label="Nahlásiť">${icon("flag")}</button>
             </div>
           </div>`;
@@ -476,7 +475,7 @@
 
     async function deleteOwnPhoto(photoId) {
       const photo = allPhotos.find((item) => item.id === photoId);
-      if (!photo || !photo.is_mine) return showToast("Túto fotku môže zmazať iba hosť, ktorý ju nahral.", "error");
+      if (!photo || !deletableMine.has(photoId)) return showToast("Túto fotku môže zmazať iba hosť, ktorý ju nahral.", "error");
 
       const ok = await confirmDialog({
         title: "Zmazať túto fotku?",
@@ -495,6 +494,8 @@
 
       mine.delete(photoId);
       localStorage.setItem(MINE_KEY, JSON.stringify(Array.from(mine)));
+      deletableMine.delete(photoId);
+      localStorage.setItem(DELETABLE_MINE_KEY, JSON.stringify(Array.from(deletableMine)));
       showToast("Fotka je zmazaná.", "ok");
       await loadPhotos(true);
     }
@@ -580,6 +581,7 @@
         if (uploadError) { list.fail(index, friendlyError(uploadError)); return; }
 
         // Riadok v databáze vytvorí až funkcia, ktorá znova overí heslo eventu.
+        let canDelete = true;
         let { data: photoId, error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
           p_slug: slug,
           p_nickname: nickname,
@@ -588,6 +590,7 @@
           p_owner_token: photoOwnerToken(),
         });
         if (isMissingGuestRpc(rpcError)) {
+          canDelete = false;
           ({ data: photoId, error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
             p_slug: slug,
             p_nickname: nickname,
@@ -597,7 +600,7 @@
         }
         if (rpcError) { list.fail(index, friendlyError(rpcError)); return; }
 
-        if (photoId) rememberMine(photoId);
+        if (photoId) rememberMine(photoId, canDelete);
         list.done(index);
         done += 1;
       });
