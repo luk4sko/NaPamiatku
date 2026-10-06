@@ -2734,6 +2734,38 @@ section[id] {
 
 .landing .founder {
   max-width: 920px;
+  display: grid;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.founder-photo {
+  width: min(100%, 19rem);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 0.6rem solid var(--bg-alt);
+  border-radius: 50%;
+  box-shadow: 0 1.1rem 2.6rem -1.8rem rgba(40, 25, 10, 0.55);
+}
+
+.founder-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 44%;
+}
+
+@media (min-width: 700px) {
+  .landing .founder {
+    grid-template-columns: minmax(14rem, 19rem) minmax(0, 1fr);
+    gap: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  .founder-photo {
+    margin: 0;
+  }
 }
 
 .founder-copy h2 {
@@ -6895,4 +6927,3 @@ kbd {
   .wall-logo { left: 1rem; top: 1rem; }
   .wall-hint { display: none; }
 }
-
