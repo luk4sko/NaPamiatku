@@ -9,11 +9,12 @@ utiahne niekoľko divákov naraz. Robí to to isté, čo YouTube či Instagram -
 originál sa nikdy nestreamuje.
 
 Beh (cron každú minútu, flock zabráni dvom behom naraz):
-  1. z tabuľky photos vezme najstaršie video so stavom pending,
-  2. stiahne ho z bucketu photos, ffmpeg-om prekóduje a vyrobí poster (JPEG),
-  3. oba súbory nahrá do bucketu pod novým UUID,
-  4. riadku nastaví novú storage_path, poster_path a video_status = ready,
-  5. originál z bucketu zmaže (rozhodnutie z 2026-09-21: originál sa nenecháva).
+  1. vymaže z Storage súbory, ktoré hosť bezpečne odstránil z galérie,
+  2. z tabuľky photos vezme najstaršie video so stavom pending,
+  3. stiahne ho z bucketu photos, ffmpeg-om prekóduje a vyrobí poster (JPEG),
+  4. oba súbory nahrá do bucketu pod novým UUID,
+  5. riadku nastaví novú storage_path, poster_path a video_status = ready,
+  6. originál z bucketu zmaže (rozhodnutie z 2026-09-21: originál sa nenecháva).
 Pri chybe nastaví video_status = failed a originál nechá - galéria ho potom
 prehráva tak ako doteraz.
 
@@ -96,7 +97,15 @@ class Api:
                                 "&select=id,event_id,storage_path&order=created_at.asc&limit=20")
 
     def update_photo(self, photo_id, fields):
-        self.json("PATCH", f"/rest/v1/photos?id=eq.{photo_id}", body=fields,
+        return self.json("PATCH", f"/rest/v1/photos?id=eq.{photo_id}", body=fields,
+                         extra_headers={"Prefer": "return=representation"})
+
+    def pending_guest_deletions(self):
+        return self.json("GET", "/rest/v1/guest_photo_delete_queue?select=id,storage_path"
+                                "&order=created_at.asc&limit=100")
+
+    def finish_guest_deletion(self, deletion_id):
+        self.json("DELETE", f"/rest/v1/guest_photo_delete_queue?id=eq.{deletion_id}",
                   extra_headers={"Prefer": "return=minimal"})
 
     def download(self, path, target):
@@ -172,9 +181,14 @@ def process(api, photo, dry_run):
         api.upload(poster_path, poster_out, "image/jpeg")
 
     # Až keď sú nové súbory hore, prepneme riadok - divák nikdy neuvidí dieru.
-    api.update_photo(photo["id"], {
+    updated = api.update_photo(photo["id"], {
         "storage_path": video_path, "poster_path": poster_path, "video_status": "ready",
     })
+    # Hosť mohol video medzitým zmazať. Vtedy PATCH nevráti riadok a nové
+    # prekódované súbory nesmú zostať osirelé v Storage.
+    if not updated:
+        api.delete_files([video_path, poster_path])
+        return
     api.delete_files([original])
     log(f"  hotovo: {before / 1e6:.1f} MB -> {after / 1e6:.1f} MB ({video_path})")
 
@@ -188,6 +202,20 @@ def main():
     if not env.get("SERVICE_ROLE_KEY"):
         sys.exit(f"V {ENV_FILE} chýba SERVICE_ROLE_KEY")
     api = Api(API_URL, env["SERVICE_ROLE_KEY"])
+
+    # Fotky zmazané hosťami sú okamžite preč z galérie; ich fyzické súbory
+    # odstránime tu cez Storage API. Tento skript beží každú minútu.
+    if not dry_run:
+        while True:
+            deletions = api.pending_guest_deletions()
+            if not deletions:
+                break
+            for deletion in deletions:
+                try:
+                    api.delete_files([deletion["storage_path"]])
+                    api.finish_guest_deletion(deletion["id"])
+                except Exception as error:  # noqa: BLE001 - ďalší beh to skúsi znova
+                    log(f"  CHYBA pri mazaní súboru {deletion['storage_path']}: {error}")
 
     # Cyklus, kým je čo robiť - videá nahraté počas behu chytí ten istý beh.
     processed = 0

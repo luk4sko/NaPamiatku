@@ -210,6 +210,9 @@
     const NICKNAME_KEY = "napamiatku-nick-" + slug;
     // ID fotiek a odkazov, ktoré poslal tento prehliadač - pre filter "Moje".
     const MINE_KEY = "napamiatku-mine-" + slug;
+    // Náhodný kľúč je dôkaz, že fotka vznikla z tohto prehliadača. Do databázy
+    // nikdy neposielame ani nevraciame jeho čitateľnú podobu, iba SHA-256 hash.
+    const PHOTO_OWNER_TOKEN_KEY = "napamiatku-photo-owner-" + slug;
 
     let eventInfo = null;
     let nickname = null;
@@ -219,6 +222,21 @@
     const GALLERY_PAGE = 48;
     let galleryLimit = GALLERY_PAGE;
     let mine = new Set(JSON.parse(localStorage.getItem(MINE_KEY) || "[]"));
+
+    function photoOwnerToken() {
+      let token = localStorage.getItem(PHOTO_OWNER_TOKEN_KEY);
+      if (!token) {
+        token = crypto.randomUUID();
+        localStorage.setItem(PHOTO_OWNER_TOKEN_KEY, token);
+      }
+      return token;
+    }
+
+    // Umožní najprv nasadiť frontend a až potom databázovú migráciu bez toho,
+    // aby staršia databáza na prechodný čas prestala hosťom zobrazovať galériu.
+    function isMissingGuestRpc(error) {
+      return error && (error.code === "PGRST202" || /Could not find the function/i.test(error.message || ""));
+    }
 
     function rememberMine(id) {
       mine.add(id);
@@ -375,9 +393,14 @@
       const gallery = document.getElementById("gallery");
       if (!silent) gallery.innerHTML = skeletonCards(4);
 
-      const { data, error } = await supabaseClient.rpc("guest_list_photos", {
+      let { data, error } = await supabaseClient.rpc("guest_list_photos", {
         p_slug: slug,
+        p_owner_token: localStorage.getItem(PHOTO_OWNER_TOKEN_KEY),
       });
+
+      if (isMissingGuestRpc(error)) {
+        ({ data, error } = await supabaseClient.rpc("guest_list_photos", { p_slug: slug }));
+      }
 
       if (error) {
         if (silent) return; // pri tichom obnovení nechaj starú galériu, nie chybu
@@ -399,7 +422,7 @@
 
     function renderGallery() {
       const gallery = document.getElementById("gallery");
-      const photos = photoFilter === "mine" ? allPhotos.filter((photo) => mine.has(photo.id)) : allPhotos;
+      const photos = photoFilter === "mine" ? allPhotos.filter((photo) => photo.is_mine || mine.has(photo.id)) : allPhotos;
 
       if (allPhotos.length === 0) {
         gallery.innerHTML = emptyState({ iconName: "camera", title: "Zatiaľ tu nie sú žiadne fotky", text: "Buď prvý - pridaj fotku a ostatní ju uvidia hneď." });
@@ -431,6 +454,7 @@
             <span class="photo-overlay-name">${icon("user")}${escapeHtml(photo.nickname)}</span>
             <div class="photo-overlay-actions">
               <button type="button" data-download="${url}" data-filename="${isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg"}" title="Stiahnuť" aria-label="Stiahnuť">${icon("download")}</button>
+              ${photo.is_mine ? `<button type="button" class="delete" data-delete-own="${photo.id}" title="Zmazať moju fotku" aria-label="Zmazať moju fotku">${icon("trash")}</button>` : ""}
               <button type="button" class="delete" data-report="${photo.id}" title="Nahlásiť nevhodný obsah" aria-label="Nahlásiť">${icon("flag")}</button>
             </div>
           </div>`;
@@ -443,8 +467,36 @@
       gallery.querySelectorAll("[data-report]").forEach((button) => {
         button.addEventListener("click", () => openReportDialog(button.dataset.report));
       });
+      gallery.querySelectorAll("[data-delete-own]").forEach((button) => {
+        button.addEventListener("click", () => deleteOwnPhoto(button.dataset.deleteOwn));
+      });
       setupGalleryLightbox(gallery);
       renderLoadMore(gallery, photos.length, () => { galleryLimit += GALLERY_PAGE; renderGallery(); });
+    }
+
+    async function deleteOwnPhoto(photoId) {
+      const photo = allPhotos.find((item) => item.id === photoId);
+      if (!photo || !photo.is_mine) return showToast("Túto fotku môže zmazať iba hosť, ktorý ju nahral.", "error");
+
+      const ok = await confirmDialog({
+        title: "Zmazať túto fotku?",
+        text: "Fotka sa odstráni z galérie a nedá sa obnoviť.",
+        confirmLabel: "Zmazať",
+        danger: true,
+      });
+      if (!ok) return;
+
+      const { error } = await supabaseClient.rpc("guest_delete_photo", {
+        p_slug: slug,
+        p_photo_id: photoId,
+        p_owner_token: photoOwnerToken(),
+      });
+      if (error) return showToast(friendlyError(error), "error");
+
+      mine.delete(photoId);
+      localStorage.setItem(MINE_KEY, JSON.stringify(Array.from(mine)));
+      showToast("Fotka je zmazaná.", "ok");
+      await loadPhotos(true);
     }
 
     document.getElementById("photoFilter").addEventListener("click", (event) => {
@@ -528,12 +580,21 @@
         if (uploadError) { list.fail(index, friendlyError(uploadError)); return; }
 
         // Riadok v databáze vytvorí až funkcia, ktorá znova overí heslo eventu.
-        const { data: photoId, error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
+        let { data: photoId, error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
           p_slug: slug,
-            p_nickname: nickname,
+          p_nickname: nickname,
           p_storage_path: path,
           p_media_type: isVideo ? "video" : "photo",
+          p_owner_token: photoOwnerToken(),
         });
+        if (isMissingGuestRpc(rpcError)) {
+          ({ data: photoId, error: rpcError } = await supabaseClient.rpc("guest_add_photo", {
+            p_slug: slug,
+            p_nickname: nickname,
+            p_storage_path: path,
+            p_media_type: isVideo ? "video" : "photo",
+          }));
+        }
         if (rpcError) { list.fail(index, friendlyError(rpcError)); return; }
 
         if (photoId) rememberMine(photoId);
