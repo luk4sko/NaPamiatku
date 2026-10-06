@@ -2744,7 +2744,7 @@ section[id] {
   aspect-ratio: 1;
   margin: 0 auto;
   overflow: hidden;
-  border: 0.6rem solid var(--bg-alt);
+  border: 0.22rem solid var(--accent);
   border-radius: 50%;
   box-shadow: 0 1.1rem 2.6rem -1.8rem rgba(40, 25, 10, 0.55);
 }
@@ -2754,7 +2754,7 @@ section[id] {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 44%;
+  object-position: 50% 50%;
 }
 
 @media (min-width: 700px) {
