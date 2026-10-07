@@ -546,8 +546,10 @@
           url: publicUrl("photos", photo.storage_path),
           filename: photoFilename(photo, index),
         }));
-        await downloadAsZip(items, safeFilename(eventInfo.name) + "-fotky.zip", (done, total) => {
-          button.innerHTML = `<span class="spinner"></span> ${done} / ${total}`;
+        await downloadAsZip(items, safeFilename(eventInfo.name) + "-fotky.zip", (progress) => {
+          button.innerHTML = progress.phase === "archive"
+            ? `<span class="spinner"></span> Balenie ${Math.round(progress.percent)} %`
+            : `<span class="spinner"></span> ${progress.done} / ${progress.total}`;
         });
         showToast(`ZIP so ${photos.length} ${plural(photos.length, "súborom", "súbormi", "súbormi")} je stiahnutý.`, "ok");
       } catch (error) {

@@ -1203,19 +1203,40 @@ function loadZipLibrary() {
   return zipLibraryPromise;
 }
 
-// items: [{ url, filename }]. Súbory sa sťahujú po jednom a balia v prehliadači;
-// onProgress(done, total) hlási pokrok, aby sa dalo ukázať "12 z 40".
+// items: [{ url, filename }]. Súbory sa sťahujú po jednom, aby veľká galéria
+// nezaťažila linku ani pamäť telefónu naraz. Po stiahnutí JSZip vytvára archív
+// po prúdoch (streamFiles), takže pri balení nedrží spracované dáta každého
+// súboru ešte raz v pamäti. onProgress hlási dve fázy: sťahovanie a balenie.
 async function downloadAsZip(items, zipName, onProgress) {
   const JSZip = await loadZipLibrary();
+  if (!JSZip || !JSZip.support || !JSZip.support.blob) {
+    throw new Error("Váš prehliadač nepodporuje vytvorenie ZIP súboru.");
+  }
+
   const zip = new JSZip();
   let done = 0;
   for (const item of items) {
     const response = await fetch(item.url);
+    if (!response.ok) {
+      throw new Error(`Súbor sa nepodarilo stiahnuť (${response.status}).`);
+    }
     zip.file(item.filename, await response.blob());
     done += 1;
-    if (onProgress) onProgress(done, items.length);
+    if (onProgress) onProgress({ phase: "download", done, total: items.length });
   }
-  const blob = await zip.generateAsync({ type: "blob" });
+
+  // Predvolený režim JSZip najprv drží spracovaný obsah každého súboru
+  // v pamäti. Pri desiatkach fotiek sa potom môže posledný krok zdanlivo
+  // zaseknúť. streamFiles vytvára položky postupne a callback ukazuje, že
+  // sa ZIP naozaj ešte balí.
+  const blob = await zip.generateAsync(
+    { type: "blob", mimeType: "application/zip", streamFiles: true },
+    (metadata) => {
+      if (onProgress) onProgress({ phase: "archive", percent: metadata.percent });
+    },
+  );
+  if (blob.size === 0) throw new Error("ZIP súbor je prázdny.");
+
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = objectUrl;
