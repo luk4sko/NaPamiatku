@@ -899,6 +899,8 @@
     ["Všetko najlepšie k osemnástke, Tomáš! Na ďalších aspoň sto takých osláv.", "Happy 18th birthday, Tomáš! Here's to a hundred more celebrations."],
     ["Ďakujeme, že sme mohli byť pri tom. Na ďalších päťdesiat rokov!", "Thank you for letting us be part of it. Here's to another fifty years!"],
     ["stužkovú", "prom"],
+    ["oslavu", "celebration"],
+    ["krstiny", "christening"],
     ["firemný večierok", "company party"],
     ["stretávku", "reunion"],
     ["Váš prehliadač nepodporuje vytvorenie ZIP súboru.", "Your browser cannot create ZIP files."],
