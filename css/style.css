@@ -1107,37 +1107,54 @@ section[id] {
   margin-bottom: 2rem;
 }
 
-/* Tri stručné výhody pod tlačidlami. <dl> (zoznam pojmov a vysvetlení)
-   sedí významom: nadpis je pojem, text pod ním jeho vysvetlenie. */
+/* Tri krátke fakty pod tlačidlami. Sú oddelené jemnými čiarami, aby boli
+   výrazné, ale neprebíjali hlavný nadpis a tlačidlo. */
 .hero-facts {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
   max-width: 34rem;
   margin: 0;
-  padding-top: 1.4rem;
+  padding-top: 1.25rem;
   border-top: 1px solid var(--border-strong);
+}
+
+.hero-facts > div {
+  min-width: 0;
+  padding: 0.1rem 0.95rem;
+}
+
+.hero-facts > div:first-child {
+  padding-left: 0;
+}
+
+.hero-facts > div + div {
+  border-left: 1px solid var(--border);
 }
 
 .hero-facts dt {
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 1.75rem;
+  font-size: clamp(1.65rem, 3.5vw, 2rem);
   font-weight: 600;
   line-height: 1.1;
-  /* Nadpisy sú zámerne slovné, preto sa na menších obrazovkách môžu zalomiť. */
-  white-space: normal;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  white-space: nowrap;
 }
 
 .hero-facts dd {
-  margin: 0.35rem 0 0;
-  font-size: 0.85rem;
-  line-height: 1.45;
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
 }
 
 @media (max-width: 420px) {
-  .hero-facts dt { font-size: 1.4rem; }
-  .hero-facts dd { font-size: 0.78rem; }
+  .hero-facts > div { padding: 0.1rem 0.55rem; }
+  .hero-facts dt { font-size: 1.55rem; }
+  .hero-facts dd { font-size: 0.65rem; }
 }
 
 /* Text hero sa pri načítaní vysunie zdola, ukážka sa zjaví o chvíľu neskôr.
