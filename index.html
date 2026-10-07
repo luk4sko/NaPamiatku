@@ -74,21 +74,20 @@
           <a href="/register" class="btn large" data-umami-event="Klik: Založiť akciu" data-umami-event-miesto="úvod">Založiť akciu zadarmo</a>
           <a href="#ako-to-funguje" class="text-link">Ako to funguje <span aria-hidden="true">↓</span></a>
         </div>
-        <!-- Tri fakty vedľa seba. Číslo hore, vysvetlenie pod ním - oko ich
-             prečíta na jeden pohľad. Čísla 10 a 2400 nabehnú od nuly, keď sa
-             stránka načíta (trieda count-up, rieši to skript na konci). -->
+        <!-- Tri hlavné výhody vedľa seba. Krátky nadpis hore, vysvetlenie pod
+             ním - návštevník hneď vie, čo mu služba prinesie. -->
         <dl class="hero-facts">
           <div>
-            <dt>0</dt>
-            <dd>aplikácií, ktoré musia hostia inštalovať</dd>
+            <dt>Bez aplikácie</dt>
+            <dd>Stačí naskenovať QR kód.</dd>
           </div>
           <div>
-            <dt><span class="count-up" data-to="10">10</span>&nbsp;s</dt>
-            <dd>od naskenovania QR kódu po prvú fotku</dd>
+            <dt>Fotky hneď</dt>
+            <dd>Pribúdajú priamo do galérie.</dd>
           </div>
           <div>
-            <dt><span class="count-up" data-to="2400">2400</span>&nbsp;px</dt>
-            <dd>ostré fotky, ktoré sa dajú aj vytlačiť</dd>
+            <dt>Vysoká kvalita</dt>
+            <dd>Vhodné aj na vytlačenie.</dd>
           </div>
         </dl>
       </div>
@@ -698,18 +697,12 @@
     /* ---------- Odhaľovanie pri scrollovaní ----------
        IntersectionObserver zavolá funkciu, keď sa prvok objaví v okne.
        Je to lacnejšie než počítať pozície pri každom scroll evente.
-       Okrem .reveal sleduje aj časovú os (čiara sa začne kresliť) a čísla
-       .count-up, ktoré nabehnú od nuly až vo chvíli, keď ich človek vidí. */
-    const revealItems = document.querySelectorAll(".reveal, .timeline, .count-up");
+       Okrem .reveal sleduje aj časovú os, aby sa čiara začala kresliť až
+       vo chvíli, keď sa dostane do zorného poľa. */
+    const revealItems = document.querySelectorAll(".reveal, .timeline");
 
     function reveal(el) {
       el.classList.add("in");
-      if (el.classList.contains("count-up")) {
-        // Počítadlo ide od nuly, nie od čísla v HTML (to tam je pre prípad,
-        // keď JS nebeží, a pre vyhľadávače).
-        el.textContent = "0";
-        animateNumber(el, Number(el.dataset.to), 2000);
-      }
       if (el.classList.contains("timeline")) countTimeline(el);
     }
 

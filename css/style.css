@@ -1107,8 +1107,8 @@ section[id] {
   margin-bottom: 2rem;
 }
 
-/* Tri fakty pod tlačidlami. <dl> (zoznam pojmov a vysvetlení) sedí
-   významom: číslo je pojem, text pod ním jeho vysvetlenie. */
+/* Tri stručné výhody pod tlačidlami. <dl> (zoznam pojmov a vysvetlení)
+   sedí významom: nadpis je pojem, text pod ním jeho vysvetlenie. */
 .hero-facts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1124,7 +1124,8 @@ section[id] {
   font-size: 1.75rem;
   font-weight: 600;
   line-height: 1.1;
-  white-space: nowrap;
+  /* Nadpisy sú zámerne slovné, preto sa na menších obrazovkách môžu zalomiť. */
+  white-space: normal;
 }
 
 .hero-facts dd {
@@ -1137,11 +1138,6 @@ section[id] {
 @media (max-width: 420px) {
   .hero-facts dt { font-size: 1.4rem; }
   .hero-facts dd { font-size: 0.78rem; }
-}
-
-/* Číslice rovnako široké - kým číslo nabieha, text vedľa neposkakuje. */
-.count-up {
-  font-variant-numeric: lining-nums tabular-nums;
 }
 
 /* Text hero sa pri načítaní vysunie zdola, ukážka sa zjaví o chvíľu neskôr.
