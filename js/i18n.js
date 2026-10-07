@@ -17,9 +17,11 @@
     .trim();
 
   let savedLanguage = "sk";
+  let languageFromQuery = false;
   try {
     const queryLanguage = new URLSearchParams(window.location.search).get("lang");
     const storedLanguage = localStorage.getItem(STORAGE_KEY);
+    languageFromQuery = queryLanguage === "en" || queryLanguage === "sk";
     savedLanguage = queryLanguage === "en" || queryLanguage === "sk"
       ? queryLanguage
       : (storedLanguage === "en" ? "en" : "sk");
@@ -1060,7 +1062,10 @@
       window.setTimeout(() => document.documentElement.classList.add("language-changing"), reducedMotion ? 0 : 170);
       window.setTimeout(() => {
         const url = new URL(window.location.href);
-        url.searchParams.delete("lang");
+        // Parameter zaručí skutočnú navigáciu aj vtedy, keď je v adrese
+        // kotva (#ako-to-funguje). Navigácia na identickú URL by iba nechala
+        // dobehnúť fade-out a stránka by ostala priehľadná.
+        url.searchParams.set("lang", nextLanguage);
         window.location.replace(url.toString());
       }, reducedMotion ? 20 : 430);
     });
@@ -1111,6 +1116,13 @@
   document.addEventListener("DOMContentLoaded", () => {
     translateElement(document);
     addLanguageToggle();
+    // Jazykový parameter potrebujeme len na vynútenie nového načítania.
+    // Po načítaní ho z adresy odstránime bez zmeny kotvy alebo scrollu.
+    if (languageFromQuery) {
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete("lang");
+      history.replaceState(null, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+    }
     window.setTimeout(() => document.documentElement.classList.remove("language-arrived"), 500);
   });
 })();
