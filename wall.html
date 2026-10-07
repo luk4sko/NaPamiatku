@@ -7,6 +7,7 @@
   <title>Živá stena — NaPamiatku</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="/js/i18n.js"></script>
 </head>
 <body class="wall-body">
   <!-- Živá stena: stránka pre TV alebo projektor na akcii. Fotky od hostí sa
@@ -34,7 +35,7 @@
     <div class="wall-caption" id="wallCaption">
       <span class="avatar" id="captionAvatar"></span>
       <span class="wall-caption-text">
-        <strong id="captionName"></strong>
+        <strong id="captionName" data-no-i18n></strong>
         <small id="captionTime"></small>
       </span>
       <span class="wall-new hidden" id="captionNew">nová</span>
@@ -43,7 +44,7 @@
     <aside class="wall-panel">
       <img id="wallQr" alt="QR kód pre hostí" />
       <div class="wall-panel-text">
-        <strong id="wallEventName"></strong>
+        <strong id="wallEventName" data-no-i18n></strong>
         <span>Naskenuj a pridaj svoje fotky</span>
       </div>
     </aside>

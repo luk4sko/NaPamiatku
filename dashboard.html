@@ -6,7 +6,7 @@
   <title>NaPamiatku — Moje akcie</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
-  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
   <nav class="site-nav">
@@ -267,7 +267,7 @@
     function renderGreeting() {
       const firstName = profile && profile.full_name ? profile.full_name.trim().split(/\s+/)[0] : "";
       document.getElementById("greeting").innerHTML = firstName
-        ? `Ahoj, <em>${escapeHtml(firstName)}</em>.`
+        ? `Ahoj, <em data-no-i18n>${escapeHtml(firstName)}</em>.`
         : "Vitaj <em>späť</em>.";
     }
 
@@ -430,12 +430,12 @@
         const relative = event.event_date ? relativeDate(event.event_date) : "";
         const badge = event.status === "rejected" ? '<span class="badge rejected">pozastavená</span>' : "";
         const client = isOwner && event.clientLabel
-          ? `<div class="event-card-meta event-card-client">${icon("user")}<span>${escapeHtml(event.clientLabel)}</span></div>` : "";
+          ? `<div class="event-card-meta event-card-client">${icon("user")}<span data-no-i18n>${escapeHtml(event.clientLabel)}</span></div>` : "";
         li.innerHTML = `
           <a class="event-card" href="/event?id=${encodeURIComponent(event.id)}">
             <div class="event-card-cover"${cover}>${event.cover ? "" : icon("camera")}${badge}</div>
             <div class="event-card-body">
-              <h3>${escapeHtml(event.name)}</h3>
+              <h3 data-no-i18n>${escapeHtml(event.name)}</h3>
               <div class="event-card-meta">${icon("calendar")}<span>${escapeHtml(dateText)}${relative ? ` <em>· ${escapeHtml(relative)}</em>` : ""}</span></div>
               ${client}
               <div class="event-card-stats">
@@ -629,7 +629,7 @@
         <a class="account-row top-event-row" href="/event?id=${encodeURIComponent(event.id)}">
           <span class="avatar">${icon("camera")}</span>
           <div class="account-row-body">
-            <strong>${escapeHtml(event.name)}</strong>
+            <strong data-no-i18n>${escapeHtml(event.name)}</strong>
             <span>${event.event_date ? escapeHtml(formatDate(event.event_date)) + " · " : ""}${event.uploads} ${plural(event.uploads, "fotka alebo video", "fotky a videá", "fotiek a videí")} · ${event.messages} ${plural(event.messages, "odkaz", "odkazy", "odkazov")}</span>
           </div>
         </a>`).join("");
@@ -687,8 +687,8 @@
         row.innerHTML = `
           <span class="avatar">${escapeHtml(initials(item.full_name, item.email))}</span>
           <div class="account-row-body">
-            <strong>${escapeHtml(item.full_name || item.email)}</strong>
-            <span>${escapeHtml(item.email)} · od ${escapeHtml(formatDate(item.created_at))}</span>
+            <strong data-no-i18n>${escapeHtml(item.full_name || item.email)}</strong>
+            <span><span data-no-i18n>${escapeHtml(item.email)}</span> · od ${escapeHtml(formatDate(item.created_at))}</span>
           </div>
           <span class="badge">${item.role === "majitel" ? "Majiteľ" : "Klient"}</span>`;
         container.appendChild(row);

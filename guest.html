@@ -6,7 +6,7 @@
   <title>NaPamiatku</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
-  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
+  <script src="/js/i18n.js"></script>
   <script>
     // Stránka je predvolene svetlá. Kto si tlačidlom zapol tmavý režim,
     // dostane ho hneď tu, ešte pred vykreslením - initTheme v app.js sa
@@ -29,7 +29,7 @@
 
     <div class="gate-card">
       <a class="logo" href="/">Na<span>Pamiatku</span></a>
-      <p class="eyebrow" id="nameStepEvent"></p>
+      <p class="eyebrow" id="nameStepEvent" data-no-i18n></p>
       <h1>Ako sa voláš?</h1>
       <p>Pod týmto menom uvidia ostatní tvoje fotky a odkazy.</p>
       <form id="nameForm">
@@ -57,7 +57,7 @@
         <div class="app-hero-actions">
           <span class="guest-identity">
             <span class="avatar" id="guestAvatar"></span>
-            <span id="guestName"></span>
+            <span id="guestName" data-no-i18n></span>
             <button type="button" id="changeNameButton">zmeniť</button>
           </span>
           <button class="secondary small icon-button" data-theme-toggle aria-label="Prepnúť svetlý a tmavý režim"></button>
@@ -333,7 +333,7 @@
       document.getElementById("guestFooter").classList.remove("hidden");
       document.getElementById("mainStep").classList.remove("hidden");
 
-      document.getElementById("eventName").textContent = eventInfo.name;
+      document.getElementById("eventName").innerHTML = `<span data-no-i18n>${escapeHtml(eventInfo.name)}</span>`;
       document.getElementById("eventDate").innerHTML = eventInfo.event_date
         ? `<span>${icon("calendar")} ${escapeHtml(formatDateLong(eventInfo.event_date))}</span>`
         : "";
@@ -345,8 +345,9 @@
 
       if (eventInfo.gift_enabled && eventInfo.gift_iban) {
         document.getElementById("giftsTab").classList.remove("hidden");
-        document.getElementById("giftRecipientInfo").textContent =
-          eventInfo.gift_recipient ? "Príjemca: " + eventInfo.gift_recipient : "";
+        document.getElementById("giftRecipientInfo").innerHTML = eventInfo.gift_recipient
+          ? "Príjemca: <span data-no-i18n>" + escapeHtml(eventInfo.gift_recipient) + "</span>"
+          : "";
       }
 
       setupTabs();
@@ -450,7 +451,7 @@
           ${mediaTag}
           ${isVideo ? `<span class="photo-tag">${icon("video")}video</span>` : ""}
           <div class="photo-overlay">
-            <span class="photo-overlay-name">${icon("user")}${escapeHtml(photo.nickname)}</span>
+            <span class="photo-overlay-name" data-no-i18n>${icon("user")}${escapeHtml(photo.nickname)}</span>
             <div class="photo-overlay-actions">
               <button type="button" data-download="${url}" data-filename="${isVideo ? "napamiatku-video.mp4" : "napamiatku-foto.jpg"}" title="Stiahnuť" aria-label="Stiahnuť">${icon("download")}</button>
               ${deletableMine.has(photo.id) ? `<button type="button" class="delete" data-delete-own="${photo.id}" title="Zmazať moju fotku" aria-label="Zmazať moju fotku">${icon("trash")}</button>` : ""}
@@ -675,10 +676,10 @@
           <span class="avatar">${escapeHtml(initials(item.nickname))}</span>
           <div class="bubble-body">
             <div class="bubble-head">
-              <strong>${escapeHtml(item.nickname)}</strong>
+              <strong data-no-i18n>${escapeHtml(item.nickname)}</strong>
               <span>${escapeHtml(formatDateTime(item.created_at))}</span>
             </div>
-            <p>${escapeHtml(item.message)}</p>
+            <p data-no-i18n>${escapeHtml(item.message)}</p>
           </div>`;
         list.appendChild(li);
       }

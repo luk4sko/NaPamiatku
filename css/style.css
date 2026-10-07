@@ -206,6 +206,154 @@ a {
   align-items: center;
 }
 
+/* Čisté tlačidlo jazyka: zemeguľa + práve zvolený jazyk. Pri zmene sa
+   zemeguľa otočí a skratky sa vymenia zvislým pohybom. */
+button.language-toggle {
+  width: auto;
+  min-width: 3.75rem;
+  height: 2.25rem;
+  padding: 0 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.18s;
+}
+
+button.language-toggle:hover {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+button.language-toggle:hover .language-globe {
+  color: #fff;
+}
+
+button.language-toggle:active,
+button.language-toggle.is-switching {
+  transform: scale(0.96);
+}
+
+button.language-toggle.is-switching {
+  pointer-events: none;
+}
+
+.language-globe {
+  width: 1rem;
+  height: 1rem;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  transform-origin: center;
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.language-globe svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.language-code {
+  position: relative;
+  width: 1.45rem;
+  height: 0.85rem;
+  display: block;
+  overflow: hidden;
+}
+
+.language-code-current,
+.language-code-next {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s;
+}
+
+.language-code-next {
+  opacity: 0;
+  transform: translateY(130%);
+}
+
+button.language-toggle.is-switching .language-globe {
+  transform: rotate(180deg);
+}
+
+button.language-toggle.is-switching .language-code-current {
+  opacity: 0;
+  transform: translateY(-130%);
+}
+
+button.language-toggle.is-switching .language-code-next {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+button.gate-language {
+  position: absolute;
+  top: 1rem;
+  right: 3.7rem;
+  z-index: 2;
+}
+
+button.language-toggle-fixed {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 20;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+/* Krátky prechod zakryje tvrdé prebliknutie pri opätovnom načítaní stránky.
+   Stav sa prenesie cez sessionStorage v i18n.js. */
+html.language-changing body {
+  animation: language-page-out 0.28s ease forwards;
+  pointer-events: none;
+}
+
+html.language-arrived body {
+  animation: language-page-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes language-page-out {
+  to { opacity: 0; transform: translateY(4px); }
+}
+
+@keyframes language-page-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.language-toggle,
+  .language-globe,
+  .language-code-current,
+  .language-code-next {
+    transition-duration: 0.01ms;
+  }
+
+  html.language-changing body,
+  html.language-arrived body {
+    animation-duration: 0.01ms;
+  }
+}
+
 h2 {
   font-size: 1.4rem;
   margin: 2.5rem 0 1rem;
@@ -6501,6 +6649,12 @@ p.consent {
   }
 
   .landing .site-nav [data-theme-toggle] {
+    display: none;
+  }
+
+  /* Anglické texty a prepínač jazyka potrebujú o trochu viac miesta.
+     Hlavná výzva je hneď v hero, preto ju v mobilnej lište neopakujeme. */
+  .landing .site-nav .top-bar-actions > .btn {
     display: none;
   }
 

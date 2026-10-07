@@ -6,7 +6,7 @@
   <title>NaPamiatku — Akcia</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
-  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="5554d20d-e9bc-4427-87f2-575c0d594dc6" data-culture="sk" data-blockingmode="manual" type="text/javascript"></script>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
   <nav class="site-nav">
@@ -358,7 +358,7 @@
     }
 
     function renderHeader() {
-      document.getElementById("eventName").textContent = currentEvent.name;
+      document.getElementById("eventName").innerHTML = `<span data-no-i18n>${escapeHtml(currentEvent.name)}</span>`;
       const parts = [];
       if (currentEvent.event_date) {
         parts.push(icon("calendar") + " " + escapeHtml(formatDateLong(currentEvent.event_date)) +
@@ -469,7 +469,7 @@
           <div class="tent-qr"><img src="${tentQrDataUrl}" alt="QR kód" /><p class="tent-qr-caption">${TENT_CAMERA}Naskenuj mobilom</p></div>
           <div class="tent-body">
             <p class="tent-eyebrow">Pridaj svoje fotky</p>
-            <h2>${escapeHtml(currentEvent.name)}</h2>
+            <h2 data-no-i18n>${escapeHtml(currentEvent.name)}</h2>
             ${currentEvent.event_date ? `<p class="tent-date">${escapeHtml(formatDateLong(currentEvent.event_date))}</p>` : ""}
             <ol class="tent-steps">
               <li><span>1</span>Naskenuj kód mobilom</li>
@@ -656,7 +656,7 @@
                   <li class="report-item" data-report-id="${report.id}">
                     <span class="report-thumb">${thumb}</span>
                     <div class="report-body">
-                      <p><strong>Dôvod:</strong> ${escapeHtml(report.reason)}</p>
+                      <p><strong>Dôvod:</strong> <span data-no-i18n>${escapeHtml(report.reason)}</span></p>
                       <p class="muted">${escapeHtml(formatDateTime(report.created_at))}${report.reporter_contact ? " · kontakt: " + escapeHtml(report.reporter_contact) : ""}${photo.uploaded_by_nickname ? " · nahral " + escapeHtml(photo.uploaded_by_nickname) : ""}</p>
                     </div>
                     <div class="button-row">
@@ -737,7 +737,7 @@
           ${isVideo ? `<span class="photo-tag">${icon("video")}video</span>` : ""}
           <button type="button" class="photo-check" aria-label="Vybrať">${icon("check")}</button>
           <div class="photo-overlay">
-            <span class="photo-overlay-name">${icon("user")}${escapeHtml(nickname)}</span>
+            <span class="photo-overlay-name" data-no-i18n>${icon("user")}${escapeHtml(nickname)}</span>
             <div class="photo-overlay-actions">
               <button type="button" data-download="${photo.id}" title="Stiahnuť" aria-label="Stiahnuť">${icon("download")}</button>
               <button type="button" class="delete" data-delete="${photo.id}" title="Zmazať" aria-label="Zmazať">${icon("trash")}</button>
@@ -991,10 +991,10 @@
           <span class="avatar">${escapeHtml(initials(nickname))}</span>
           <div class="bubble-body">
             <div class="bubble-head">
-              <strong>${escapeHtml(nickname)}</strong>
+              <strong data-no-i18n>${escapeHtml(nickname)}</strong>
               <span>${escapeHtml(formatDateTime(item.created_at))}</span>
             </div>
-            <p>${escapeHtml(item.message)}</p>
+            <p data-no-i18n>${escapeHtml(item.message)}</p>
             <div class="bubble-actions">
               <button type="button" data-delete-message="${item.id}">${icon("trash")}Zmazať</button>
             </div>
@@ -1033,13 +1033,13 @@
       if (allMessages.length === 0) return showToast("Kniha hostí je zatiaľ prázdna.", "error");
       const entries = [...allMessages].reverse().map((item) => `
         <li>
-          <strong>${escapeHtml(item.nickname || "Hosť")}</strong>
+          <strong data-no-i18n>${escapeHtml(item.nickname || "Hosť")}</strong>
           <span>${escapeHtml(formatDateTime(item.created_at))}</span>
-          <p>${escapeHtml(item.message)}</p>
+          <p data-no-i18n>${escapeHtml(item.message)}</p>
         </li>`).join("");
       printSheet(`
         <span class="logo">Na<span>Pamiatku</span></span>
-        <h1>${escapeHtml(currentEvent.name)}</h1>
+        <h1 data-no-i18n>${escapeHtml(currentEvent.name)}</h1>
         <p class="print-date">Kniha hostí${currentEvent.event_date ? " · " + escapeHtml(formatDateLong(currentEvent.event_date)) : ""}</p>
         <ul class="print-book">${entries}</ul>`, "print-card");
     });

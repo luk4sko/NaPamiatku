@@ -246,18 +246,18 @@ function escapeHtml(value) {
 }
 
 function showMessage(element, text, type) {
-  element.textContent = text;
+  element.textContent = typeof window.translateText === "function" ? window.translateText(text) : text;
   element.className = "message" + (type ? " " + type : "");
 }
 
 function formatDate(value) {
   if (!value) return "";
-  return new Date(value).toLocaleDateString("sk-SK");
+  return new Date(value).toLocaleDateString(window.NAPAMIATKU_LOCALE || "sk-SK");
 }
 
 function formatDateTime(value) {
   if (!value) return "";
-  return new Date(value).toLocaleString("sk-SK", {
+  return new Date(value).toLocaleString(window.NAPAMIATKU_LOCALE || "sk-SK", {
     day: "numeric", month: "numeric", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
@@ -266,7 +266,7 @@ function formatDateTime(value) {
 // "17. septembra 2026" - do nadpisov, kde je miesto a číselný zápis pôsobí úradne.
 function formatDateLong(value) {
   if (!value) return "";
-  return new Date(value).toLocaleDateString("sk-SK", { day: "numeric", month: "long", year: "numeric" });
+  return new Date(value).toLocaleDateString(window.NAPAMIATKU_LOCALE || "sk-SK", { day: "numeric", month: "long", year: "numeric" });
 }
 
 // Slovenčina má tri tvary množného čísla: 1 deň, 2-4 dni, 5+ dní.
@@ -285,6 +285,15 @@ function relativeDate(value) {
   const date = new Date(value);
   date.setHours(0, 0, 0, 0);
   const days = Math.round((date - today) / 86400000);
+
+  if (window.NAPAMIATKU_LANGUAGE === "en") {
+    const formatter = new Intl.RelativeTimeFormat("en-GB", { numeric: "auto" });
+    const absDays = Math.abs(days);
+    if (absDays < 14) return formatter.format(days, "day");
+    if (absDays < 60) return formatter.format(Math.round(days / 7), "week");
+    if (absDays < 365) return formatter.format(Math.round(days / 30), "month");
+    return formatter.format(Math.round(days / 365), "year");
+  }
 
   if (days === 0) return "dnes";
   if (days === 1) return "zajtra";
@@ -582,7 +591,7 @@ function ensureLightbox() {
     <button type="button" class="lightbox-close" aria-label="Zavrieť">✕</button>
     <div class="lightbox-caption hidden">
       <span class="avatar"></span>
-      <span class="lightbox-caption-text"><strong></strong><small></small></span>
+      <span class="lightbox-caption-text"><strong data-no-i18n></strong><small></small></span>
     </div>
     <button type="button" class="lightbox-arrow lightbox-prev hidden" aria-label="Predchádzajúca fotka">‹</button>
     <img />
@@ -920,7 +929,7 @@ function showToast(text, type) {
   toast.className = "toast" + (type ? " " + type : "");
   toast.setAttribute("role", "status");
   toast.innerHTML = icon(type === "error" ? "alert" : type === "ok" ? "check" : "info") + "<span></span>";
-  toast.querySelector("span").textContent = text;
+  toast.querySelector("span").textContent = typeof window.translateText === "function" ? window.translateText(text) : text;
   host.appendChild(toast);
 
   // Trieda "in" sa pridáva až v ďalšom snímku, aby prebehol prechod (fade-in).
@@ -949,10 +958,11 @@ function confirmDialog({ title, text, confirmLabel, cancelLabel, danger }) {
           <button type="submit" class="${danger ? "danger-solid" : ""}" value="ok"></button>
         </div>
       </form>`;
-    dialog.querySelector("h3").textContent = title;
-    dialog.querySelector("p").textContent = text || "";
-    dialog.querySelector('[value="cancel"]').textContent = cancelLabel || "Zrušiť";
-    dialog.querySelector('[value="ok"]').textContent = confirmLabel || "Potvrdiť";
+    const tr = typeof window.translateText === "function" ? window.translateText : (value) => value;
+    dialog.querySelector("h3").textContent = tr(title);
+    dialog.querySelector("p").textContent = tr(text || "");
+    dialog.querySelector('[value="cancel"]').textContent = tr(cancelLabel || "Zrušiť");
+    dialog.querySelector('[value="ok"]').textContent = tr(confirmLabel || "Potvrdiť");
 
     // Výsledok berieme priamo z odoslania formulára (event.submitter = stlačené
     // tlačidlo). Udalosť "close" dialógu je len záloha pre Escape a klik mimo
@@ -993,11 +1003,12 @@ function setupDialog(dialog) {
 
 // Namiesto holého "Zatiaľ nič." - ikona v krúžku, nadpis, veta a prípadne tlačidlo.
 function emptyState({ iconName, title, text, action }) {
+  const tr = typeof window.translateText === "function" ? window.translateText : (value) => value;
   return `
     <div class="empty-state">
       <div class="empty-state-icon">${icon(iconName || "sparkles")}</div>
-      <h3>${escapeHtml(title)}</h3>
-      ${text ? "<p>" + escapeHtml(text) + "</p>" : ""}
+      <h3>${escapeHtml(tr(title))}</h3>
+      ${text ? "<p>" + escapeHtml(tr(text)) + "</p>" : ""}
       ${action || ""}
     </div>`;
 }
